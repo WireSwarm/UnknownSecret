@@ -48,7 +48,10 @@ export function GeneratorPanel({ onCopyPassword }) {
             length: config.length,
             charset,
             mandatoryChars: config.include,
-            ensureCommonSymbols: config.ensureCommon && !config.tokens.includes('all_unicode') // Less relevant if all unicode
+            length: config.length,
+            charset,
+            mandatoryChars: config.include,
+            ensureRobustness: config.ensureCommon // Mapped to the new logic
         });
         setResult(res);
         setCopied(false);
@@ -112,7 +115,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         className="keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-24" // Added pr-24 for padding
                         wrapperClassName="mb-1"
                         onClick={copyToClipboard}
-                        style={{ cursor: 'pointer' }}
+                        style={{ cursor: 'pointer', paddingRight: '8.4rem' }}
                         rightElement={
                             <>
                                 <button
@@ -267,7 +270,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 className="w-full"
                             />
                             <p className="text-xs text-muted leading-relaxed" id="compat-desc">
-                                Forces insertion of standard symbols to satisfy most website requirements.
+                                Guarantees at least one lowercase, uppercase, number, and symbol.
                             </p>
                         </div>
 

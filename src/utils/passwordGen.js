@@ -139,7 +139,7 @@ export function generatePassword({
     length = 16,
     charset = '', // The actual string pool
     mandatoryChars = '', // String of chars that MUST appear
-    ensureCommonSymbols = false, // Toggle to force at least one common symbol
+    ensureRobustness = false, // New toggle for robustness (1 Lower, 1 Upper, 1 Digit, 1 Symbol)
 }) {
     if (!charset) return { password: '', entropy: 0 };
 
@@ -170,14 +170,24 @@ export function generatePassword({
         requiredChars.push(...mandatoryChars.split(''));
     }
 
-    if (ensureCommonSymbols) {
-        // Check if we already have one
-        const hasCommon = buffer.some(c => CHAR_SETS.commonSymbols.includes(c));
-        if (!hasCommon) {
-            // Pick one random common symbol
-            const sym = CHAR_SETS.commonSymbols[getRandomInt(CHAR_SETS.commonSymbols.length)];
-            requiredChars.push(sym);
-        }
+    if (ensureRobustness) {
+        // Enforce: Lowercase, Uppercase, Number, Symbol
+        const constraints = [
+            { set: CHAR_SETS.lowercase, name: 'lower' },
+            { set: CHAR_SETS.uppercase, name: 'upper' },
+            { set: CHAR_SETS.numbers, name: 'digit' },
+            { set: CHAR_SETS.symbols, name: 'symbol' } // Use full ASCII symbols
+        ];
+
+        constraints.forEach(constraint => {
+            // Check if already present in the currently generated buffer
+            // NOTE: 'charset' might not include these chars, but we must inject them if robustness is ON.
+            // We check the BUFFER, effectively.
+            // Actually, checking buffer is hard if we just have random chars.
+            // Simpler: Just force injection.
+            const charToInject = constraint.set[getRandomInt(constraint.set.length)];
+            requiredChars.push(charToInject);
+        });
     }
 
     // Inject required chars

@@ -15,7 +15,7 @@ export function Input({
                 {icon && (
                     <div
                         className="absolute flex items-center h-full text-muted"
-                        style={{ left: '1 rem', color: 'var(--text-muted)', zIndex: 10 }}
+                        style={{ left: '1rem', color: 'var(--text-muted)', zIndex: 10 }}
                         id={props.id ? `${props.id}-icon` : undefined}
                     >
                         {icon}
