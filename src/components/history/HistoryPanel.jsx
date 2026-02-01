@@ -18,13 +18,32 @@ export function HistoryPanel({ history, onUpdateHistory }) {
         onUpdateHistory(newHistory);
     };
 
-    const handleRename = (id, currentName) => {
-        const name = prompt("Enter new name:", currentName || "");
-        if (name !== null) {
-            const newHistory = history.map(h =>
-                h.id === id ? { ...h, name } : h
-            );
-            onUpdateHistory(newHistory);
+    const [editingId, setEditingId] = useState(null);
+    const [editValue, setEditValue] = useState("");
+
+    const startEditing = (id, currentName) => {
+        setEditingId(id);
+        setEditValue(currentName || "");
+    };
+
+    const saveRename = (id) => {
+        const newHistory = history.map(h =>
+            h.id === id ? { ...h, name: editValue } : h
+        );
+        onUpdateHistory(newHistory);
+        setEditingId(null);
+    };
+
+    const cancelEditing = () => {
+        setEditingId(null);
+        setEditValue("");
+    };
+
+    const handleKeyDown = (e, id) => {
+        if (e.key === 'Enter') {
+            saveRename(id);
+        } else if (e.key === 'Escape') {
+            cancelEditing();
         }
     };
 
@@ -71,32 +90,59 @@ export function HistoryPanel({ history, onUpdateHistory }) {
                         id={`history-item-${item.id}`}
                         onClick={() => handleCopy(item.password)}
                     >
-                        <div className="flex-1 overflow-hidden" id={`history-item-content-${item.id}`}>
-                            <div className="flex flex-col" id={`history-item-stack-${item.id}`}>
-                                {/* Swap: Name on top, Password below */}
-                                <div className="flex items-center gap-2 mb-1" id={`history-item-meta-${item.id}`}>
-                                    {item.favorite && <Star size={12} className="text-yellow-400 fill-yellow-400" id={`history-fav-icon-${item.id}`} />}
-                                    {item.name ?
-                                        <span className="text-xs font-semibold text-primary" id={`history-name-${item.id}`}>{item.name}</span> :
-                                        <span className="text-xs text-muted opacity-50" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
-                                    }
+                        {editingId === item.id ? (
+                            <input
+                                autoFocus
+                                className="w-full bg-transparent border-none outline-none text-sm font-semibold text-primary placeholder-muted py-1"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={() => saveRename(item.id)}
+                                onKeyDown={(e) => handleKeyDown(e, item.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="Name"
+                                style={{
+                                    height: '2.5rem', // Matched to original content height (~40px) to prevent jump
+                                    background: 'transparent',
+                                    border: 'none',
+                                    outline: 'none',
+                                    boxShadow: 'none'
+                                }}
+                            />
+                        ) : (
+                            <>
+                                <div className="flex-1 overflow-hidden" id={`history-item-content-${item.id}`}>
+                                    <div className="flex flex-col" id={`history-item-stack-${item.id}`}>
+                                        {/* Swap: Name on top, Password below */}
+                                        <div className="flex items-center gap-2 mb-1" id={`history-item-meta-${item.id}`}>
+                                            {item.favorite && <Star size={12} className="text-yellow-400 fill-yellow-400" id={`history-fav-icon-${item.id}`} />}
+                                            {item.name ? (
+                                                <div className="flex items-center gap-2 w-full">
+                                                    <span className="text-xs font-semibold text-primary truncate" id={`history-name-${item.id}`}>{item.name}</span>
+                                                    <span className="text-[10px] text-muted opacity-50 whitespace-nowrap ml-auto" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-muted opacity-50" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                            )}
+                                        </div>
+                                        <span className="font-mono text-sm truncate block password-trunc" title={item.password} id={`history-pwd-${item.id}`}>
+                                            {formatPassword(item.password)}
+                                        </span>
+                                    </div>
                                 </div>
-                                <span className="font-mono text-sm truncate block password-trunc" title={item.password} id={`history-pwd-${item.id}`}>
-                                    {formatPassword(item.password)}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()} id={`history-actions-${item.id}`}>
-                            {/* Item copy is already handled by card click, but keeping explicit icons if needed, or removing padding to avoid double click */}
-                            <button onClick={() => handleToggleFavorite(item.id)} className="icon-btn icon-btn-secondary" id={`history-fav-btn-${item.id}`}>
-                                <Star size={18} className={item.favorite ? "fill-yellow-400 text-yellow-400" : ""} />
-                            </button>
-                            <button onClick={() => handleRename(item.id, item.name)} className="icon-btn icon-btn-primary" id={`history-rename-btn-${item.id}`}><Edit2 size={18} /></button>
-                            <button onClick={() => handleDelete(item.id)} className="icon-btn" style={{ color: 'rgba(239, 68, 68, 0.7)' }} id={`history-delete-btn-${item.id}`}><Trash2 size={18} /></button>
-                        </div>
+                                <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()} id={`history-actions-${item.id}`}>
+                                    {/* Item copy is already handled by card click, but keeping explicit icons if needed, or removing padding to avoid double click */}
+                                    <button onClick={() => handleToggleFavorite(item.id)} className="icon-btn icon-btn-secondary" id={`history-fav-btn-${item.id}`}>
+                                        <Star size={18} className={item.favorite ? "fill-yellow-400 text-yellow-400" : ""} />
+                                    </button>
+                                    <button onClick={() => startEditing(item.id, item.name)} className="icon-btn icon-btn-primary" id={`history-rename-btn-${item.id}`}><Edit2 size={18} /></button>
+                                    <button onClick={() => handleDelete(item.id)} className="icon-btn" style={{ color: 'rgba(239, 68, 68, 0.7)' }} id={`history-delete-btn-${item.id}`}><Trash2 size={18} /></button>
+                                </div>
+                            </>
+                        )}
                     </GlassCard>
                 ))}
             </div>
         </div>
     );
 }
+

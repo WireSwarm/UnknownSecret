@@ -12,6 +12,7 @@ export const CHAR_SETS = {
 const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => String.fromCharCode(start + i));
 
 export const PRESETS = {
+    alphanums: { id: 'alphanums', name: 'Alphanums', tokens: ['alphanums'] },
     ascii: { id: 'ascii', name: 'Ascii', tokens: ['ascii'] },
     ascii_extended: { id: 'ascii_extended', name: 'Ascii Extended', tokens: ['ascii_extended'] },
     active_languages: { id: 'active_languages', name: 'Active Languages', tokens: ['active_languages'] },
@@ -25,6 +26,11 @@ export const PRESETS = {
  */
 export function buildCharset({ tokens = [], excludeChars = '', includeChars = '', onlyPrintable = false }) {
     let pool = '';
+
+    // Alphanums (a-z, A-Z, 0-9)
+    if (tokens.includes('alphanums')) {
+        pool += CHAR_SETS.lowercase + CHAR_SETS.uppercase + CHAR_SETS.numbers;
+    }
 
     // Basic Ascii (U+0021 – U+007E)
     if (tokens.includes('ascii')) {

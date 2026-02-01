@@ -24,10 +24,11 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [result, setResult] = useState({ password: '', entropy: 0 });
     const [showPassword, setShowPassword] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [activeSet, setActiveSet] = useState('bidon'); // Default to bidon
+    const [activeSet, setActiveSet] = useState('alphanums'); // Default to alphanums
 
     // Predefined Sets
     const SETS = {
+        alphanums: { id: 'alphanums', name: 'Alphanums', tokens: ['alphanums'] },
         ascii: { id: 'ascii', name: 'Ascii', tokens: ['ascii'] },
         ascii_extended: { id: 'ascii_extended', name: 'Ascii Extended', tokens: ['ascii_extended'] },
         active_languages: { id: 'active_languages', name: 'Active Languages', tokens: ['active_languages'] },
