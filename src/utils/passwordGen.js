@@ -43,6 +43,15 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
         pool += range(128, 255).join('');
     }
 
+    if (tokens.includes('unicode')) {
+        // Printable ASCII + Common Unicode ranges that are generally safe/visible
+        pool += range(32, 126).join(''); // ASCII Printable
+        pool += range(161, 255).join(''); // Extended Latin 1
+        pool += range(0x0100, 0x017F).join(''); // Latin Extended-A
+        pool += range(0x0370, 0x03FF).join(''); // Greek
+        // Add more if needed, but keeping it "usable"
+    }
+
     // Add custom includes
     if (includeChars) {
         // We add distinct chars from includeChars that might not be in the pool?

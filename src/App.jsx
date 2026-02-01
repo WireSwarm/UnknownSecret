@@ -28,22 +28,25 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      <header className="app-header animate-float">
-        <div className="logo-wrapper glass-card">
-          <ShieldCheck size={48} />
+    <div className="app-container" id="app-root">
+      <header className="app-header animate-float" id="main-header">
+        <div className="header-content" id="header-content">
+          <div className="logo-wrapper glass-card" id="app-logo">
+            <ShieldCheck size={32} />
+          </div>
+          <div className="title-stack" id="title-stack">
+            <h1 className="app-title text-gradient" id="app-title">UnknownSecret</h1>
+            <p className="label-text" id="app-subtitle">Premium Password Generator</p>
+          </div>
         </div>
-        <h1 className="app-title text-gradient">UnknownSecret</h1>
-        <p className="label-text">Premium Password Generator</p>
       </header>
 
-      <main className="app-main">
-        <section className="flex flex-col gap-4">
-          {/* Generator */}
+      <main className="app-main" id="main-content">
+        <section className="generator-section" id="generator-section">
           <GeneratorPanel onCopyPassword={handleGeneratedPasswordCopy} />
         </section>
 
-        <aside className="glass-card p-4 h-full" style={{ maxHeight: 'calc(100vh - 200px)', minHeight: '500px' }}>
+        <aside className="glass-card history-aside" id="history-aside">
           <HistoryPanel history={history} onUpdateHistory={handleHistoryUpdate} />
         </aside>
       </main>

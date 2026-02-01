@@ -1,43 +1,59 @@
 .app-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  /* Start from top to allow scrolling */
   min-height: 100vh;
-  padding: 2rem 1rem;
+  padding: 1rem;
 }
 
 .app-header {
-  margin-top: 2rem;
-  margin-bottom: 3rem;
-  text-align: center;
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 10;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-stack {
+  display: flex;
+  flex-direction: column;
 }
 
 .logo-wrapper {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border-radius: 50%;
-  /* Circle */
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
   color: var(--primary);
 }
 
 .app-title {
-  font-size: 3.5rem;
-  margin-bottom: 0.5rem;
-  line-height: 1.1;
+  font-size: 1.5rem;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .app-main {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
+  margin: 6rem auto 0 auto;
   display: grid;
   grid-template-columns: 1fr;
   gap: 2rem;
-  /* Ensure it takes remaining space or fits content */
+  padding-bottom: 2rem;
+}
+
+.history-aside {
+  padding: 1.5rem;
+  height: fit-content;
+  max-height: calc(100vh - 10rem);
+  min-height: 500px;
 }
 
 @media (min-width: 900px) {

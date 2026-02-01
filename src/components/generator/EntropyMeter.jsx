@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function EntropyMeter({ entropy }) {
+export function EntropyMeter({ entropy, id }) {
     // Analyze strength based on bits
     let strength = 'Very Weak';
     let color = '#EF4444'; // Red
@@ -23,13 +23,16 @@ export function EntropyMeter({ entropy }) {
     const percentage = Math.min(100, (safeEntropy / 128) * 100);
 
     return (
-        <div className="w-full mt-4">
-            <div className="flex justify-between mb-1">
-                <span className="label-text">Security Strength</span>
-                <span className="label-text" style={{ color, fontWeight: 'bold' }}>{strength} <span className="text-muted font-normal">({Math.round(safeEntropy)} bits)</span></span>
+        <div className="w-full mt-4" id={id}>
+            <div className="flex justify-between mb-1" id={id ? `${id}-header` : undefined}>
+                <span className="label-text" id={id ? `${id}-label` : undefined}>Security Strength</span>
+                <span className="label-text" style={{ color, fontWeight: 'bold' }} id={id ? `${id}-strength` : undefined}>
+                    {strength} <span className="text-muted font-normal" id={id ? `${id}-bits` : undefined}>({Math.round(safeEntropy)} bits)</span>
+                </span>
             </div>
-            <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden">
+            <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden" id={id ? `${id}-bar-bg` : undefined}>
                 <div
+                    id={id ? `${id}-bar-fill` : undefined}
                     className="h-full transition-all duration-500 ease-out"
                     style={{ width: `${Math.max(5, percentage)}%`, backgroundColor: color }}
                 />

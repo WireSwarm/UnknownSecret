@@ -47,36 +47,52 @@ export function HistoryPanel({ history, onUpdateHistory }) {
         return b.timestamp - a.timestamp;
     });
 
+    // Truncation logic: start [...] end
+    const formatPassword = (p) => {
+        if (p.length <= 16) return p;
+        return `${p.slice(0, 8)} [...] ${p.slice(-8)}`;
+    };
+
     return (
-        <div className="flex flex-col gap-4 h-full">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">History</h2>
+        <div className="flex flex-col gap-4 h-full" id="history-panel">
+            <div className="flex justify-between items-center" id="history-header">
+                <h2 className="text-xl font-bold" id="history-title">History</h2>
                 {history.length > 0 &&
-                    <Button variant="ghost" onClick={clearHistory} className="px-3 py-1 text-xs h-8">Clear</Button>
+                    <Button variant="ghost" onClick={clearHistory} className="px-3 py-1 text-xs h-8" id="clear-history-btn">Clear</Button>
                 }
             </div>
 
-            <div className="flex flex-col gap-2 overflow-y-auto pr-2" style={{ maxHeight: '600px' }}>
-                {history.length === 0 && <p className="text-muted text-center py-8">No history yet.<br /><span className="text-xs">Generated passwords will appear here when copied.</span></p>}
+            <div className="flex flex-col gap-2 overflow-y-auto pr-2" style={{ maxHeight: '600px' }} id="history-items-container">
+                {history.length === 0 && <p className="text-muted text-center py-8" id="history-empty-msg">No history yet.<br /><span className="text-xs">Generated passwords will appear here when copied.</span></p>}
                 {sortedHistory.map(item => (
-                    <GlassCard key={item.id} className="p-3 flex items-center justify-between group hover:bg-white-5 transition-colors">
-                        <div className="flex-1 overflow-hidden">
-                            <div className="flex items-center gap-2">
-                                {item.favorite && <Star size={12} className="text-yellow-400 fill-yellow-400" />}
-                                <span className="font-mono text-sm truncate block" title={item.password}>{item.password}</span>
+                    <GlassCard
+                        key={item.id}
+                        className="p-3 flex items-center justify-between group hover:bg-white-5 transition-colors history-item"
+                        id={`history-item-${item.id}`}
+                        onClick={() => handleCopy(item.password)}
+                    >
+                        <div className="flex-1 overflow-hidden" id={`history-item-content-${item.id}`}>
+                            <div className="flex flex-col" id={`history-item-stack-${item.id}`}>
+                                {/* Swap: Name on top, Password below */}
+                                <div className="flex items-center gap-2 mb-1" id={`history-item-meta-${item.id}`}>
+                                    {item.favorite && <Star size={12} className="text-yellow-400 fill-yellow-400" id={`history-fav-icon-${item.id}`} />}
+                                    {item.name ?
+                                        <span className="text-xs font-semibold text-primary" id={`history-name-${item.id}`}>{item.name}</span> :
+                                        <span className="text-xs text-muted opacity-50" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                    }
+                                </div>
+                                <span className="font-mono text-sm truncate block password-trunc" title={item.password} id={`history-pwd-${item.id}`}>
+                                    {formatPassword(item.password)}
+                                </span>
                             </div>
-                            {item.name ?
-                                <span className="text-xs text-muted block mt-1">{item.name}</span> :
-                                <span className="text-xs text-muted block mt-1 opacity-50">{new Date(item.timestamp).toLocaleTimeString()}</span>
-                            }
                         </div>
-                        <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleCopy(item.password)} className="p-2 hover:text-primary rounded hover:bg-white-10"><Copy size={16} /></button>
-                            <button onClick={() => handleToggleFavorite(item.id)} className="p-2 hover:text-yellow-400 rounded hover:bg-white-10">
-                                <Star size={16} className={item.favorite ? "fill-yellow-400" : ""} />
+                        <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()} id={`history-actions-${item.id}`}>
+                            {/* Item copy is already handled by card click, but keeping explicit icons if needed, or removing padding to avoid double click */}
+                            <button onClick={() => handleToggleFavorite(item.id)} className="icon-btn icon-btn-secondary" id={`history-fav-btn-${item.id}`}>
+                                <Star size={18} className={item.favorite ? "fill-yellow-400 text-yellow-400" : ""} />
                             </button>
-                            <button onClick={() => handleRename(item.id, item.name)} className="p-2 hover:text-secondary rounded hover:bg-white-10"><Edit2 size={16} /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-2 hover:text-red-500 rounded hover:bg-white-10"><Trash2 size={16} /></button>
+                            <button onClick={() => handleRename(item.id, item.name)} className="icon-btn icon-btn-primary" id={`history-rename-btn-${item.id}`}><Edit2 size={18} /></button>
+                            <button onClick={() => handleDelete(item.id)} className="icon-btn" style={{ color: 'rgba(239, 68, 68, 0.7)' }} id={`history-delete-btn-${item.id}`}><Trash2 size={18} /></button>
                         </div>
                     </GlassCard>
                 ))}

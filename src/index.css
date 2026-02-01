@@ -498,13 +498,13 @@ h6 {
 
 .input-field {
   width: 100%;
-  padding: 1rem 1.25rem;
-  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  border-radius: 20px;
   background: rgba(13, 16, 29, 0.78);
   border: 1px solid rgba(var(--primary-rgb), 0.28);
   color: #f4f6ff;
   font-family: var(--font-mono);
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   transition: all 0.3s ease;
   outline: none;
 }
@@ -512,6 +512,85 @@ h6 {
 .input-field:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.15);
+}
+
+/* Radiant Text Effect */
+.radiant-text {
+  background: linear-gradient(to right, #fff, var(--secondary), var(--primary), #fff);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: radiant 3s linear infinite;
+  font-weight: 800;
+}
+
+@keyframes radiant {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* Rounded Input Border Specifically */
+.input-rounded {
+  border-radius: 30px;
+}
+
+/* Ghost/Border Hidden Buttons for Icons */
+.icon-btn {
+  background: transparent !important;
+  border: none !important;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text-muted);
+}
+
+.icon-btn:hover {
+  filter: drop-shadow(0 0 8px currentColor);
+  transform: scale(1.1);
+}
+
+.icon-btn-primary:hover {
+  color: var(--primary);
+}
+
+.icon-btn-secondary:hover {
+  color: var(--secondary);
+}
+
+/* Ghost Input for Max Value */
+.ghost-size-input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px dashed rgba(var(--primary-rgb), 0.4);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-weight: bold;
+  width: 2.5rem;
+  text-align: center;
+  outline: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* History Item - Pointer and Click styles */
+.history-item {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.history-item:active {
+  transform: scale(0.98);
+}
+
+/* History Truncate logic */
+.password-trunc {
+  font-family: var(--font-mono);
 }
 
 input[type=range] {

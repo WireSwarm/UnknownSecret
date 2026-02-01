@@ -11,16 +11,24 @@ import { EntropyMeter } from './EntropyMeter';
 export function GeneratorPanel({ onCopyPassword }) {
     const [config, setConfig] = useState({
         length: 16,
-        tokens: PRESETS.ASCII_STANDARD.tokens,
+        tokens: ['bidon'], // Only bidon by default
         exclude: '',
         include: '',
         ensureCommon: true,
+        maxPossible: 128
     });
 
+    const [isEditingMax, setIsEditingMax] = useState(false);
     const [result, setResult] = useState({ password: '', entropy: 0 });
     const [showPassword, setShowPassword] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [activePreset, setActivePreset] = useState(PRESETS.ASCII_STANDARD.id);
+    const [activeSet, setActiveSet] = useState('bidon'); // Default to bidon
+
+    // Predefined Sets
+    const SETS = {
+        bidon: { id: 'bidon', name: 'Bidon', tokens: ['bidon'] },
+        unicode: { id: 'unicode', name: 'Unicode Full', tokens: ['unicode'] }
+    };
 
     // Generate function
     const handleGenerate = () => {
@@ -29,7 +37,7 @@ export function GeneratorPanel({ onCopyPassword }) {
             length: config.length,
             charset,
             mandatoryChars: config.include,
-            ensureCommonSymbols: config.ensureCommon && config.tokens.includes('symbols')
+            ensureCommonSymbols: config.ensureCommon && config.tokens.includes('unicode') // Adjust common symbols if unicode
         });
         setResult(res);
         setCopied(false);
@@ -49,153 +57,166 @@ export function GeneratorPanel({ onCopyPassword }) {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    // Toggle handling
-    const toggleToken = (token) => {
-        const has = config.tokens.includes(token);
-        let newTokens;
-        if (has) newTokens = config.tokens.filter(t => t !== token);
-        else newTokens = [...config.tokens, token];
-
-        setConfig({ ...config, tokens: newTokens });
-        setActivePreset('custom'); // Switch to custom if modified
+    // Change Set
+    const handleSetChange = (setId) => {
+        setActiveSet(setId);
+        setConfig({ ...config, tokens: SETS[setId].tokens });
     };
 
-    const setPreset = (presetKey) => {
-        setActivePreset(presetKey);
-        setConfig({ ...config, tokens: PRESETS[presetKey].tokens });
+    const handleMaxChange = (e) => {
+        if (e.key === 'Enter' || e.type === 'blur') {
+            let val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val > 0) {
+                // Cap it at something reasonable if needed, or leave it to user
+                setConfig(prev => ({ ...prev, maxPossible: val, length: Math.min(prev.length, val) }));
+            }
+            setIsEditingMax(false);
+        }
     };
 
     return (
-        <div className="flex flex-col gap-6">
-            {/* Output Section */}
-            <div className="relative">
-                <Input
-                    value={result.password}
-                    readOnly
-                    type={showPassword ? "text" : "password"}
-                    className="pr-32 text-center text-lg font-bold tracking-wider"
-                    wrapperClassName="mb-1"
-                    rightElement={
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="p-2 text-muted hover:text-white transition-colors"
-                                title={showPassword ? "Hide" : "Show"}
-                            >
-                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                            </button>
-                            <button
-                                onClick={handleGenerate}
-                                className="p-2 text-muted hover:text-primary transition-colors hover:rotate-180 duration-500"
-                                title="Regenerate"
-                            >
-                                <Dice5 size={20} />
-                            </button>
+        <div className="flex flex-col gap-6" id="generator-panel">
+            {/* Centered Output Section */}
+            <div className="flex flex-col items-center w-full" id="output-section">
+                <div className="w-full max-w-2xl relative" id="password-input-area">
+                    <Input
+                        id="main-password-input"
+                        value={result.password}
+                        readOnly
+                        type={showPassword ? "text" : "password"}
+                        className="text-center text-2xl font-bold tracking-wider radiant-text input-rounded"
+                        wrapperClassName="mb-1"
+                        onClick={copyToClipboard}
+                        style={{ cursor: 'pointer' }}
+                        rightElement={
+                            <>
+                                <button
+                                    id="toggle-visibility-btn"
+                                    onClick={(e) => { e.stopPropagation(); setShowPassword(!showPassword); }}
+                                    className="icon-btn"
+                                    title={showPassword ? "Hide" : "Show"}
+                                >
+                                    {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                                </button>
+                                <button
+                                    id="regen-password-btn"
+                                    onClick={(e) => { e.stopPropagation(); handleGenerate(); }}
+                                    className="icon-btn icon-btn-primary"
+                                    title="Regenerate"
+                                >
+                                    <Dice5 size={22} />
+                                </button>
+                            </>
+                        }
+                    />
+                </div>
+
+                {/* Password Length Slider: directly below the input */}
+                <div className="w-full max-w-2xl mt-4" id="length-slider-area">
+                    <div className="flex justify-between items-center mb-1" id="length-label-row">
+                        <label className="label-text" id="length-label">Password Length</label>
+                        <div className="flex items-center gap-2" id="length-value-container">
+                            <span className="font-mono font-bold text-primary" id="current-length-val">{config.length}</span>
+                            <span className="text-muted" id="length-sep">/</span>
+                            {isEditingMax ? (
+                                <input
+                                    id="max-length-editor"
+                                    autoFocus
+                                    defaultValue={config.maxPossible}
+                                    onKeyDown={handleMaxChange}
+                                    onBlur={handleMaxChange}
+                                    className="ghost-size-input"
+                                />
+                            ) : (
+                                <span
+                                    id="max-length-display"
+                                    className="font-mono text-muted cursor-pointer hover:text-primary transition-colors"
+                                    onClick={() => setIsEditingMax(true)}
+                                    title="Click to edit max"
+                                >
+                                    {config.maxPossible}
+                                </span>
+                            )}
                         </div>
-                    }
-                />
+                    </div>
+                    <Slider
+                        id="length-slider"
+                        value={config.length}
+                        min={1}
+                        max={config.maxPossible}
+                        onChange={(val) => setConfig({ ...config, length: val })}
+                    />
+                </div>
             </div>
 
             {/* Copy Button & Meter */}
-            <div className="flex flex-col md:flex-row md-flex-row gap-4 items-start md:items-center md-items-center justify-between">
-                <EntropyMeter entropy={result.entropy} />
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between" id="meter-action-row">
+                <EntropyMeter entropy={result.entropy} id="entropy-meter" />
 
                 <Button
+                    id="main-copy-btn"
                     onClick={copyToClipboard}
-                    className={`w-full md:w-auto md-w-auto mt-4 md:mt-0 md-mt-0 ${copied ? 'bg-green-500' : ''}`}
+                    className={`w-full md:w-auto mt-4 md:mt-0 ${copied ? 'bg-green-500' : ''}`}
                     variant={copied ? 'ghost' : 'primary'}
                     style={copied ? { borderColor: '#10B981', color: '#10B981' } : {}}
                 >
-                    {copied ? <Check size={20} /> : <Copy size={20} />}
+                    {copied ? <Check size={20} id="copied-icon" /> : <Copy size={20} id="copy-icon" />}
                     {copied ? 'Copied!' : 'Copy Password'}
                 </Button>
             </div>
 
-            {/* Controls */}
-            <GlassCard className="p-6 mt-4">
-                <h3 className="label-text mb-4">Presets</h3>
-                {/* Presets */}
-                <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-                    {Object.keys(PRESETS).map(key => (
+            {/* Options / Character Sets */}
+            <GlassCard className="p-6 mt-4" id="config-card">
+                <h3 className="label-text mb-4" id="charset-title">Jeu de caractère</h3>
+                <div className="flex gap-2 mb-6 overflow-x-auto pb-2" id="charset-selectors">
+                    {Object.keys(SETS).map(key => (
                         <button
+                            id={`charset-btn-${key}`}
                             key={key}
-                            onClick={() => setPreset(key)}
+                            onClick={() => handleSetChange(key)}
                             className={`
-                    px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all
-                    ${activePreset === key ? 'bg-primary text-white shadow-lg' : 'bg-white-5 hover-bg-white-10 text-muted'}
+                    px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all
+                    ${activeSet === key ? 'bg-primary text-white shadow-lg' : 'bg-white-5 hover-bg-white-10 text-muted'}
                  `}
                         >
-                            {PRESETS[key].name}
+                            {SETS[key].name}
                         </button>
                     ))}
-                    <button
-                        className={`
-                    px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all border border-dashed border-white-20
-                    ${activePreset === 'custom' ? 'text-primary border-primary' : 'text-muted'}
-                 `}
-                    >
-                        Custom
-                    </button>
                 </div>
 
-                <div className="grid grid-cols-1 md-grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md-grid-cols-2 gap-8" id="settings-grid">
                     {/* Left Column: Sliders & Checks */}
-                    <div className="flex flex-col gap-6">
-                        <Slider
-                            label="Password Length"
-                            value={config.length}
-                            min={8}
-                            max={128}
-                            onChange={(val) => setConfig({ ...config, length: val })}
-                        />
-
-                        <div className="flex flex-col gap-3">
-                            <h3 className="label-text mb-2">Character Sets</h3>
+                    <div className="flex flex-col gap-6" id="settings-col-1">
+                        <div className="flex flex-col gap-3" id="options-group">
+                            <h3 className="label-text mb-2" id="options-title">Option</h3>
                             <Toggle
-                                label="Uppercase (A-Z)"
-                                checked={config.tokens.includes('uppercase')}
-                                onChange={() => toggleToken('uppercase')}
-                            />
-                            <Toggle
-                                label="Lowercase (a-z)"
-                                checked={config.tokens.includes('lowercase')}
-                                onChange={() => toggleToken('lowercase')}
-                            />
-                            <Toggle
-                                label="Numbers (0-9)"
-                                checked={config.tokens.includes('numbers')}
-                                onChange={() => toggleToken('numbers')}
-                            />
-                            <Toggle
-                                label="Symbols (!@#...)"
-                                checked={config.tokens.includes('symbols')}
-                                onChange={() => toggleToken('symbols')}
-                            />
-                            <Toggle
-                                label="Extended ASCII"
-                                checked={config.tokens.includes('extended')}
-                                onChange={() => toggleToken('extended')}
+                                id="opt-bidon"
+                                label="Bidon"
+                                checked={config.tokens.includes('bidon')}
+                                onChange={() => { }} // No effect as requested
                             />
                         </div>
                     </div>
 
                     {/* Right Column: Advanced */}
-                    <div className="flex flex-col gap-6">
-                        <h3 className="label-text">Advanced Options</h3>
+                    <div className="flex flex-col gap-6" id="settings-col-2">
+                        <h3 className="label-text" id="advanced-title">Advanced Options</h3>
 
-                        <div className="p-4 rounded-xl bg-black-20 border border-white-5 flex flex-col gap-4">
+                        <div className="p-4 rounded-xl bg-black-20 border border-white-5 flex flex-col gap-4" id="compat-area">
                             <Toggle
+                                id="compat-toggle"
                                 label="Enhance Compatibility"
                                 checked={config.ensureCommon}
                                 onChange={(v) => setConfig({ ...config, ensureCommon: v })}
                                 className="w-full"
                             />
-                            <p className="text-xs text-muted leading-relaxed">
+                            <p className="text-xs text-muted leading-relaxed" id="compat-desc">
                                 Forces insertion of standard symbols to satisfy most website requirements.
                             </p>
                         </div>
 
                         <Input
+                            id="must-include-input"
                             label="Must Include Characters"
                             placeholder="e.g. @Root"
                             value={config.include}
@@ -204,6 +225,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         />
 
                         <Input
+                            id="forbidden-input"
                             label="Forbidden Characters"
                             placeholder="e.g. I1l0O"
                             value={config.exclude}

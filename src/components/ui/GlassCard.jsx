@@ -1,8 +1,8 @@
 import React from 'react';
 
-export function GlassCard({ children, className = '', ...props }) {
+export function GlassCard({ children, className = '', id, ...props }) {
     return (
-        <div className={`glass-card ${className}`} {...props}>
+        <div className={`glass-card ${className}`} id={id} {...props}>
             {children}
         </div>
     );
