@@ -20,6 +20,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     });
 
     const [isEditingMax, setIsEditingMax] = useState(false);
+    const [isEditingLength, setIsEditingLength] = useState(false); // New state for length editing
     const [result, setResult] = useState({ password: '', entropy: 0 });
     const [showPassword, setShowPassword] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -84,6 +85,20 @@ export function GeneratorPanel({ onCopyPassword }) {
         }
     };
 
+    const handleLengthChange = (e) => {
+        if (e.key === 'Enter' || e.type === 'blur') {
+            let val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val > 0) {
+                // If new length > max, update max as well
+                setConfig(prev => {
+                    const newMax = Math.max(prev.maxPossible, val);
+                    return { ...prev, length: val, maxPossible: newMax };
+                });
+            }
+            setIsEditingLength(false);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-6" id="generator-panel">
             {/* Centered Output Section */}
@@ -94,7 +109,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         value={result.password}
                         readOnly
                         type={showPassword ? "text" : "password"}
-                        className="keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded"
+                        className="keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-24" // Added pr-24 for padding
                         wrapperClassName="mb-1"
                         onClick={copyToClipboard}
                         style={{ cursor: 'pointer' }}
@@ -126,7 +141,25 @@ export function GeneratorPanel({ onCopyPassword }) {
                     <div className="flex justify-between items-center mb-1" id="length-label-row">
                         <label className="label-text" id="length-label">Password Length</label>
                         <div className="flex items-center gap-2" id="length-value-container">
-                            <span className="font-mono font-bold text-primary" id="current-length-val">{config.length}</span>
+                            {isEditingLength ? (
+                                <input
+                                    id="length-editor"
+                                    autoFocus
+                                    defaultValue={config.length}
+                                    onKeyDown={handleLengthChange}
+                                    onBlur={handleLengthChange}
+                                    className="ghost-size-input text-primary font-bold"
+                                />
+                            ) : (
+                                <span
+                                    className="font-mono font-bold text-primary cursor-pointer hover:underline"
+                                    id="current-length-val"
+                                    onClick={() => setIsEditingLength(true)}
+                                    title="Click to edit length"
+                                >
+                                    {config.length}
+                                </span>
+                            )}
                             <span className="text-muted" id="length-sep">/</span>
                             {isEditingMax ? (
                                 <input
@@ -178,16 +211,21 @@ export function GeneratorPanel({ onCopyPassword }) {
             {/* Options / Character Sets */}
             <GlassCard className="p-6 mt-4" id="config-card">
                 <h3 className="label-text mb-4" id="charset-title">Jeu de caractère</h3>
-                <div className="flex gap-2 mb-6 overflow-x-auto pb-2" id="charset-selectors">
+                <div className="flex flex-wrap gap-3 mb-6 justify-center" id="charset-selectors">
                     {Object.keys(SETS).map(key => (
                         <button
                             id={`charset-btn-${key}`}
                             key={key}
                             onClick={() => handleSetChange(key)}
                             className={`
-                    px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all
-                    ${activeSet === key ? 'bg-primary text-white shadow-lg' : 'bg-white-5 hover-bg-white-10 text-muted'}
+                    charset-selector-btn rounded-full transition-all
+                    ${activeSet === key
+                                    ? 'bg-primary text-white shadow-lg'
+                                    : 'bg-black-20 hover:bg-white-5 text-muted'}
                  `}
+                            style={{
+                                border: activeSet === key ? '1px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.1)'
+                            }}
                         >
                             {SETS[key].name}
                         </button>

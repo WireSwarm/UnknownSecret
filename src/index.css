@@ -739,3 +739,19 @@ input[type=range]::-webkit-slider-runnable-track {
   text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.3);
   /* Subtle glow to help text pop */
 }
+
+.charset-selector-btn {
+  height: 48px !important;
+  /* Reduced from 56px */
+  min-width: 140px !important;
+  /* Reduced from 160px */
+  padding: 0 20px !important;
+  /* Reduced padding */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
+  font-weight: 700 !important;
+  /* Removed flex-shrink: 0 to play nice with wrapping if needed, though container controls wrap */
+}
