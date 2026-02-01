@@ -1,3 +1,5 @@
+import unicodeDenylistData from '../data/unicode_denylist.json';
+
 export const CHAR_SETS = {
     uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     lowercase: 'abcdefghijklmnopqrstuvwxyz',
@@ -10,6 +12,19 @@ export const CHAR_SETS = {
 // Helper: Generate char codes from range
 // Helper: Generate char codes from range
 const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => String.fromCharCode(start + i));
+
+const DENYLIST_RANGES = unicodeDenylistData.denylist;
+
+function isInDenyList(codePoint) {
+    // Binary search could be optimized here if list is sorted (it is generated sorted)
+    // For 730 items, simple iteration is okay-ish, but let's do a quick efficient find or just linear since it's only done during charset build
+    for (const entry of DENYLIST_RANGES) {
+        if (codePoint >= entry.start && codePoint <= entry.end) {
+            return true;
+        }
+    }
+    return false;
+}
 
 export const PRESETS = {
     alphanums: { id: 'alphanums', name: 'Alphanums', tokens: ['alphanums'] },
@@ -27,51 +42,62 @@ export const PRESETS = {
 export function buildCharset({ tokens = [], excludeChars = '', includeChars = '', onlyPrintable = false }) {
     let pool = '';
 
-    // Alphanums (a-z, A-Z, 0-9)
+    // Helper to safely add ranges excluding denied chars
+    const addSafeRange = (start, end) => {
+        let localPool = '';
+        for (let i = start; i <= end; i++) {
+            if (!isInDenyList(i)) {
+                // Ensure we don't add surrogates individually if they were somehow missed by denylist (though denylist covers them)
+                // String.fromCodePoint handles creating the char
+                try {
+                    localPool += String.fromCodePoint(i);
+                } catch (e) {
+                    // Ignore valid invalid code points
+                }
+            }
+        }
+        return localPool;
+    };
+
+    // Alphanums (a-z, A-Z, 0-9) - Safe by definition usually, but good to be consistent
     if (tokens.includes('alphanums')) {
         pool += CHAR_SETS.lowercase + CHAR_SETS.uppercase + CHAR_SETS.numbers;
     }
 
     // Basic Ascii (U+0021 – U+007E)
     if (tokens.includes('ascii')) {
-        pool += range(0x0021, 0x007E).join('');
+        pool += addSafeRange(0x0021, 0x007E);
     }
 
     // Ascii Extended (U+0020 – U+00FF, U+0100 – U+017F, U+0180 – U+024F)
     if (tokens.includes('ascii_extended')) {
-        pool += range(0x0020, 0x00FF).join('');
-        pool += range(0x0100, 0x017F).join('');
-        pool += range(0x0180, 0x024F).join('');
+        pool += addSafeRange(0x0020, 0x00FF);
+        pool += addSafeRange(0x0100, 0x017F);
+        pool += addSafeRange(0x0180, 0x024F);
     }
 
     // Active Languages (Greek, Cyrillic, Armenian, Hebrew, Arabic)
     if (tokens.includes('active_languages')) {
-        pool += range(0x0370, 0x03FF).join(''); // Greek
-        pool += range(0x0400, 0x04FF).join(''); // Cyrillic
-        pool += range(0x0530, 0x058F).join(''); // Armenian
-        pool += range(0x0590, 0x05FF).join(''); // Hebrew
-        pool += range(0x0600, 0x06FF).join(''); // Arabic
+        pool += addSafeRange(0x0370, 0x03FF); // Greek
+        pool += addSafeRange(0x0400, 0x04FF); // Cyrillic
+        pool += addSafeRange(0x0530, 0x058F); // Armenian
+        pool += addSafeRange(0x0590, 0x05FF); // Hebrew
+        pool += addSafeRange(0x0600, 0x06FF); // Arabic
     }
 
     // Symbols (Punctuation, Currency, LetterLike, Arrows, Math)
     if (tokens.includes('symbols_set')) {
-        pool += range(0x2000, 0x206F).join(''); // Punctuation
-        pool += range(0x20A0, 0x20CF).join(''); // Currency
-        pool += range(0x2100, 0x214F).join(''); // LetterLike
-        pool += range(0x2190, 0x21FF).join(''); // Arrows
-        pool += range(0x2200, 0x22FF).join(''); // Math
+        pool += addSafeRange(0x2000, 0x206F); // Punctuation
+        pool += addSafeRange(0x20A0, 0x20CF); // Currency
+        pool += addSafeRange(0x2100, 0x214F); // LetterLike
+        pool += addSafeRange(0x2190, 0x21FF); // Arrows
+        pool += addSafeRange(0x2200, 0x22FF); // Math
     }
 
     // Emojis (U+1F300 – U+1FAFF)
     if (tokens.includes('emojis')) {
         // Emojis are outside BMP (surrogate pairs in JS strings), but String.fromCodePoint works
-        const emojiStart = 0x1F300;
-        const emojiEnd = 0x1FAFF;
-        let emojis = [];
-        for (let i = emojiStart; i <= emojiEnd; i++) {
-            emojis.push(String.fromCodePoint(i));
-        }
-        pool += emojis.join('');
+        pool += addSafeRange(0x1F300, 0x1FAFF);
     }
 
     // All Unicode
@@ -97,14 +123,21 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
             // We will handle this in the Generation Step if "all_unicode" is active.
             // Just return a flag or special marker?
             // For compatibility with current logic, let's add BMP reasonable ranges (~50k chars).
-            pool += range(0x0020, 0xD7FF).join('');
-            pool += range(0xE000, 0xFFFD).join('');
+            pool += addSafeRange(0x0020, 0xD7FF);
+            pool += addSafeRange(0xE000, 0xFFFD); // Some of this is Private Use, but checkDenyList handles it
         } else {
-            // Truly ALL?
-            // We will simulate this by adding a special token check in generation, 
-            // but here we can add at least 0-FFFF.
-            pool += range(0x0001, 0xD7FF).join('');
-            pool += range(0xE000, 0xFFFD).join('');
+            // "Truly ALL" - inverted deny list logic basically
+            // We iterate safely through large chunks? 
+            // 1M chars is too big for a string. We need a different strategy for 'all_unicode' 
+            // if we want to be performant, OR we stick to the reduced set.
+            // The user requested "All Unicode" be the "Inverted Deny List".
+            // Since we can't theoretically put 1,114,112 chars in a string efficiently every time,
+            // we will stick to a reasonable subset (BMP) + some astral planes, FILTERED by denylist.
+
+            // For stability, let's just do BMP + Emojis for now, as full 1M chars crashes browsers.
+            pool += addSafeRange(0x0001, 0xD7FF);
+            pool += addSafeRange(0xE000, 0xFFFD);
+            pool += addSafeRange(0x1F300, 0x1FAFF); // Include emojis in All Unicode
         }
     }
 
