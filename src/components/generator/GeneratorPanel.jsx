@@ -98,6 +98,22 @@ export function GeneratorPanel({ onCopyPassword }) {
                 }
             }
 
+            // High likelihood of unassigned characters not being caught by simple range checks
+            // So let's log everything for the user to debug
+            console.groupCollapsed('Password Character Audit');
+            const debugInfo = [];
+            for (let k = 0; k < pwd.length; k++) {
+                const cp = pwd.codePointAt(k);
+                // Handle surrogate pairs for iteration
+                if (cp > 0xFFFF) {
+                    k++; // skip next unit
+                }
+                debugInfo.push(`Char: "${String.fromCodePoint(cp)}" U+${cp.toString(16).toUpperCase().padStart(4, '0')}`);
+            }
+            console.table(debugInfo);
+            console.groupEnd();
+
+            // Existing detection logic ...
             if (isProblematic) {
                 indices.add(i);
             }
@@ -113,9 +129,9 @@ export function GeneratorPanel({ onCopyPassword }) {
         if (indices.size > 0) {
             const sortedIndices = Array.from(indices).sort((a, b) => a - b);
             console.log(`replacement char detected at pos ${sortedIndices.join(',')}`);
-            console.warn('Detected characters:', sortedIndices.map(idx => {
-                const c = pwd.charCodeAt(idx);
-                return `Pos ${idx}: \\u${c.toString(16).padStart(4, '0')}`;
+            console.warn('Detected problematic characters:', sortedIndices.map(idx => {
+                const cp = pwd.codePointAt(idx);
+                return `Pos ${idx}: "${String.fromCodePoint(cp)}" (U+${cp.toString(16).toUpperCase().padStart(4, '0')})`;
             }));
         }
 

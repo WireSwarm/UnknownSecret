@@ -159,7 +159,9 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
 
     // Deduplicate
     // large set -> Set() is expensive but necessary for uniform distribution
-    return Array.from(new Set(Array.from(pool))).join(''); // Array.from(string) handles surrogates correctly
+    // NOTE: This now returns an Array of Strings (where each string is one full character/codepoint)
+    // instead of a single string, to support proper indexing of emojis.
+    return Array.from(new Set(Array.from(pool)));
 }
 
 /**
@@ -176,25 +178,27 @@ function getRandomInt(max) {
  */
 export function generatePassword({
     length = 16,
-    charset = '', // The actual string pool
+    charset = [], // EXPLICITLY EXPECTING AN ARRAY NOW
     mandatoryChars = '', // String of chars that MUST appear
-    ensureRobustness = false, // New toggle for robustness (1 Lower, 1 Upper, 1 Digit, 1 Symbol)
+    ensureRobustness = false,
 }) {
-    if (!charset) return { password: '', entropy: 0 };
+    // Safety check if charset is passed as string by legacy code, convert to array
+    if (typeof charset === 'string') {
+        charset = Array.from(charset);
+    }
+
+    if (!charset || charset.length === 0) return { password: '', entropy: 0 };
 
     const buffer = new Array(length);
     const charsetLen = charset.length;
 
     // 1. Fill linearly with random
     for (let i = 0; i < length; i++) {
+        // charset is an array of strings (chars), so [i] works correctly for emojis
         buffer[i] = charset[getRandomInt(charsetLen)];
     }
 
     // 2. Handle Mandatory Constraints
-    // We need to inject mandatory chars if they are missing.
-    // "Must Include": User typed specific chars.
-    // "Common Symbol": Ensure at least one (!@#$%^&*?) if requested.
-
     // Collect positions to overwrite (randomly picked)
     let positions = Array.from({ length }, (_, i) => i);
     // Shuffle positions to avoid bias (Fisher-Yates)
@@ -206,39 +210,28 @@ export function generatePassword({
     let requiredChars = [];
 
     if (mandatoryChars) {
-        requiredChars.push(...mandatoryChars.split(''));
+        // Using Array.from to correctly split mandatory chars if they contain emojis
+        requiredChars.push(...Array.from(mandatoryChars));
     }
 
     if (ensureRobustness) {
         // Enforce: Lowercase, Uppercase, Number, Symbol
+        // We still use strings for raw sets definitions, so we must array-ify them to pick from them
         const constraints = [
-            { set: CHAR_SETS.lowercase, name: 'lower' },
-            { set: CHAR_SETS.uppercase, name: 'upper' },
-            { set: CHAR_SETS.numbers, name: 'digit' },
-            { set: CHAR_SETS.symbols, name: 'symbol' } // Use full ASCII symbols
+            { set: Array.from(CHAR_SETS.lowercase), name: 'lower' },
+            { set: Array.from(CHAR_SETS.uppercase), name: 'upper' },
+            { set: Array.from(CHAR_SETS.numbers), name: 'digit' },
+            { set: Array.from(CHAR_SETS.symbols), name: 'symbol' }
         ];
 
         constraints.forEach(constraint => {
-            // Check if already present in the currently generated buffer
-            // NOTE: 'charset' might not include these chars, but we must inject them if robustness is ON.
-            // We check the BUFFER, effectively.
-            // Actually, checking buffer is hard if we just have random chars.
-            // Simpler: Just force injection.
             const charToInject = constraint.set[getRandomInt(constraint.set.length)];
             requiredChars.push(charToInject);
         });
     }
 
     // Inject required chars
-    // Note: This replaces random characters.
-    // We should only replace if the password doesn't already satisfy (optimized), 
-    // but "Must Includes" usually implies "Make sure these exist".
-    // For "User Typed" mandatory, we assume they MUST exist.
-    // If the user typed "ABC", we inject A, B, C.
-
-    // We need to validite if distinct required chars fit in length
     if (requiredChars.length > length) {
-        // Truncate or warn? We'll prioritize the first ones.
         requiredChars = requiredChars.slice(0, length);
     }
 
