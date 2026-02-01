@@ -631,6 +631,7 @@ input[data-keeper-lock-id]~.icon-btn {
 
 input[type=range] {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   background: transparent;
   margin: 1rem 0;
@@ -745,11 +746,11 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 .charset-selector-btn {
-  height: 48px !important;
-  /* Reduced from 56px */
-  min-width: 140px !important;
-  /* Reduced from 160px */
-  padding: 0 20px !important;
+  height: 40px !important;
+  /* Reduced from 48px */
+  min-width: 110px !important;
+  /* Reduced from 140px */
+  padding: 0 16px !important;
   /* Reduced padding */
   display: flex !important;
   align-items: center !important;

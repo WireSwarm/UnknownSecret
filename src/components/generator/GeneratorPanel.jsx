@@ -79,6 +79,8 @@ export function GeneratorPanel({ onCopyPassword }) {
     // Preset creation UI state
     const [isCreatingPreset, setIsCreatingPreset] = useState(false);
     const [newPresetName, setNewPresetName] = useState('');
+    const [activePresetId, setActivePresetId] = useState(null);
+    const [clearConfirmLevel, setClearConfirmLevel] = useState(0); // 0: Normal, 1: Sure?, 2: Really?
 
     // --- AUTO-SAVE EFFECT ---
     useEffect(() => {
@@ -268,16 +270,40 @@ export function GeneratorPanel({ onCopyPassword }) {
         setPresets([...presets, newPreset]);
         setNewPresetName('');
         setIsCreatingPreset(false);
+        setActivePresetId(newPreset.id);
     };
 
     const loadPreset = (preset) => {
         setConfig(preset.config);
         setActiveSet(preset.activeSet);
+        setActivePresetId(preset.id);
     };
 
     const deletePreset = (id, e) => {
         e.stopPropagation();
         setPresets(presets.filter(p => p.id !== id));
+        if (activePresetId === id) setActivePresetId(null);
+    };
+
+    const handleClearAllPresets = () => {
+        if (clearConfirmLevel === 0) {
+            setClearConfirmLevel(1);
+            // Auto reset after 3s if not confirmed
+            setTimeout(() => setClearConfirmLevel(prev => prev === 1 ? 0 : prev), 3000);
+        } else if (clearConfirmLevel === 1) {
+            setClearConfirmLevel(2);
+            setTimeout(() => setClearConfirmLevel(prev => prev === 2 ? 0 : prev), 3000);
+        } else {
+            setPresets([]);
+            setActivePresetId(null);
+            setClearConfirmLevel(0);
+        }
+    };
+
+    const getClearButtonText = () => {
+        if (clearConfirmLevel === 1) return "Sure?";
+        if (clearConfirmLevel === 2) return "REALLY Sure?";
+        return <Trash2 size={16} />;
     };
 
     return (
@@ -476,13 +502,27 @@ export function GeneratorPanel({ onCopyPassword }) {
             {/* Presets Section */}
             <GlassCard className="p-6" id="presets-card">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="label-text" id="presets-title">Presets</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="label-text" id="presets-title">Presets</h3>
+                        {presets.length > 0 && (
+                            <button
+                                onClick={handleClearAllPresets}
+                                className={`
+                                    text-xs px-2 py-1 rounded transition-all font-bold tracking-wider
+                                    ${clearConfirmLevel > 0 ? 'bg-red-500 text-white animate-pulse' : 'text-muted hover:text-red-400 bg-white-5 hover:bg-white-10'}
+                                `}
+                                title="Clear all presets"
+                            >
+                                {getClearButtonText()}
+                            </button>
+                        )}
+                    </div>
                     <button
                         onClick={() => setIsCreatingPreset(!isCreatingPreset)}
                         className="icon-btn text-primary hover:bg-primary/20"
                         title="Add current configuration as preset"
                     >
-                        <Plus size={20} />
+                        <Plus size={24} />
                     </button>
                 </div>
 
@@ -498,10 +538,11 @@ export function GeneratorPanel({ onCopyPassword }) {
                             onKeyDown={(e) => e.key === 'Enter' && saveCurrentAsPreset()}
                         />
                         <button
-                            onClick={saveCurrentAsPreset}
-                            className="bg-primary text-black p-2 rounded-md hover:opacity-90 transition-opacity"
+                            onClick={() => setIsCreatingPreset(false)}
+                            className="bg-black-20 text-muted p-2 rounded-md hover:bg-red-500/20 hover:text-red-500 transition-colors"
+                            title="Cancel"
                         >
-                            <Save size={18} />
+                            <Trash2 size={18} />
                         </button>
                     </div>
                 )}
@@ -510,22 +551,37 @@ export function GeneratorPanel({ onCopyPassword }) {
                     {presets.length === 0 ? (
                         <p className="text-muted text-sm italic w-full text-center py-2">No presets saved yet.</p>
                     ) : (
-                        presets.map(preset => (
-                            <div
-                                key={preset.id}
-                                onClick={() => loadPreset(preset)}
-                                className="group relative flex items-center gap-2 pl-4 pr-2 py-2 rounded-full cursor-pointer bg-black-20 hover:bg-white-5 border border-white-5 hover:border-white-10 transition-all"
-                            >
-                                <span className="text-sm font-medium text-gray-200">{preset.name}</span>
-                                <button
-                                    onClick={(e) => deletePreset(preset.id, e)}
-                                    className="p-1 rounded-full text-muted hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
-                                    title="Delete preset"
+                        presets.map(preset => {
+                            const isActive = activePresetId === preset.id;
+                            return (
+                                <div
+                                    key={preset.id}
+                                    onClick={() => loadPreset(preset)}
+                                    className={`
+                                        group relative flex items-center justify-between gap-3 px-5 h-12 rounded-full cursor-pointer transition-all min-w-[130px]
+                                        ${isActive
+                                            ? 'bg-primary text-white shadow-lg border-primary'
+                                            : 'bg-black-20 hover:bg-white-5 text-muted border-white-5 hover:border-white-10'}
+                                    `}
+                                    style={{
+                                        border: isActive ? '1px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.1)'
+                                    }}
                                 >
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
-                        ))
+                                    <span className={`text-sm font-bold tracking-wider ${isActive ? 'text-white' : 'text-muted'}`}>
+                                        {preset.name}
+                                    </span>
+
+                                    <button
+                                        onClick={(e) => deletePreset(preset.id, e)}
+                                        className="p-1 rounded-full transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                        style={{ color: 'rgba(239, 68, 68, 0.9)' }}
+                                        title="Delete preset"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            );
+                        })
                     )}
                 </div>
             </GlassCard>
