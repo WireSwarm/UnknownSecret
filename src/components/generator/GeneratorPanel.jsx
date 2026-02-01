@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles } from 'lucide-react';
+import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -9,22 +9,91 @@ import { generatePassword, PRESETS, buildCharset } from '../../utils/passwordGen
 import { EntropyMeter } from './EntropyMeter';
 
 export function GeneratorPanel({ onCopyPassword }) {
-    const [config, setConfig] = useState({
+    // --- PERSISTENCE CONSTANTS ---
+    const STORAGE_KEY_PARAMS = 'usr_gen_params';
+    const STORAGE_KEY_PRESETS = 'usr_gen_presets';
+
+    // Default configuration reference
+    const DEFAULT_CONFIG = {
         length: 16,
-        tokens: ['ascii'], // Default to ASCII
+        tokens: ['ascii'],
         exclude: '',
         include: '',
         ensureCommon: true,
         maxPossible: 128,
-        onlyPrintable: false // New option
+        onlyPrintable: false
+    };
+
+    /**
+     * STATE INITIALIZATION WITH PERSISTENCE
+     * 
+     * NOTE FOR FUTURE DEVELOPERS:
+     * When adding or removing options in the `config` object, ensure that:
+     * 1. The key is added to the DEFAULT_CONFIG above.
+     * 2. The loading logic below merges the saved config with the default (already handled) 
+     *    to prevent undefined values for new settings on existing users' machines.
+     * 3. No specific action is needed for saving, as the entire `config` object is serialized.
+     */
+
+    const [config, setConfig] = useState(() => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY_PARAMS);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Merge saved config with defaults to handle new fields seamlessly
+                return { ...DEFAULT_CONFIG, ...parsed.config };
+            }
+        } catch (error) {
+            console.error('Failed to load settings', error);
+        }
+        return DEFAULT_CONFIG;
+    });
+
+    const [activeSet, setActiveSet] = useState(() => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY_PARAMS);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return parsed.activeSet || 'alphanums';
+            }
+        } catch (e) { }
+        return 'alphanums';
+    });
+
+    // Presets State
+    const [presets, setPresets] = useState(() => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY_PRESETS);
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
     });
 
     const [isEditingMax, setIsEditingMax] = useState(false);
-    const [isEditingLength, setIsEditingLength] = useState(false); // New state for length editing
+    const [isEditingLength, setIsEditingLength] = useState(false);
     const [result, setResult] = useState({ password: '', entropy: 0 });
     const [showPassword, setShowPassword] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [activeSet, setActiveSet] = useState('alphanums'); // Default to alphanums
+
+    // Preset creation UI state
+    const [isCreatingPreset, setIsCreatingPreset] = useState(false);
+    const [newPresetName, setNewPresetName] = useState('');
+
+    // --- AUTO-SAVE EFFECT ---
+    useEffect(() => {
+        const payload = {
+            config,
+            activeSet
+        };
+        localStorage.setItem(STORAGE_KEY_PARAMS, JSON.stringify(payload));
+    }, [config, activeSet]);
+
+    // --- PRESETS SAVE EFFECT ---
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
+    }, [presets]);
+
 
     // Predefined Sets
     const SETS = {
@@ -182,6 +251,33 @@ export function GeneratorPanel({ onCopyPassword }) {
             }
             setIsEditingLength(false);
         }
+    }
+
+
+    // Preset handlers
+    const saveCurrentAsPreset = () => {
+        if (!newPresetName.trim()) return;
+
+        const newPreset = {
+            id: Date.now(),
+            name: newPresetName.trim(),
+            config: { ...config },
+            activeSet
+        };
+
+        setPresets([...presets, newPreset]);
+        setNewPresetName('');
+        setIsCreatingPreset(false);
+    };
+
+    const loadPreset = (preset) => {
+        setConfig(preset.config);
+        setActiveSet(preset.activeSet);
+    };
+
+    const deletePreset = (id, e) => {
+        e.stopPropagation();
+        setPresets(presets.filter(p => p.id !== id));
     };
 
     return (
@@ -374,6 +470,63 @@ export function GeneratorPanel({ onCopyPassword }) {
                             icon={<ShieldAlert size={16} />}
                         />
                     </div>
+                </div>
+            </GlassCard>
+
+            {/* Presets Section */}
+            <GlassCard className="p-6" id="presets-card">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="label-text" id="presets-title">Presets</h3>
+                    <button
+                        onClick={() => setIsCreatingPreset(!isCreatingPreset)}
+                        className="icon-btn text-primary hover:bg-primary/20"
+                        title="Add current configuration as preset"
+                    >
+                        <Plus size={20} />
+                    </button>
+                </div>
+
+                {isCreatingPreset && (
+                    <div className="flex gap-2 mb-4 items-center bg-black-20 p-2 rounded-lg animate-in fade-in slide-in-from-top-2">
+                        <Input
+                            autoFocus
+                            placeholder="Preset Name (e.g. Microsoft Legacy)"
+                            value={newPresetName}
+                            onChange={(e) => setNewPresetName(e.target.value)}
+                            wrapperClassName="flex-1 mb-0"
+                            className="h-10"
+                            onKeyDown={(e) => e.key === 'Enter' && saveCurrentAsPreset()}
+                        />
+                        <button
+                            onClick={saveCurrentAsPreset}
+                            className="bg-primary text-black p-2 rounded-md hover:opacity-90 transition-opacity"
+                        >
+                            <Save size={18} />
+                        </button>
+                    </div>
+                )}
+
+                <div className="flex flex-wrap gap-3">
+                    {presets.length === 0 ? (
+                        <p className="text-muted text-sm italic w-full text-center py-2">No presets saved yet.</p>
+                    ) : (
+                        presets.map(preset => (
+                            <div
+                                key={preset.id}
+                                onClick={() => loadPreset(preset)}
+                                className="group relative flex items-center gap-2 pl-4 pr-2 py-2 rounded-full cursor-pointer bg-black-20 hover:bg-white-5 border border-white-5 hover:border-white-10 transition-all"
+                            >
+                                <span className="text-sm font-medium text-gray-200">{preset.name}</span>
+                                <button
+                                    onClick={(e) => deletePreset(preset.id, e)}
+                                    className="p-1 rounded-full text-muted hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Delete preset"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        ))
+                    )}
                 </div>
             </GlassCard>
         </div>
