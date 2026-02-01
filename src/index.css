@@ -641,9 +641,11 @@ input[type=range]::-webkit-slider-thumb {
   height: 24px;
   width: 24px;
   border-radius: 50%;
-  background: var(--text-main);
+  background: #ffffff;
+  /* Pure white for max visibility */
   cursor: pointer;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.9);
+  /* Stronger glow */
   margin-top: -10px;
   transition: transform 0.1s;
 }
@@ -656,8 +658,11 @@ input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
   height: 4px;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.85);
+  /* Very high contrast */
   border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  /* Slight glow for the track too */
 }
 
 .toggle-switch {
@@ -721,6 +726,7 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 /* Main Password Input Specific Override */
+/* Main Password Input Specific Override */
 #main-password-input {
   background: transparent !important;
   -webkit-text-fill-color: var(--text-main) !important;
@@ -728,5 +734,8 @@ input[type=range]::-webkit-slider-runnable-track {
   background-clip: border-box !important;
   -webkit-background-clip: border-box !important;
   box-shadow: none;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  /* Increased border contrast */
+  text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.3);
+  /* Subtle glow to help text pop */
 }

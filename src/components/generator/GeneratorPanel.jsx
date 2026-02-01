@@ -94,7 +94,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         value={result.password}
                         readOnly
                         type={showPassword ? "text" : "password"}
-                        className="text-center text-2xl font-bold tracking-wider radiant-text input-rounded"
+                        className="keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded"
                         wrapperClassName="mb-1"
                         onClick={copyToClipboard}
                         style={{ cursor: 'pointer' }}
