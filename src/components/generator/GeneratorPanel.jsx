@@ -49,11 +49,76 @@ export function GeneratorPanel({ onCopyPassword }) {
             length: config.length,
             charset,
             mandatoryChars: config.include,
-            length: config.length,
-            charset,
-            mandatoryChars: config.include,
             ensureRobustness: config.ensureCommon // Mapped to the new logic
         });
+
+        // Detect replacement characters and other anomalies
+        const pwd = res.password;
+        const indices = new Set();
+        const weirdChar = '🩍'; // User provided char
+
+        // 1. Check for Specials Block (U+FFF0 - U+FFFF) specifically
+        // 2. Check for Private Use Area (U+E000 - U+F8FF) - often render as boxes/tofu
+        // 3. Check for Lone Surrogates (U+D800 - U+DFFF) - caused by splitting multi-byte chars
+
+        for (let i = 0; i < pwd.length; i++) {
+            const code = pwd.charCodeAt(i);
+            let isProblematic = false;
+
+            // Check for Specials (includes Replacement Char U+FFFD)
+            // U+FFF0 - U+FFFF
+            if (code >= 0xFFF0 && code <= 0xFFFF) {
+                isProblematic = true;
+            }
+
+            // Check for Private Use Area (PUA)
+            // U+E000 - U+F8FF
+            else if (code >= 0xE000 && code <= 0xF8FF) {
+                isProblematic = true;
+            }
+
+            // Check for Surrogates (Lone Surrogates detection)
+            else if (code >= 0xD800 && code <= 0xDFFF) {
+                // High Surrogate?
+                if (code >= 0xD800 && code <= 0xDBFF) {
+                    const nextCode = i + 1 < pwd.length ? pwd.charCodeAt(i + 1) : 0;
+                    if (nextCode >= 0xDC00 && nextCode <= 0xDFFF) {
+                        // Valid pair, skip next char
+                        i++;
+                        continue;
+                    } else {
+                        // High surrogate without low surrogate -> Lone (Replacement Char)
+                        isProblematic = true;
+                    }
+                }
+                // Low Surrogate?
+                else {
+                    // If we are here, it's a Low Surrogate without a preceding High (since we handled pairs above)
+                    isProblematic = true;
+                }
+            }
+
+            if (isProblematic) {
+                indices.add(i);
+            }
+        }
+
+        // Check for specific weird char users reported
+        let pos = pwd.indexOf(weirdChar);
+        while (pos !== -1) {
+            indices.add(pos);
+            pos = pwd.indexOf(weirdChar, pos + 1);
+        }
+
+        if (indices.size > 0) {
+            const sortedIndices = Array.from(indices).sort((a, b) => a - b);
+            console.log(`replacement char detected at pos ${sortedIndices.join(',')}`);
+            console.warn('Detected characters:', sortedIndices.map(idx => {
+                const c = pwd.charCodeAt(idx);
+                return `Pos ${idx}: \\u${c.toString(16).padStart(4, '0')}`;
+            }));
+        }
+
         setResult(res);
         setCopied(false);
     };
@@ -198,7 +263,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
             {/* Copy Button & Meter */}
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between" id="meter-action-row">
-                <EntropyMeter entropy={result.entropy} id="entropy-meter" />
+                <EntropyMeter entropy={result.entropy} combinations={result.combinations} id="entropy-meter" />
 
                 <Button
                     id="main-copy-btn"
