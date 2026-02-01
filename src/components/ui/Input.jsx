@@ -13,12 +13,20 @@ export function Input({
             {label && <label className="label-text" id={props.id ? `${props.id}-label` : undefined}>{label}</label>}
             <div className="input-wrapper relative" id={props.id ? `${props.id}-container` : undefined}>
                 {icon && (
-                    <div className="absolute left-3 flex items-center h-full text-muted" style={{ color: 'var(--text-muted)' }} id={props.id ? `${props.id}-icon` : undefined}>
+                    <div
+                        className="absolute flex items-center h-full text-muted"
+                        style={{ left: '1 rem', color: 'var(--text-muted)', zIndex: 10 }}
+                        id={props.id ? `${props.id}-icon` : undefined}
+                    >
                         {icon}
                     </div>
                 )}
                 <input
-                    className={`input-field ${icon ? 'pl-10' : ''} ${className}`}
+                    className={`input-field ${className}`}
+                    style={{
+                        paddingLeft: icon ? '2.5rem' : undefined,
+                        ...props.style
+                    }}
                     id={props.id}
                     {...props}
                 />

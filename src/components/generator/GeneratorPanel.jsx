@@ -274,7 +274,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         <Input
                             id="must-include-input"
                             label="Must Include Characters"
-                            placeholder="e.g. @Root"
+                            placeholder="e.g. @ö5"
                             value={config.include}
                             onChange={(e) => setConfig({ ...config, include: e.target.value })}
                             icon={<Sparkles size={16} />}
