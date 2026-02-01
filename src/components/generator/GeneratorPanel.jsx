@@ -11,11 +11,12 @@ import { EntropyMeter } from './EntropyMeter';
 export function GeneratorPanel({ onCopyPassword }) {
     const [config, setConfig] = useState({
         length: 16,
-        tokens: ['bidon'], // Only bidon by default
+        tokens: ['ascii'], // Default to ASCII
         exclude: '',
         include: '',
         ensureCommon: true,
-        maxPossible: 128
+        maxPossible: 128,
+        onlyPrintable: false // New option
     });
 
     const [isEditingMax, setIsEditingMax] = useState(false);
@@ -26,18 +27,27 @@ export function GeneratorPanel({ onCopyPassword }) {
 
     // Predefined Sets
     const SETS = {
-        bidon: { id: 'bidon', name: 'Bidon', tokens: ['bidon'] },
-        unicode: { id: 'unicode', name: 'Unicode Full', tokens: ['unicode'] }
+        ascii: { id: 'ascii', name: 'Ascii', tokens: ['ascii'] },
+        ascii_extended: { id: 'ascii_extended', name: 'Ascii Extended', tokens: ['ascii_extended'] },
+        active_languages: { id: 'active_languages', name: 'Active Languages', tokens: ['active_languages'] },
+        symbols_set: { id: 'symbols_set', name: 'With Symbols', tokens: ['symbols_set'] },
+        emojis: { id: 'emojis', name: 'With Emojis', tokens: ['emojis'] },
+        all_unicode: { id: 'all_unicode', name: 'All Unicode', tokens: ['all_unicode'] }
     };
 
     // Generate function
     const handleGenerate = () => {
-        const charset = buildCharset({ tokens: config.tokens, exclude: config.exclude, include: config.include });
+        const charset = buildCharset({
+            tokens: config.tokens,
+            exclude: config.exclude,
+            include: config.include,
+            onlyPrintable: config.onlyPrintable
+        });
         const res = generatePassword({
             length: config.length,
             charset,
             mandatoryChars: config.include,
-            ensureCommonSymbols: config.ensureCommon && config.tokens.includes('unicode') // Adjust common symbols if unicode
+            ensureCommonSymbols: config.ensureCommon && !config.tokens.includes('all_unicode') // Less relevant if all unicode
         });
         setResult(res);
         setCopied(false);
@@ -195,6 +205,14 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 checked={config.tokens.includes('bidon')}
                                 onChange={() => { }} // No effect as requested
                             />
+                            {activeSet === 'all_unicode' && (
+                                <Toggle
+                                    id="opt-printable"
+                                    label="Only Imprimable"
+                                    checked={config.onlyPrintable}
+                                    onChange={(v) => setConfig({ ...config, onlyPrintable: v })}
+                                />
+                            )}
                         </div>
                     </div>
 

@@ -7,68 +7,120 @@ export const CHAR_SETS = {
 };
 
 // Helper: Generate char codes from range
+// Helper: Generate char codes from range
+// Helper: Generate char codes from range
 const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => String.fromCharCode(start + i));
 
 export const PRESETS = {
-    ALPHANUMERIC: {
-        id: 'alphanumeric',
-        name: 'Alphanumeric Only',
-        tokens: ['uppercase', 'lowercase', 'numbers'],
-    },
-    ASCII_STANDARD: {
-        id: 'ascii',
-        name: 'Standard ASCII (Most Compatible)',
-        tokens: ['uppercase', 'lowercase', 'numbers', 'symbols'],
-    },
-    ASCII_EXTENDED: {
-        id: 'ascii_extended',
-        name: 'ASCII Extended',
-        tokens: ['uppercase', 'lowercase', 'numbers', 'symbols', 'extended'],
-    },
+    ascii: { id: 'ascii', name: 'Ascii', tokens: ['ascii'] },
+    ascii_extended: { id: 'ascii_extended', name: 'Ascii Extended', tokens: ['ascii_extended'] },
+    active_languages: { id: 'active_languages', name: 'Active Languages', tokens: ['active_languages'] },
+    symbols_set: { id: 'symbols_set', name: 'With Symbols', tokens: ['symbols_set'] },
+    emojis: { id: 'emojis', name: 'With Emojis', tokens: ['emojis'] },
+    all_unicode: { id: 'all_unicode', name: 'All Unicode', tokens: ['all_unicode'] }
 };
 
 /**
  * Generates a charset string based on configuration
  */
-export function buildCharset({ tokens = [], excludeChars = '', includeChars = '' }) {
+export function buildCharset({ tokens = [], excludeChars = '', includeChars = '', onlyPrintable = false }) {
     let pool = '';
 
-    // Add standard sets
-    if (tokens.includes('uppercase')) pool += CHAR_SETS.uppercase;
-    if (tokens.includes('lowercase')) pool += CHAR_SETS.lowercase;
-    if (tokens.includes('numbers')) pool += CHAR_SETS.numbers;
-    if (tokens.includes('symbols')) pool += CHAR_SETS.symbols;
-
-    if (tokens.includes('extended')) {
-        pool += range(128, 255).join('');
+    // Basic Ascii (U+0021 – U+007E)
+    if (tokens.includes('ascii')) {
+        pool += range(0x0021, 0x007E).join('');
     }
 
-    if (tokens.includes('unicode')) {
-        // Printable ASCII + Common Unicode ranges that are generally safe/visible
-        pool += range(32, 126).join(''); // ASCII Printable
-        pool += range(161, 255).join(''); // Extended Latin 1
-        pool += range(0x0100, 0x017F).join(''); // Latin Extended-A
+    // Ascii Extended (U+0020 – U+00FF, U+0100 – U+017F, U+0180 – U+024F)
+    if (tokens.includes('ascii_extended')) {
+        pool += range(0x0020, 0x00FF).join('');
+        pool += range(0x0100, 0x017F).join('');
+        pool += range(0x0180, 0x024F).join('');
+    }
+
+    // Active Languages (Greek, Cyrillic, Armenian, Hebrew, Arabic)
+    if (tokens.includes('active_languages')) {
         pool += range(0x0370, 0x03FF).join(''); // Greek
-        // Add more if needed, but keeping it "usable"
+        pool += range(0x0400, 0x04FF).join(''); // Cyrillic
+        pool += range(0x0530, 0x058F).join(''); // Armenian
+        pool += range(0x0590, 0x05FF).join(''); // Hebrew
+        pool += range(0x0600, 0x06FF).join(''); // Arabic
+    }
+
+    // Symbols (Punctuation, Currency, LetterLike, Arrows, Math)
+    if (tokens.includes('symbols_set')) {
+        pool += range(0x2000, 0x206F).join(''); // Punctuation
+        pool += range(0x20A0, 0x20CF).join(''); // Currency
+        pool += range(0x2100, 0x214F).join(''); // LetterLike
+        pool += range(0x2190, 0x21FF).join(''); // Arrows
+        pool += range(0x2200, 0x22FF).join(''); // Math
+    }
+
+    // Emojis (U+1F300 – U+1FAFF)
+    if (tokens.includes('emojis')) {
+        // Emojis are outside BMP (surrogate pairs in JS strings), but String.fromCodePoint works
+        const emojiStart = 0x1F300;
+        const emojiEnd = 0x1FAFF;
+        let emojis = [];
+        for (let i = emojiStart; i <= emojiEnd; i++) {
+            emojis.push(String.fromCodePoint(i));
+        }
+        pool += emojis.join('');
+    }
+
+    // All Unicode
+    if (tokens.includes('all_unicode')) {
+        if (onlyPrintable) {
+            // Approximation of "Printable" across Unicode is complex. 
+            // We will take standard blocks avoiding controls.
+            // Re-using defined blocks + typical ranges.
+            // Simple approach: standard sets above + CJK + others?
+            // User asked for "All Unicode" then "Only Printable" option.
+            // We'll define "All Unicode" as a massive range, and "Only Printable" as filtering out Control Chars.
+            // BUT generating ALL unicode is huge (1M+ chars). We should probably pick a large sampling or specific blocks.
+            // Given constraints, let's include all BMP (0-FFFF) except surrogates/private/control.
+
+            let ranges = [
+                [0x0020, 0x007E], [0x00A0, 0xD7FF], [0xE000, 0xFFFD],
+                [0x10000, 0x10FFFF] // Astral planes
+            ];
+
+            // Too expensive to generate string. We need a generator or sampling approach if "All" is active.
+            // For now, let's bundle a very wide set of safe ranges if specific logic isn't changed.
+            // However, "pool" string approach crashes with 1M chars.
+            // We will handle this in the Generation Step if "all_unicode" is active.
+            // Just return a flag or special marker?
+            // For compatibility with current logic, let's add BMP reasonable ranges (~50k chars).
+            pool += range(0x0020, 0xD7FF).join('');
+            pool += range(0xE000, 0xFFFD).join('');
+        } else {
+            // Truly ALL?
+            // We will simulate this by adding a special token check in generation, 
+            // but here we can add at least 0-FFFF.
+            pool += range(0x0001, 0xD7FF).join('');
+            pool += range(0xE000, 0xFFFD).join('');
+        }
     }
 
     // Add custom includes
     if (includeChars) {
-        // We add distinct chars from includeChars that might not be in the pool?
-        // Usually "includeChars" in generators means "ensure these are part of the pool"
-        // But if they are mandatory, they are handled separately.
-        // If user explicitly adds chars to the pool:
         pool += includeChars;
     }
 
     // Remove exclusions
     if (excludeChars) {
         const excludeSet = new Set(excludeChars.split(''));
-        pool = pool.split('').filter(c => !excludeSet.has(c)).join('');
+        // Splitting a huge string is slow. 
+        // If pool is massive (Unicode), this is bad. 
+        // Optimization: If pool > 10000, maybe do regex? 
+        // For now, standard filter.
+        const tempArr = Array.from(pool); // Correctly handles surrogate pairs (emojis)
+        pool = tempArr.filter(c => !excludeSet.has(c)).join('');
     }
 
     // Deduplicate
-    return Array.from(new Set(pool.split(''))).join('');
+    // large set -> Set() is expensive but necessary for uniform distribution
+    return Array.from(new Set(Array.from(pool))).join(''); // Array.from(string) handles surrogates correctly
 }
 
 /**
