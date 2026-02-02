@@ -502,15 +502,25 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 <Save size={16} className="text-primary" />
                                 Saved Configurations
                             </h3>
+                            {/* 
+                             * ⚠️ STYLE NOTE: This project uses vanilla CSS, not Tailwind.
+                             * Use inline styles or classes defined in index.css.
+                             * See .agent/agents.md for guidelines.
+                             */}
                             {presets.length > 0 && (
                                 <button
                                     onClick={handleClearAllPresets}
-                                    className={`
-                                        text-xs px-2 py-1 rounded transition-all font-bold tracking-wider
-                                        ${clearConfirmLevel > 0
-                                            ? 'bg-red-500/20 text-red-400 border border-red-500/50'
-                                            : 'text-muted hover:text-red-400 hover:bg-white-5'}
-                                    `}
+                                    className="icon-btn transition-all"
+                                    style={{
+                                        color: clearConfirmLevel > 0 ? '#EF4444' : 'rgba(239, 68, 68, 0.7)',
+                                        background: clearConfirmLevel > 0 ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                                        border: clearConfirmLevel > 0 ? '1px solid rgba(239, 68, 68, 0.5)' : 'none',
+                                        padding: clearConfirmLevel > 0 ? '0.25rem 0.5rem' : '0.5rem',
+                                        borderRadius: '0.375rem',
+                                        fontSize: clearConfirmLevel > 0 ? '0.75rem' : undefined,
+                                        fontWeight: clearConfirmLevel > 0 ? 700 : undefined,
+                                        letterSpacing: clearConfirmLevel > 0 ? '0.05em' : undefined
+                                    }}
                                     title="Clear all presets"
                                 >
                                     {getClearButtonText()}
@@ -520,26 +530,55 @@ export function GeneratorPanel({ onCopyPassword }) {
                     </div>
 
                     {isCreatingPreset && (
-                        <div className="flex gap-2 items-center bg-black-20 p-3 rounded-lg border border-primary/30 animate-in fade-in slide-in-from-top-2">
-                            <Input
-                                autoFocus
-                                placeholder="Name this configuration..."
-                                value={newPresetName}
-                                onChange={(e) => setNewPresetName(e.target.value)}
-                                wrapperClassName="flex-1 mb-0"
-                                className="h-10 border-none bg-transparent"
-                                onKeyDown={(e) => e.key === 'Enter' && saveCurrentAsPreset()}
-                            />
+                        <div className="flex gap-2 items-center w-full animate-in fade-in slide-in-from-top-2 mb-3">
+                            <div className="flex-1 relative group">
+                                <input
+                                    autoFocus
+                                    placeholder="Configuration name..."
+                                    value={newPresetName}
+                                    onChange={(e) => setNewPresetName(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && saveCurrentAsPreset()}
+                                    className="w-full transition-all"
+                                    style={{
+                                        height: '2.5rem',
+                                        padding: '0 1rem',
+                                        borderRadius: '9999px',
+                                        background: 'rgba(0, 0, 0, 0.4)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        outline: 'none',
+                                        fontSize: '0.875rem',
+                                        color: 'white',
+                                        backdropFilter: 'blur(4px)'
+                                    }}
+                                />
+                            </div>
+
                             <button
                                 onClick={saveCurrentAsPreset}
-                                className="bg-primary hover:bg-primary-hover text-white p-2 rounded-md transition-colors"
-                                title="Save"
+                                className="icon-btn transition-all"
+                                style={{
+                                    height: '2.5rem',
+                                    width: '2.5rem',
+                                    borderRadius: '9999px',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    color: 'var(--text-muted)',
+                                    backdropFilter: 'blur(4px)'
+                                }}
+                                title="Confirm Save"
                             >
                                 <Check size={18} />
                             </button>
+
                             <button
                                 onClick={() => setIsCreatingPreset(false)}
-                                className="text-muted hover:text-red-400 p-2 rounded-md transition-colors"
+                                className="icon-btn transition-colors"
+                                style={{
+                                    height: '2.5rem',
+                                    width: '2.5rem',
+                                    borderRadius: '9999px',
+                                    color: 'rgba(239, 68, 68, 0.7)'
+                                }}
                                 title="Cancel"
                             >
                                 <Trash2 size={18} />
@@ -555,44 +594,52 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     key={preset.id}
                                     onClick={() => loadPreset(preset)}
                                     className={`
-                                        group relative flex items-center justify-between gap-3 px-4 h-10 rounded-full cursor-pointer transition-all select-none
-                                        ${isActive
-                                            ? 'bg-primary text-white shadow-lg'
-                                            : 'bg-black-20 hover:bg-white-5 text-muted'}
+                                        group relative flex items-center gap-3 px-4 h-10 rounded-lg cursor-pointer transition-all select-none overflow-hidden
+                                        ${isActive ? 'scale-[1.02]' : 'hover:bg-white/5'}
                                     `}
                                     style={{
-                                        border: isActive ? '1px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.1)'
+                                        background: isActive
+                                            ? 'linear-gradient(90deg, rgba(var(--primary-rgb), 0.15), rgba(var(--secondary-rgb), 0.05))'
+                                            : 'rgba(0, 0, 0, 0.2)',
+                                        border: isActive
+                                            ? '1px solid rgba(var(--primary-rgb), 0.5)'
+                                            : '1px solid rgba(255, 255, 255, 0.05)',
+                                        boxShadow: isActive
+                                            ? '0 0 20px rgba(var(--primary-rgb), 0.15), inset 0 0 10px rgba(var(--primary-rgb), 0.05)'
+                                            : 'none'
                                     }}
                                 >
-                                    <span className={`text-sm font-bold tracking-wide ${isActive ? 'text-white' : 'text-muted'}`}>
+                                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary shadow-[0_0_8px_var(--primary)]"></div>}
+
+                                    <span className={`text-xs font-bold tracking-wider uppercase ${isActive ? 'text-white' : 'text-muted'}`}
+                                        style={{ textShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'none' }}>
                                         {preset.name}
                                     </span>
 
                                     <button
                                         onClick={(e) => deletePreset(preset.id, e)}
-                                        className={`
-                                            p-1 rounded-full transition-all 
-                                            ${isActive
-                                                ? 'text-white/70 hover:text-white hover:bg-white/20'
-                                                : 'text-muted hover:text-red-400 hover:bg-white/10 opacity-0 group-hover:opacity-100'}
-                                        `}
+                                        className="icon-btn p-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-1 group-hover:translate-x-0"
+                                        style={{ color: 'rgba(239, 68, 68, 0.7)' }}
                                         title="Delete preset"
                                     >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={16} />
                                     </button>
                                 </div>
                             );
                         })}
 
-                        {/* Save Current Config Button - Always visible */}
+                        {/* Save Current Config Button - Tech Style */}
                         {!isCreatingPreset && (
                             <button
                                 onClick={() => setIsCreatingPreset(true)}
-                                className="flex items-center gap-2 px-4 h-10 rounded-full border border-dashed border-white/20 hover:border-primary/50 hover:bg-primary/10 text-muted hover:text-primary transition-all group"
-                                title="Save current configuration as a preset"
+                                className="flex items-center gap-2 px-4 h-10 rounded-lg cursor-pointer transition-all text-muted hover:text-primary hover:bg-white/5"
+                                style={{
+                                    background: 'rgba(0, 0, 0, 0.2)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                                }}
                             >
-                                <Plus size={16} className="group-hover:scale-110 transition-transform" />
-                                <span className="font-bold text-xs uppercase tracking-wider">Save Current</span>
+                                <Plus size={16} />
+                                <span className="font-semibold text-xs uppercase tracking-wider">Save Current</span>
                             </button>
                         )}
                     </div>

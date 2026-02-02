@@ -1,3 +1,19 @@
+/*
+ * ⚠️ IMPORTANT: This project uses VANILLA CSS, NOT Tailwind CSS!
+ * 
+ * Do NOT use Tailwind utility classes like:
+ *   - bg-black/40, hover:bg-white/5, text-red-400, etc.
+ *   - focus:shadow-[...], placeholder-muted/40, etc.
+ * 
+ * These classes WILL NOT WORK and will cause default browser styling.
+ * 
+ * Instead, use:
+ *   1. Inline styles in JSX (preferred for complex/dynamic styling)
+ *   2. Classes defined in this file (for reusable utilities)
+ * 
+ * See .agent/agents.md for complete styling guidelines.
+ */
+
 :root {
   /* Colors - Base */
   --md-background: #050612;
@@ -202,6 +218,38 @@ h6 {
 
 .bg-black-20 {
   background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Hover utilities with pseudo-class */
+.hover\:bg-white\/5:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.hover\:bg-white\/10:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.hover\:text-primary:hover {
+  color: var(--primary);
+}
+
+/* Size utilities */
+.h-10 {
+  height: 2.5rem;
+}
+
+.w-10 {
+  width: 2.5rem;
+}
+
+/* Border radius */
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+/* Select none */
+.select-none {
+  user-select: none;
 }
 
 .border-white-5 {
