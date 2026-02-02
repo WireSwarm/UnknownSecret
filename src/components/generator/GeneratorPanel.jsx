@@ -450,7 +450,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 checked={config.tokens.includes('bidon')}
                                 onChange={() => { }} // No effect as requested
                             />
-                            {activeSet === 'all_unicode' && (
+                            {(activeSet === 'all_unicode' || activeSet === 'emojis') && (
                                 <Toggle
                                     id="opt-printable"
                                     label="Only Imprimable"

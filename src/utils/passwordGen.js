@@ -1,4 +1,5 @@
 import unicodeDenylistData from '../data/unicode_denylist.json';
+import recentUnstableData from '../data/recent_unstable.json';
 
 export const CHAR_SETS = {
     uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
@@ -9,20 +10,28 @@ export const CHAR_SETS = {
 };
 
 // Helper: Generate char codes from range
-// Helper: Generate char codes from range
-// Helper: Generate char codes from range
 const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => String.fromCharCode(start + i));
 
 const DENYLIST_RANGES = unicodeDenylistData.denylist;
+const UNSTABLE_RANGES = recentUnstableData.unstable;
 
-function isInDenyList(codePoint) {
-    // Binary search could be optimized here if list is sorted (it is generated sorted)
-    // For 730 items, simple iteration is okay-ish, but let's do a quick efficient find or just linear since it's only done during charset build
+function isInDenyList(codePoint, enforcePrintable = false) {
+    // 1. Hard deny list (Technical invalidity)
     for (const entry of DENYLIST_RANGES) {
         if (codePoint >= entry.start && codePoint <= entry.end) {
             return true;
         }
     }
+
+    // 2. Unstable/Recent list (Visual invalidity) -> Only if "Only Printable" is requested
+    if (enforcePrintable) {
+        for (const entry of UNSTABLE_RANGES) {
+            if (codePoint >= entry.start && codePoint <= entry.end) {
+                return true;
+            }
+        }
+    }
+
     return false;
 }
 
@@ -46,7 +55,7 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
     const addSafeRange = (start, end) => {
         let localPool = '';
         for (let i = start; i <= end; i++) {
-            if (!isInDenyList(i)) {
+            if (!isInDenyList(i, onlyPrintable)) {
                 // Ensure we don't add surrogates individually if they were somehow missed by denylist (though denylist covers them)
                 // String.fromCodePoint handles creating the char
                 try {

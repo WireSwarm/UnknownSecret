@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-02-02T12:14:36.961Z",
+  "comment": "Liste des plages Unicode >= 12.0 (2019+) considérées comme instables/non-imprimables sur les vieux systèmes.",
+  "unstable": [
+    {
+      "start": 129024,
+      "end": 129279
+    },
+    {
+      "start": 129291,
+      "end": 129291
+    },
+    {
+      "start": 129293,
+      "end": 129295
+    },
+    {
+      "start": 129343,
+      "end": 129343
+    },
+    {
+      "start": 129355,
+      "end": 129359
+    },
+    {
+      "start": 129393,
+      "end": 129401
+    },
+    {
+      "start": 129443,
+      "end": 129535
+    },
+    {
+      "start": 129536,
+      "end": 129647
+    },
+    {
+      "start": 129579,
+      "end": 129579
+    },
+    {
+      "start": 129618,
+      "end": 129618
+    },
+    {
+      "start": 129648,
+      "end": 129791
+    },
+    {
+      "start": 129792,
+      "end": 130047
+    }
+  ]
+}
