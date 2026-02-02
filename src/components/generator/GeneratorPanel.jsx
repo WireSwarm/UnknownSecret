@@ -491,175 +491,202 @@ export function GeneratorPanel({ onCopyPassword }) {
                 </Button>
             </div>
 
-            {/* Options / Character Sets */}
-            <GlassCard className="p-6 mt-4" id="config-card">
-                <h3 className="label-text mb-4" id="charset-title">Character set</h3>
-                <div className="flex flex-wrap gap-3 mb-6 justify-center" id="charset-selectors">
-                    {Object.keys(SETS).map(key => (
-                        <button
-                            id={`charset-btn-${key}`}
-                            key={key}
-                            onClick={() => handleSetChange(key)}
-                            className={`
-                    charset-selector-btn rounded-full transition-all
-                    ${activeSet === key
-                                    ? 'bg-primary text-white shadow-lg'
-                                    : 'bg-black-20 hover:bg-white-5 text-muted'}
-                 `}
-                            style={{
-                                border: activeSet === key ? '1px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.1)'
-                            }}
-                        >
-                            {SETS[key].name}
-                        </button>
-                    ))}
-                </div>
+            {/* Unified Configuration & Presets Panel */}
+            <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="unified-config-card">
 
-                <div className="grid grid-cols-1 md-grid-cols-2 gap-8" id="settings-grid">
-                    {/* Left Column: Sliders & Checks */}
-                    <div className="flex flex-col gap-6" id="settings-col-1">
-                        <div className="flex flex-col gap-3" id="options-group">
-                            <h3 className="label-text mb-2" id="options-title">Option</h3>
-                            <Toggle
-                                id="opt-bidon"
-                                label="Bidon"
-                                checked={config.tokens.includes('bidon')}
-                                onChange={() => { }} // No effect as requested
-                            />
-                            {(activeSet === 'all_unicode' || activeSet === 'emojis') && (
-                                <Toggle
-                                    id="opt-printable"
-                                    label="Only Imprimable"
-                                    checked={config.onlyPrintable}
-                                    onChange={(v) => setConfig({ ...config, onlyPrintable: v })}
-                                />
+                {/* Section 1: Presets (Saved Configurations Bar) */}
+                <div className="flex flex-col gap-4" id="presets-section">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <h3 className="label-text flex items-center gap-2">
+                                <Save size={16} className="text-primary" />
+                                Saved Configurations
+                            </h3>
+                            {presets.length > 0 && (
+                                <button
+                                    onClick={handleClearAllPresets}
+                                    className={`
+                                        text-xs px-2 py-1 rounded transition-all font-bold tracking-wider
+                                        ${clearConfirmLevel > 0
+                                            ? 'bg-red-500/20 text-red-400 border border-red-500/50'
+                                            : 'text-muted hover:text-red-400 hover:bg-white-5'}
+                                    `}
+                                    title="Clear all presets"
+                                >
+                                    {getClearButtonText()}
+                                </button>
                             )}
                         </div>
                     </div>
 
-
-                    {/* Right Column: Advanced */}
-                    <div className="flex flex-col gap-6" id="settings-col-2">
-                        <h3 className="label-text" id="advanced-title">Advanced Options</h3>
-
-                        <div className="p-4 rounded-xl bg-black-20 border border-white-5 flex flex-col gap-4" id="compat-area">
-                            <Toggle
-                                id="compat-toggle"
-                                label="Enhance Compatibility"
-                                checked={config.ensureCommon}
-                                onChange={(v) => setConfig({ ...config, ensureCommon: v })}
-                                className="w-full"
+                    {isCreatingPreset && (
+                        <div className="flex gap-2 items-center bg-black-20 p-3 rounded-lg border border-primary/30 animate-in fade-in slide-in-from-top-2">
+                            <Input
+                                autoFocus
+                                placeholder="Name this configuration..."
+                                value={newPresetName}
+                                onChange={(e) => setNewPresetName(e.target.value)}
+                                wrapperClassName="flex-1 mb-0"
+                                className="h-10 border-none bg-transparent"
+                                onKeyDown={(e) => e.key === 'Enter' && saveCurrentAsPreset()}
                             />
-                            <p className="text-xs text-muted leading-relaxed" id="compat-desc">
-                                Guarantees at least one lowercase, uppercase, number, and symbol.
-                            </p>
-                        </div>
-
-                        <Input
-                            id="must-include-input"
-                            label="Must Include Characters"
-                            placeholder="e.g. @ö5"
-                            value={config.include}
-                            onChange={(e) => setConfig({ ...config, include: e.target.value })}
-                            icon={<Sparkles size={16} />}
-                        />
-
-                        <Input
-                            id="forbidden-input"
-                            label="Forbidden Characters"
-                            placeholder="e.g. I1l0O"
-                            value={config.exclude}
-                            onChange={(e) => setConfig({ ...config, exclude: e.target.value })}
-                            icon={<ShieldAlert size={16} />}
-                        />
-                    </div>
-                </div>
-            </GlassCard>
-
-            {/* Presets Section */}
-            <GlassCard className="p-6" id="presets-card">
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-3">
-                        <h3 className="label-text" id="presets-title">Presets</h3>
-                        {presets.length > 0 && (
                             <button
-                                onClick={handleClearAllPresets}
-                                className={`
-                                    text-xs px-2 py-1 rounded transition-all font-bold tracking-wider
-                                    ${clearConfirmLevel > 0 ? 'bg-red-500 text-white animate-pulse' : 'text-muted hover:text-red-400 bg-white-5 hover:bg-white-10'}
-                                `}
-                                title="Clear all presets"
+                                onClick={saveCurrentAsPreset}
+                                className="bg-primary hover:bg-primary-hover text-white p-2 rounded-md transition-colors"
+                                title="Save"
                             >
-                                {getClearButtonText()}
+                                <Check size={18} />
                             </button>
-                        )}
-                    </div>
-                    <button
-                        onClick={() => setIsCreatingPreset(!isCreatingPreset)}
-                        className="icon-btn text-primary hover:bg-primary/20"
-                        title="Add current configuration as preset"
-                    >
-                        <Plus size={24} />
-                    </button>
-                </div>
+                            <button
+                                onClick={() => setIsCreatingPreset(false)}
+                                className="text-muted hover:text-red-400 p-2 rounded-md transition-colors"
+                                title="Cancel"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                    )}
 
-                {isCreatingPreset && (
-                    <div className="flex gap-2 mb-4 items-center bg-black-20 p-2 rounded-lg animate-in fade-in slide-in-from-top-2">
-                        <Input
-                            autoFocus
-                            placeholder="Preset Name (e.g. Microsoft Legacy)"
-                            value={newPresetName}
-                            onChange={(e) => setNewPresetName(e.target.value)}
-                            wrapperClassName="flex-1 mb-0"
-                            className="h-10"
-                            onKeyDown={(e) => e.key === 'Enter' && saveCurrentAsPreset()}
-                        />
-                        <button
-                            onClick={() => setIsCreatingPreset(false)}
-                            className="bg-black-20 text-muted p-2 rounded-md hover:bg-red-500/20 hover:text-red-500 transition-colors"
-                            title="Cancel"
-                        >
-                            <Trash2 size={18} />
-                        </button>
-                    </div>
-                )}
-
-                <div className="flex flex-wrap gap-3">
-                    {presets.length === 0 ? (
-                        <p className="text-muted text-sm italic w-full text-center py-2">No presets saved yet.</p>
-                    ) : (
-                        presets.map(preset => {
+                    <div className="flex flex-wrap gap-3 items-center">
+                        {presets.map(preset => {
                             const isActive = activePresetId === preset.id;
                             return (
                                 <div
                                     key={preset.id}
                                     onClick={() => loadPreset(preset)}
                                     className={`
-                                        group relative flex items-center justify-between gap-3 px-5 h-12 rounded-full cursor-pointer transition-all min-w-[130px]
+                                        group relative flex items-center justify-between gap-3 px-4 h-10 rounded-full cursor-pointer transition-all select-none
                                         ${isActive
-                                            ? 'bg-primary text-white shadow-lg border-primary'
-                                            : 'bg-black-20 hover:bg-white-5 text-muted border-white-5 hover:border-white-10'}
+                                            ? 'bg-primary text-white shadow-lg'
+                                            : 'bg-black-20 hover:bg-white-5 text-muted'}
                                     `}
                                     style={{
                                         border: isActive ? '1px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.1)'
                                     }}
                                 >
-                                    <span className={`text-sm font-bold tracking-wider ${isActive ? 'text-white' : 'text-muted'}`}>
+                                    <span className={`text-sm font-bold tracking-wide ${isActive ? 'text-white' : 'text-muted'}`}>
                                         {preset.name}
                                     </span>
 
                                     <button
                                         onClick={(e) => deletePreset(preset.id, e)}
-                                        className="p-1 rounded-full transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                                        style={{ color: 'rgba(239, 68, 68, 0.9)' }}
+                                        className={`
+                                            p-1 rounded-full transition-all 
+                                            ${isActive
+                                                ? 'text-white/70 hover:text-white hover:bg-white/20'
+                                                : 'text-muted hover:text-red-400 hover:bg-white/10 opacity-0 group-hover:opacity-100'}
+                                        `}
                                         title="Delete preset"
                                     >
-                                        <Trash2 size={18} />
+                                        <Trash2 size={14} />
                                     </button>
                                 </div>
                             );
-                        })
-                    )}
+                        })}
+
+                        {/* Save Current Config Button - Always visible */}
+                        {!isCreatingPreset && (
+                            <button
+                                onClick={() => setIsCreatingPreset(true)}
+                                className="flex items-center gap-2 px-4 h-10 rounded-full border border-dashed border-white/20 hover:border-primary/50 hover:bg-primary/10 text-muted hover:text-primary transition-all group"
+                                title="Save current configuration as a preset"
+                            >
+                                <Plus size={16} className="group-hover:scale-110 transition-transform" />
+                                <span className="font-bold text-xs uppercase tracking-wider">Save Current</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Divider */}
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"></div>
+
+                {/* Section 2: Configuration (The Workspace) */}
+                <div className="flex flex-col gap-6" id="config-section">
+
+                    {/* Character Sets */}
+                    <div>
+                        <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
+                        <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
+                            {Object.keys(SETS).map(key => (
+                                <button
+                                    id={`charset-btn-${key}`}
+                                    key={key}
+                                    onClick={() => handleSetChange(key)}
+                                    className={`
+                                        charset-selector-btn rounded-full transition-all px-4 py-2 text-sm
+                                        ${activeSet === key
+                                            ? 'bg-primary text-white shadow-lg'
+                                            : 'bg-black-20 hover:bg-white-5 text-muted'}
+                                    `}
+                                    style={{
+                                        border: activeSet === key ? '1px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.1)'
+                                    }}
+                                >
+                                    {SETS[key].name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="settings-grid">
+                        {/* Left Column: Options */}
+                        <div className="flex flex-col gap-6" id="settings-col-1">
+                            <div className="flex flex-col gap-3" id="options-group">
+                                <h3 className="label-text mb-2" id="options-title">Options</h3>
+                                <Toggle
+                                    id="opt-bidon"
+                                    label="Bidon"
+                                    checked={config.tokens.includes('bidon')}
+                                    onChange={() => { }}
+                                />
+                                {(activeSet === 'all_unicode' || activeSet === 'emojis') && (
+                                    <Toggle
+                                        id="opt-printable"
+                                        label="Only Printable"
+                                        checked={config.onlyPrintable}
+                                        onChange={(v) => setConfig({ ...config, onlyPrintable: v })}
+                                    />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Right Column: Advanced */}
+                        <div className="flex flex-col gap-6" id="settings-col-2">
+                            <h3 className="label-text" id="advanced-title">Advanced</h3>
+
+                            <div className="p-4 rounded-xl bg-black-20 border border-white-5 flex flex-col gap-4" id="compat-area">
+                                <Toggle
+                                    id="compat-toggle"
+                                    label="Enhance Compatibility"
+                                    checked={config.ensureCommon}
+                                    onChange={(v) => setConfig({ ...config, ensureCommon: v })}
+                                    className="w-full"
+                                />
+                                <p className="text-xs text-muted leading-relaxed" id="compat-desc">
+                                    Guarantees at least one lowercase, uppercase, number, and symbol.
+                                </p>
+                            </div>
+
+                            <Input
+                                id="must-include-input"
+                                label="Must Include Characters"
+                                placeholder="e.g. @ö5"
+                                value={config.include}
+                                onChange={(e) => setConfig({ ...config, include: e.target.value })}
+                                icon={<Sparkles size={16} />}
+                            />
+
+                            <Input
+                                id="forbidden-input"
+                                label="Forbidden Characters"
+                                placeholder="e.g. I1l0O"
+                                value={config.exclude}
+                                onChange={(e) => setConfig({ ...config, exclude: e.target.value })}
+                                icon={<ShieldAlert size={16} />}
+                            />
+                        </div>
+                    </div>
                 </div>
             </GlassCard>
         </div>
