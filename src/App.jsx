@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import './App.css';
 import { GeneratorPanel } from './components/generator/GeneratorPanel';
 import { HistoryPanel } from './components/history/HistoryPanel';
-import { useLocalStorage } from './utils/storage';
+import { useSessionStorage } from './utils/storage';
 
 function App() {
-  const [history, setHistory] = useLocalStorage('password_history', []);
+  const [history, setHistory] = useSessionStorage('password_history', []);
 
   const handleHistoryUpdate = (newHistory) => {
     setHistory(newHistory);
@@ -26,6 +26,24 @@ function App() {
     // Add to history
     setHistory([...history, newItem]);
   };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      const hasFavorites = history.some(item => item.favorite);
+      if (hasFavorites) {
+        e.preventDefault();
+        // Modern browsers require setting returnValue to show the dialog
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [history]);
 
   return (
     <div className="app-container" id="app-root">

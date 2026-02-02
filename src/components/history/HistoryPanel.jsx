@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Trash2, Edit2, Star } from 'lucide-react';
+import { Copy, Trash2, Edit2, Star, Eye, EyeOff } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 
@@ -20,6 +20,19 @@ export function HistoryPanel({ history, onUpdateHistory }) {
 
     const [editingId, setEditingId] = useState(null);
     const [editValue, setEditValue] = useState("");
+    const [visiblePasswords, setVisiblePasswords] = useState(new Set());
+
+    const toggleVisibility = (id) => {
+        setVisiblePasswords(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
 
     const startEditing = (id, currentName) => {
         setEditingId(id);
@@ -72,10 +85,31 @@ export function HistoryPanel({ history, onUpdateHistory }) {
         return `${p.slice(0, 8)} [...] ${p.slice(-8)}`;
     };
 
+    const areAllVisible = history.length > 0 && visiblePasswords.size === history.length;
+
+    const toggleAllVisibility = () => {
+        if (areAllVisible) {
+            setVisiblePasswords(new Set());
+        } else {
+            setVisiblePasswords(new Set(history.map(h => h.id)));
+        }
+    };
+
     return (
         <div className="flex flex-col gap-4 h-full" id="history-panel">
             <div className="flex justify-between items-center" id="history-header">
-                <h2 className="text-xl font-bold" id="history-title">History</h2>
+                <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold" id="history-title">History</h2>
+                    {history.length > 0 && (
+                        <button
+                            onClick={toggleAllVisibility}
+                            className="icon-btn p-1 ml-2 opacity-50 hover:opacity-100 transition-opacity"
+                            title={areAllVisible ? "Hide all" : "Show all"}
+                        >
+                            {areAllVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                    )}
+                </div>
                 {history.length > 0 &&
                     <Button variant="ghost" onClick={clearHistory} className="px-3 py-1 text-xs h-8" id="clear-history-btn">Clear</Button>
                 }
@@ -118,23 +152,32 @@ export function HistoryPanel({ history, onUpdateHistory }) {
                                             {item.name ? (
                                                 <div className="flex items-center gap-2 w-full">
                                                     <span className="text-xs font-semibold text-primary truncate" id={`history-name-${item.id}`}>{item.name}</span>
-                                                    <span className="text-[10px] text-muted opacity-50 whitespace-nowrap ml-auto" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                                    <div className="flex items-center gap-1 ml-auto">
+                                                        <span className="text-[10px] text-muted opacity-50 whitespace-nowrap" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                                        <button onClick={(e) => { e.stopPropagation(); startEditing(item.id, item.name); }} className="icon-btn icon-btn-primary p-0 h-4 w-4 opacity-50 hover:opacity-100" id={`history-rename-btn-${item.id}`}><Edit2 size={10} /></button>
+                                                    </div>
                                                 </div>
                                             ) : (
-                                                <span className="text-xs text-muted opacity-50" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                                <div className="flex items-center gap-2 w-full">
+                                                    <span className="text-xs text-muted opacity-50" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                                    <button onClick={(e) => { e.stopPropagation(); startEditing(item.id, item.name); }} className="icon-btn icon-btn-primary p-0 h-4 w-4 opacity-50 hover:opacity-100" id={`history-rename-btn-${item.id}`}><Edit2 size={10} /></button>
+                                                </div>
                                             )}
                                         </div>
-                                        <span className="font-mono text-sm truncate block password-trunc" title={item.password} id={`history-pwd-${item.id}`}>
-                                            {formatPassword(item.password)}
+                                        <span className="font-mono text-sm truncate block password-trunc" title={visiblePasswords.has(item.id) ? "" : "Click eye to reveal"} id={`history-pwd-${item.id}`}>
+                                            {visiblePasswords.has(item.id) ? item.password : "••••••••••••••••"}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()} id={`history-actions-${item.id}`}>
                                     {/* Item copy is already handled by card click, but keeping explicit icons if needed, or removing padding to avoid double click */}
+                                    <button onClick={() => toggleVisibility(item.id)} className="icon-btn" id={`history-visibility-btn-${item.id}`}>
+                                        {visiblePasswords.has(item.id) ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
                                     <button onClick={() => handleToggleFavorite(item.id)} className="icon-btn icon-btn-secondary" id={`history-fav-btn-${item.id}`}>
                                         <Star size={18} className={item.favorite ? "fill-yellow-400 text-yellow-400" : ""} />
                                     </button>
-                                    <button onClick={() => startEditing(item.id, item.name)} className="icon-btn icon-btn-primary" id={`history-rename-btn-${item.id}`}><Edit2 size={18} /></button>
+                                    {/* Edit button moved to header */}
                                     <button onClick={() => handleDelete(item.id)} className="icon-btn" style={{ color: 'rgba(239, 68, 68, 0.7)' }} id={`history-delete-btn-${item.id}`}><Trash2 size={18} /></button>
                                 </div>
                             </>
