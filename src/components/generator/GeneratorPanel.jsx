@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Slider } from '../ui/Slider';
 import { Toggle } from '../ui/Toggle';
-import { generatePassword, PRESETS, buildCharset } from '../../utils/passwordGen';
+import { generatePassword, PRESETS, buildCharset, getCharsetSizes } from '../../utils/passwordGen';
 import { EntropyMeter } from './EntropyMeter';
 
 export function GeneratorPanel({ onCopyPassword }) {
@@ -173,16 +173,54 @@ export function GeneratorPanel({ onCopyPassword }) {
 
     // Predefined Sets with linear inclusion hierarchy (left to right = small to large)
     // Each set includes all sets to its LEFT (like ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ)
-    const SETS_ORDER = ['alphanums', 'ascii', 'ascii_extended', 'active_languages', 'symbols_set', 'emojis', 'all_unicode'];
+    const SETS_ORDER = ['alphanums', 'ascii', 'ascii_extended', 'symbols_set', 'active_languages', 'emojis', 'all_unicode'];
+
+    // Get exact charset sizes (computed once and cached)
+    const charsetSizes = useMemo(() => getCharsetSizes(), []);
 
     const SETS = {
-        alphanums: { id: 'alphanums', name: 'Alphanums', tokens: ['alphanums'] },
-        ascii: { id: 'ascii', name: 'Ascii', tokens: ['ascii'] },
-        ascii_extended: { id: 'ascii_extended', name: 'Ascii Extended', tokens: ['ascii_extended'] },
-        active_languages: { id: 'active_languages', name: 'Active Languages', tokens: ['active_languages'] },
-        symbols_set: { id: 'symbols_set', name: 'With Symbols', tokens: ['symbols_set'] },
-        emojis: { id: 'emojis', name: 'With Emojis', tokens: ['emojis'] },
-        all_unicode: { id: 'all_unicode', name: 'All Unicode', tokens: ['all_unicode'] }
+        alphanums: {
+            id: 'alphanums',
+            name: 'Alphanums',
+            tokens: ['alphanums'],
+            description: 'a-z, A-Z, 0-9'
+        },
+        ascii: {
+            id: 'ascii',
+            name: 'Ascii',
+            tokens: ['ascii'],
+            description: '+ Full ASCII table (U+0000-00FF)'
+        },
+        ascii_extended: {
+            id: 'ascii_extended',
+            name: 'Ascii Extended',
+            tokens: ['ascii_extended'],
+            description: '+ Latin Extended A & B (U+0100-024F)'
+        },
+        symbols_set: {
+            id: 'symbols_set',
+            name: 'With Symbols',
+            tokens: ['symbols_set'],
+            description: '+ Arrows, Math, Currency (→∑€...)'
+        },
+        active_languages: {
+            id: 'active_languages',
+            name: 'Active Languages',
+            tokens: ['active_languages'],
+            description: '+ Greek, Cyrillic, Hebrew, Arabic (αБא...)'
+        },
+        emojis: {
+            id: 'emojis',
+            name: 'With Emojis',
+            tokens: ['emojis'],
+            description: '+ Emojis (🎉🔥💻...)'
+        },
+        all_unicode: {
+            id: 'all_unicode',
+            name: 'All Unicode',
+            tokens: ['all_unicode'],
+            description: '+ Full BMP (CJK, Technical...)'
+        }
     };
 
     // State for tracking hovered set (for inclusion highlighting)
@@ -568,6 +606,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         onMouseEnter={() => setHoveredSet(key)}
                                         onMouseLeave={() => setHoveredSet(null)}
                                         className="charset-selector-btn rounded-full transition-all px-4 py-2 text-sm cursor-pointer"
+                                        title={`${SETS[key].description}\n${charsetSizes[key]?.toLocaleString() || '?'} characters`}
                                         style={{
                                             background: isActive
                                                 ? 'var(--primary)'
