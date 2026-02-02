@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders } from 'lucide-react';
+import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -20,8 +20,7 @@ export function GeneratorPanel({ onCopyPassword }) {
         exclude: '',
         include: '',
         ensureCommon: true,
-        maxPossible: 128,
-        onlyPrintable: false
+        maxPossible: 128
     };
 
     /**
@@ -253,8 +252,7 @@ export function GeneratorPanel({ onCopyPassword }) {
         const charset = buildCharset({
             tokens: config.tokens,
             exclude: config.exclude,
-            include: config.include,
-            onlyPrintable: config.onlyPrintable
+            include: config.include
         });
         const res = generatePassword({
             // ... (rest of handleGenerate doesn't change usually but let's be careful with chunk)
@@ -265,94 +263,24 @@ export function GeneratorPanel({ onCopyPassword }) {
             ensureRobustness: config.ensureCommon // Mapped to the new logic
         });
 
-        // Detect replacement characters and other anomalies
-        const pwd = res.password;
-        const indices = new Set();
-        const weirdChar = '🩍'; // User provided char
-
-        // 1. Check for Specials Block (U+FFF0 - U+FFFF) specifically
-        // 2. Check for Private Use Area (U+E000 - U+F8FF) - often render as boxes/tofu
-        // 3. Check for Lone Surrogates (U+D800 - U+DFFF) - caused by splitting multi-byte chars
-
-        for (let i = 0; i < pwd.length; i++) {
-            const code = pwd.charCodeAt(i);
-            let isProblematic = false;
-
-            // Check for Specials (includes Replacement Char U+FFFD)
-            // U+FFF0 - U+FFFF
-            if (code >= 0xFFF0 && code <= 0xFFFF) {
-                isProblematic = true;
-            }
-
-            // Check for Private Use Area (PUA)
-            // U+E000 - U+F8FF
-            else if (code >= 0xE000 && code <= 0xF8FF) {
-                isProblematic = true;
-            }
-
-            // Check for Surrogates (Lone Surrogates detection)
-            else if (code >= 0xD800 && code <= 0xDFFF) {
-                // High Surrogate?
-                if (code >= 0xD800 && code <= 0xDBFF) {
-                    const nextCode = i + 1 < pwd.length ? pwd.charCodeAt(i + 1) : 0;
-                    if (nextCode >= 0xDC00 && nextCode <= 0xDFFF) {
-                        // Valid pair, skip next char
-                        i++;
-                        continue;
-                    } else {
-                        // High surrogate without low surrogate -> Lone (Replacement Char)
-                        isProblematic = true;
-                    }
-                }
-                // Low Surrogate?
-                else {
-                    // If we are here, it's a Low Surrogate without a preceding High (since we handled pairs above)
-                    isProblematic = true;
-                }
-            }
-
-            // High likelihood of unassigned characters not being caught by simple range checks
-            // So let's log everything for the user to debug
-            // console.groupCollapsed('Password Character Audit');
-            const debugInfo = [];
-            for (let k = 0; k < pwd.length; k++) {
-                const cp = pwd.codePointAt(k);
-                // Handle surrogate pairs for iteration
-                if (cp > 0xFFFF) {
-                    k++; // skip next unit
-                }
-                debugInfo.push(`Char: "${String.fromCodePoint(cp)}" U+${cp.toString(16).toUpperCase().padStart(4, '0')}`);
-            }
-            // console.table(debugInfo);
-            // console.groupEnd();
-
-            // Existing detection logic ...
-            if (isProblematic) {
-                indices.add(i);
-            }
-        }
-
-        // Check for specific weird char users reported
-        let pos = pwd.indexOf(weirdChar);
-        while (pos !== -1) {
-            indices.add(pos);
-            pos = pwd.indexOf(weirdChar, pos + 1);
-        }
-
-        if (indices.size > 0) {
-            const sortedIndices = Array.from(indices).sort((a, b) => a - b);
-            // console.log(`replacement char detected at pos ${sortedIndices.join(',')}`);
-            console.warn('Detected problematic characters:', sortedIndices.map(idx => {
-                const cp = pwd.codePointAt(idx);
-                return `Pos ${idx}: "${String.fromCodePoint(cp)}" (U+${cp.toString(16).toUpperCase().padStart(4, '0')})`;
-            }));
-        }
-
         setResult(res);
         setCopied(false);
         setHasBeenCopied(false);
         if (isScrambling) setIsScrambling(false);
     };
+
+    // Calculate conflicts between Must Include and Forbidden
+    const getConflictChars = () => {
+        if (!config.include || !config.exclude) return [];
+        const includeSet = new Set(config.include);
+        const excludeSet = new Set(config.exclude);
+        return [...includeSet].filter(x => excludeSet.has(x));
+    };
+
+    const conflictChars = getConflictChars();
+    const hasConflict = conflictChars.length > 0;
+
+
 
     // Initial & Watch trigger
     useEffect(() => {
@@ -668,14 +596,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     checked={config.tokens.includes('bidon')}
                                     onChange={() => { }}
                                 />
-                                {(activeSet === 'all_unicode' || activeSet === 'emojis') && (
-                                    <Toggle
-                                        id="opt-printable"
-                                        label="Only Printable"
-                                        checked={config.onlyPrintable}
-                                        onChange={(v) => setConfig({ ...config, onlyPrintable: v })}
-                                    />
-                                )}
+
                             </div>
                         </div>
 
@@ -735,16 +656,47 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         value={config.include}
                                         onChange={(e) => setConfig({ ...config, include: e.target.value })}
                                         icon={<Sparkles size={14} />}
+                                        rightElement={hasConflict && (
+                                            <button
+                                                onClick={() => {
+                                                    const excludeSet = new Set(config.exclude);
+                                                    const newInclude = config.include.split('').filter(c => !excludeSet.has(c)).join('');
+                                                    setConfig({ ...config, include: newInclude });
+                                                }}
+                                                style={{
+                                                    fontSize: '10px',
+                                                    background: 'rgba(239, 68, 68, 0.15)',
+                                                    color: 'rgba(252, 165, 165, 1)',
+                                                    padding: '4px 8px',
+                                                    borderRadius: '4px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
+                                                title="Remove characters that are also in 'Forbidden'"
+                                            >
+                                                <Eraser size={10} />
+                                                Remove Duplicate
+                                            </button>
+                                        )}
                                         className="compact-input"
                                         style={{
                                             padding: '0.6rem 1rem',
                                             paddingLeft: '2.2rem',
+                                            paddingRight: hasConflict ? '8rem' : undefined, // Make space for the button
                                             fontSize: '0.875rem',
                                             borderRadius: '10px',
-                                            background: 'rgba(255, 255, 255, 0.03)',
-                                            border: '1px solid rgba(255, 255, 255, 0.08)'
+                                            background: hasConflict ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.03)',
+                                            border: hasConflict ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)'
                                         }}
                                     />
+
+
 
                                     <Input
                                         id="forbidden-input"
@@ -753,16 +705,70 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         value={config.exclude}
                                         onChange={(e) => setConfig({ ...config, exclude: e.target.value })}
                                         icon={<ShieldAlert size={14} />}
+                                        rightElement={hasConflict && (
+                                            <button
+                                                onClick={() => {
+                                                    const includeSet = new Set(config.include);
+                                                    const newExclude = config.exclude.split('').filter(c => !includeSet.has(c)).join('');
+                                                    setConfig({ ...config, exclude: newExclude });
+                                                }}
+                                                style={{
+                                                    fontSize: '10px',
+                                                    background: 'rgba(239, 68, 68, 0.15)',
+                                                    color: 'rgba(252, 165, 165, 1)',
+                                                    padding: '4px 8px',
+                                                    borderRadius: '4px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
+                                                title="Remove characters that are also in 'Must Include'"
+                                            >
+                                                <Eraser size={10} />
+                                                Remove Duplicate
+                                            </button>
+                                        )}
                                         className="compact-input"
                                         style={{
                                             padding: '0.6rem 1rem',
                                             paddingLeft: '2.2rem',
+                                            paddingRight: hasConflict ? '8rem' : undefined, // Make space for the button
                                             fontSize: '0.875rem',
                                             borderRadius: '10px',
-                                            background: 'rgba(255, 255, 255, 0.03)',
-                                            border: '1px solid rgba(255, 255, 255, 0.08)'
+                                            background: hasConflict ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.03)',
+                                            border: hasConflict ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)'
                                         }}
                                     />
+
+                                    {hasConflict && (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                gap: '12px',
+                                                padding: '12px',
+                                                borderRadius: '8px',
+                                                marginTop: '4px',
+                                                background: 'rgba(234, 179, 8, 0.1)', // Yellow background
+                                                border: '1px solid rgba(234, 179, 8, 0.3)', // Yellow border
+                                                boxShadow: '0 0 10px rgba(234, 179, 8, 0.05)'
+                                            }}
+                                        >
+                                            <TriangleAlert size={18} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FEF9C3', margin: 0 }}>Conflict Detected</h4>
+                                                <p style={{ fontSize: '0.75rem', color: 'rgba(254, 240, 138, 0.8)', lineHeight: 1.625, margin: 0 }}>
+                                                    Some characters appear in both "Must Include" and "Forbidden" fields.
+                                                    This is impossible to satisfy (<b>{conflictChars.join(' ')}</b>).
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

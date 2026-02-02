@@ -1,5 +1,4 @@
 import unicodeDenylistData from '../data/unicode_denylist.json';
-import recentUnstableData from '../data/recent_unstable.json';
 
 export const CHAR_SETS = {
     uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
@@ -13,25 +12,13 @@ export const CHAR_SETS = {
 const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => String.fromCharCode(start + i));
 
 const DENYLIST_RANGES = unicodeDenylistData.denylist;
-const UNSTABLE_RANGES = recentUnstableData.unstable;
 
-function isInDenyList(codePoint, enforcePrintable = false) {
-    // 1. Hard deny list (Technical invalidity)
+function isInDenyList(codePoint) {
     for (const entry of DENYLIST_RANGES) {
         if (codePoint >= entry.start && codePoint <= entry.end) {
             return true;
         }
     }
-
-    // 2. Unstable/Recent list (Visual invalidity) -> Only if "Only Printable" is requested
-    if (enforcePrintable) {
-        for (const entry of UNSTABLE_RANGES) {
-            if (codePoint >= entry.start && codePoint <= entry.end) {
-                return true;
-            }
-        }
-    }
-
     return false;
 }
 
@@ -72,14 +59,14 @@ export function getCharsetSizes() {
  * Sets are INCLUSIVE: each set includes all characters from sets to its "left" in the hierarchy
  * Hierarchy: alphanums ⊂ ascii ⊂ ascii_extended ⊂ symbols_set ⊂ active_languages ⊂ emojis ⊂ all_unicode
  */
-export function buildCharset({ tokens = [], excludeChars = '', includeChars = '', onlyPrintable = false }) {
+export function buildCharset({ tokens = [], excludeChars = '', includeChars = '' }) {
     let pool = '';
 
     // Helper to safely add ranges excluding denied chars
     const addSafeRange = (start, end) => {
         let localPool = '';
         for (let i = start; i <= end; i++) {
-            if (!isInDenyList(i, onlyPrintable)) {
+            if (!isInDenyList(i)) {
                 try {
                     localPool += String.fromCodePoint(i);
                 } catch (e) {
@@ -147,14 +134,9 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
 
     // Level 6: all_unicode (includes emojis)
     if (maxLevel >= 6) {
-        if (onlyPrintable) {
-            pool += addSafeRange(0x0020, 0xD7FF);
-            pool += addSafeRange(0xE000, 0xFFFD);
-        } else {
-            pool += addSafeRange(0x0001, 0xD7FF);
-            pool += addSafeRange(0xE000, 0xFFFD);
-            pool += addSafeRange(0x1F300, 0x1FAFF);
-        }
+        pool += addSafeRange(0x0001, 0xD7FF);
+        pool += addSafeRange(0xE000, 0xFFFD);
+        pool += addSafeRange(0x1F300, 0x1FAFF);
     }
 
     // Add custom includes
