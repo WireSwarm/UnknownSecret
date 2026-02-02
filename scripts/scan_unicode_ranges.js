@@ -43,7 +43,7 @@ function isProblematic(codePoint) {
     return false;
 }
 
-console.log("Scanning Unicode table (0 - 0x10FFFF)...");
+// console.log("Scanning Unicode table (0 - 0x10FFFF)...");
 
 for (let i = 0; i <= 0x10FFFF; i++) {
     if (isProblematic(i)) {
@@ -69,8 +69,8 @@ for (let i = 0; i <= 0x10FFFF; i++) {
 // Close pending range
 if (start !== null) ranges.push({ start, end: 0x10FFFF, type: 'range' });
 
-console.log("\nScan complete.");
-console.log(`Found ${ranges.length} ranges/items.`);
+// console.log("\nScan complete.");
+// console.log(`Found ${ranges.length} ranges/items.`);
 
 const data = {
     generatedAt: new Date().toISOString(),
@@ -79,4 +79,4 @@ const data = {
 };
 
 fs.writeFileSync(outFile, JSON.stringify(data, null, 2));
-console.log(`Database written to ${outFile}`);
+// console.log(`Database written to ${outFile}`);

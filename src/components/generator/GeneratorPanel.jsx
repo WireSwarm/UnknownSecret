@@ -82,6 +82,13 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [activePresetId, setActivePresetId] = useState(null);
     const [clearConfirmLevel, setClearConfirmLevel] = useState(0); // 0: Normal, 1: Sure?, 2: Really?
 
+    // Local state for slider to prevent regeneration while dragging
+    const [sliderLength, setSliderLength] = useState(config.length);
+
+    // Sync sliderLength when config changes (e.g. presets)
+    useEffect(() => {
+        setSliderLength(config.length);
+    }, [config.length]);
 
     // --- AUTO-SAVE EFFECT ---
     useEffect(() => {
@@ -174,7 +181,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
             // High likelihood of unassigned characters not being caught by simple range checks
             // So let's log everything for the user to debug
-            console.groupCollapsed('Password Character Audit');
+            // console.groupCollapsed('Password Character Audit');
             const debugInfo = [];
             for (let k = 0; k < pwd.length; k++) {
                 const cp = pwd.codePointAt(k);
@@ -184,8 +191,8 @@ export function GeneratorPanel({ onCopyPassword }) {
                 }
                 debugInfo.push(`Char: "${String.fromCodePoint(cp)}" U+${cp.toString(16).toUpperCase().padStart(4, '0')}`);
             }
-            console.table(debugInfo);
-            console.groupEnd();
+            // console.table(debugInfo);
+            // console.groupEnd();
 
             // Existing detection logic ...
             if (isProblematic) {
@@ -202,7 +209,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
         if (indices.size > 0) {
             const sortedIndices = Array.from(indices).sort((a, b) => a - b);
-            console.log(`replacement char detected at pos ${sortedIndices.join(',')}`);
+            // console.log(`replacement char detected at pos ${sortedIndices.join(',')}`);
             console.warn('Detected problematic characters:', sortedIndices.map(idx => {
                 const cp = pwd.codePointAt(idx);
                 return `Pos ${idx}: "${String.fromCodePoint(cp)}" (U+${cp.toString(16).toUpperCase().padStart(4, '0')})`;
@@ -367,7 +374,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     onClick={() => setIsEditingLength(true)}
                                     title="Click to edit length"
                                 >
-                                    {config.length}
+                                    {sliderLength}
                                 </span>
                             )}
                             <span className="text-muted" id="length-sep">/</span>
@@ -394,10 +401,11 @@ export function GeneratorPanel({ onCopyPassword }) {
                     </div>
                     <Slider
                         id="length-slider"
-                        value={config.length}
+                        value={sliderLength}
                         min={1}
                         max={config.maxPossible}
-                        onChange={(val) => setConfig({ ...config, length: val })}
+                        onChange={(val) => setSliderLength(val)}
+                        onAfterChange={(val) => setConfig({ ...config, length: val })}
                     />
                 </div>
             </div>

@@ -85,4 +85,4 @@ const data = {
 };
 
 fs.writeFileSync(outFile, JSON.stringify(data, null, 2));
-console.log(`Unstable list written to ${outFile}`);
+// console.log(`Unstable list written to ${outFile}`);
