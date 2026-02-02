@@ -21,7 +21,7 @@
 
   /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: 'Fira Code', 'Roboto Mono', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Noto Color Emoji', monospace;
+  --font-mono: 'Noto Sans', 'Noto Sans Math', 'Noto Sans Symbols', 'Noto Sans Symbols 2', 'Fira Code', 'Roboto Mono', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Noto Color Emoji', monospace;
 
   /* Glassmorphism Utilities */
   --glass-border: 1px solid rgba(255, 255, 255, 0.12);

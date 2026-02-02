@@ -82,6 +82,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [activePresetId, setActivePresetId] = useState(null);
     const [clearConfirmLevel, setClearConfirmLevel] = useState(0); // 0: Normal, 1: Sure?, 2: Really?
 
+
     // --- AUTO-SAVE EFFECT ---
     useEffect(() => {
         const payload = {
@@ -117,6 +118,8 @@ export function GeneratorPanel({ onCopyPassword }) {
             onlyPrintable: config.onlyPrintable
         });
         const res = generatePassword({
+            // ... (rest of handleGenerate doesn't change usually but let's be careful with chunk)
+
             length: config.length,
             charset,
             mandatoryChars: config.include,
@@ -460,6 +463,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                             )}
                         </div>
                     </div>
+
 
                     {/* Right Column: Advanced */}
                     <div className="flex flex-col gap-6" id="settings-col-2">
