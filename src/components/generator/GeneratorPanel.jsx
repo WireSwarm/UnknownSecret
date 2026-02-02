@@ -171,7 +171,10 @@ export function GeneratorPanel({ onCopyPassword }) {
     }, [presets]);
 
 
-    // Predefined Sets
+    // Predefined Sets with linear inclusion hierarchy (left to right = small to large)
+    // Each set includes all sets to its LEFT (like ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ)
+    const SETS_ORDER = ['alphanums', 'ascii', 'ascii_extended', 'active_languages', 'symbols_set', 'emojis', 'all_unicode'];
+
     const SETS = {
         alphanums: { id: 'alphanums', name: 'Alphanums', tokens: ['alphanums'] },
         ascii: { id: 'ascii', name: 'Ascii', tokens: ['ascii'] },
@@ -180,6 +183,31 @@ export function GeneratorPanel({ onCopyPassword }) {
         symbols_set: { id: 'symbols_set', name: 'With Symbols', tokens: ['symbols_set'] },
         emojis: { id: 'emojis', name: 'With Emojis', tokens: ['emojis'] },
         all_unicode: { id: 'all_unicode', name: 'All Unicode', tokens: ['all_unicode'] }
+    };
+
+    // State for tracking hovered set (for inclusion highlighting)
+    const [hoveredSet, setHoveredSet] = useState(null);
+
+    // Helper: Check if a set is included in another based on position (left = included in right)
+    const isSetHighlighted = (setKey) => {
+        const setIndex = SETS_ORDER.indexOf(setKey);
+        const activeIndex = SETS_ORDER.indexOf(activeSet);
+        const hoveredIndex = hoveredSet ? SETS_ORDER.indexOf(hoveredSet) : -1;
+
+        // Always highlight the active set
+        if (activeSet === setKey) return 'active';
+
+        // Check if this set is to the LEFT of the hovered set (meaning it's included)
+        if (hoveredSet && setIndex < hoveredIndex) {
+            return 'included';
+        }
+
+        // Check if this set is to the LEFT of the active set (meaning it's a child)
+        if (setIndex < activeIndex) {
+            return 'child';
+        }
+
+        return null;
     };
 
     // Generate function
@@ -521,28 +549,72 @@ export function GeneratorPanel({ onCopyPassword }) {
                         Configuration
                     </h3>
 
-                    {/* Character Sets */}
+                    {/* Character Sets with inclusion highlighting */}
                     <div>
                         <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
                         <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
-                            {Object.keys(SETS).map(key => (
-                                <button
-                                    id={`charset-btn-${key}`}
-                                    key={key}
-                                    onClick={() => handleSetChange(key)}
-                                    className={`
-                                        charset-selector-btn rounded-full transition-all px-4 py-2 text-sm
-                                        ${activeSet === key
-                                            ? 'bg-primary text-white shadow-lg'
-                                            : 'bg-black-20 hover:bg-white-5 text-muted'}
-                                    `}
-                                    style={{
-                                        border: activeSet === key ? '1px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.1)'
-                                    }}
-                                >
-                                    {SETS[key].name}
-                                </button>
-                            ))}
+                            {SETS_ORDER.map(key => {
+                                const highlightState = isSetHighlighted(key);
+                                const isActive = highlightState === 'active';
+                                const isIncluded = highlightState === 'included';
+                                const isChild = highlightState === 'child';
+                                const isHovered = hoveredSet === key;
+
+                                return (
+                                    <button
+                                        id={`charset-btn-${key}`}
+                                        key={key}
+                                        onClick={() => handleSetChange(key)}
+                                        onMouseEnter={() => setHoveredSet(key)}
+                                        onMouseLeave={() => setHoveredSet(null)}
+                                        className="charset-selector-btn rounded-full transition-all px-4 py-2 text-sm cursor-pointer"
+                                        style={{
+                                            background: isActive
+                                                ? 'var(--primary)'
+                                                : isHovered
+                                                    ? 'rgba(var(--primary-rgb), 0.35)'
+                                                    : isIncluded
+                                                        ? 'rgba(var(--primary-rgb), 0.2)'
+                                                        : isChild
+                                                            ? 'rgba(var(--primary-rgb), 0.15)'
+                                                            : 'rgba(0, 0, 0, 0.2)',
+                                            color: isActive
+                                                ? 'white'
+                                                : isHovered
+                                                    ? 'white'
+                                                    : isIncluded
+                                                        ? 'rgba(255, 255, 255, 0.9)'
+                                                        : isChild
+                                                            ? 'rgba(255, 255, 255, 0.8)'
+                                                            : 'var(--text-muted)',
+                                            border: isActive
+                                                ? '1px solid var(--primary)'
+                                                : isHovered
+                                                    ? '1px solid rgba(var(--primary-rgb), 0.7)'
+                                                    : isIncluded
+                                                        ? '1px solid rgba(var(--primary-rgb), 0.4)'
+                                                        : isChild
+                                                            ? '1px solid rgba(var(--primary-rgb), 0.3)'
+                                                            : '1px solid rgba(255, 255, 255, 0.1)',
+                                            boxShadow: isActive
+                                                ? '0 0 15px rgba(var(--primary-rgb), 0.4)'
+                                                : isHovered
+                                                    ? '0 0 12px rgba(var(--primary-rgb), 0.35)'
+                                                    : isIncluded
+                                                        ? '0 0 8px rgba(var(--primary-rgb), 0.25)'
+                                                        : 'none',
+                                            transform: isHovered
+                                                ? 'scale(1.08)'
+                                                : isIncluded
+                                                    ? 'scale(1.02)'
+                                                    : 'scale(1)',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        {SETS[key].name}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
