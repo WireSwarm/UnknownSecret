@@ -13,6 +13,9 @@ function App() {
   };
 
   const handleGeneratedPasswordCopy = (result) => {
+    // If this password instance has already been copied, don't add duplicate to history
+    if (result.alreadyCopied) return;
+
     // result: { password, entropy, timestamp }
     const newItem = {
       id: Date.now().toString() + Math.random().toString().slice(2, 5),

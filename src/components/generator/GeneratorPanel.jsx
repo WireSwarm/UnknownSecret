@@ -75,6 +75,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [result, setResult] = useState({ password: '', entropy: 0 });
     const [showPassword, setShowPassword] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [hasBeenCopied, setHasBeenCopied] = useState(false); // Track if current password was copied
 
     // Preset creation UI state
     const [isCreatingPreset, setIsCreatingPreset] = useState(false);
@@ -265,6 +266,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
         setResult(res);
         setCopied(false);
+        setHasBeenCopied(false);
         if (isScrambling) setIsScrambling(false);
     };
 
@@ -277,7 +279,17 @@ export function GeneratorPanel({ onCopyPassword }) {
         if (!result.password) return;
         navigator.clipboard.writeText(result.password);
         setCopied(true);
-        if (onCopyPassword) onCopyPassword({ ...result, timestamp: Date.now() });
+
+        // Pass a flag indicating if this exact password instance was already copied
+        if (onCopyPassword) {
+            onCopyPassword({
+                ...result,
+                timestamp: Date.now(),
+                alreadyCopied: hasBeenCopied
+            });
+        }
+
+        setHasBeenCopied(true);
         // Reset copied state after 2s
         setTimeout(() => setCopied(false), 2000);
     };
