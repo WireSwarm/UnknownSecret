@@ -81,7 +81,7 @@ export function HistoryPanel({ history, onUpdateHistory }) {
                 }
             </div>
 
-            <div className="flex flex-col gap-2 overflow-y-auto pr-2" style={{ maxHeight: '600px' }} id="history-items-container">
+            <div className="flex flex-col gap-2 overflow-y-auto pr-2 flex-1 min-h-0" id="history-items-container">
                 {history.length === 0 && <p className="text-muted text-center py-8" id="history-empty-msg">No history yet.<br /><span className="text-xs">Generated passwords will appear here when copied.</span></p>}
                 {sortedHistory.map(item => (
                     <GlassCard

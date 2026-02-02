@@ -369,6 +369,10 @@ h6 {
   padding-bottom: 0.5rem;
 }
 
+.pr-2 {
+  padding-right: 0.5rem;
+}
+
 .relative {
   position: relative;
 }
@@ -391,6 +395,14 @@ h6 {
 
 .overflow-x-auto {
   overflow-x: auto;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.min-h-0 {
+  min-height: 0;
 }
 
 .truncate {
@@ -759,4 +771,31 @@ input[type=range]::-webkit-slider-runnable-track {
   letter-spacing: 0.05em !important;
   font-weight: 700 !important;
   /* Removed flex-shrink: 0 to play nice with wrapping if needed, though container controls wrap */
+}
+
+/* Custom Scrollbar Logic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }

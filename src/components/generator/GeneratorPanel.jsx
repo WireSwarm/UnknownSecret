@@ -417,7 +417,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
             {/* Options / Character Sets */}
             <GlassCard className="p-6 mt-4" id="config-card">
-                <h3 className="label-text mb-4" id="charset-title">Jeu de caractère</h3>
+                <h3 className="label-text mb-4" id="charset-title">Character set</h3>
                 <div className="flex flex-wrap gap-3 mb-6 justify-center" id="charset-selectors">
                     {Object.keys(SETS).map(key => (
                         <button
