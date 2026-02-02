@@ -82,6 +82,23 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [newPresetName, setNewPresetName] = useState('');
     const [activePresetId, setActivePresetId] = useState(null);
     const [clearConfirmLevel, setClearConfirmLevel] = useState(0); // 0: Normal, 1: Sure?, 2: Really?
+    const [isShiftPressed, setIsShiftPressed] = useState(false); // Track Shift key for delete buttons
+
+    // Effect to track Shift key globally
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Shift') setIsShiftPressed(true);
+        };
+        const handleKeyUp = (e) => {
+            if (e.key === 'Shift') setIsShiftPressed(false);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
 
     // Local state for slider to prevent regeneration while dragging
     const [sliderLength, setSliderLength] = useState(config.length);
@@ -372,8 +389,8 @@ export function GeneratorPanel({ onCopyPassword }) {
 
     const getClearButtonText = () => {
         if (clearConfirmLevel === 1) return "Sure?";
-        if (clearConfirmLevel === 2) return "REALLY Sure?";
-        return <Trash2 size={16} />;
+        if (clearConfirmLevel === 2) return "REALLY?";
+        return "Clear";
     };
 
     return (
@@ -498,8 +515,8 @@ export function GeneratorPanel({ onCopyPassword }) {
                 <div className="flex flex-col gap-4" id="presets-section">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <h3 className="label-text flex items-center gap-2">
-                                <Save size={16} className="text-primary" />
+                            <h3 className="text-lg font-bold flex items-center gap-2">
+                                <Save size={18} className="text-primary" />
                                 Saved Configurations
                             </h3>
                             {/* 
@@ -507,25 +524,9 @@ export function GeneratorPanel({ onCopyPassword }) {
                              * Use inline styles or classes defined in index.css.
                              * See .agent/agents.md for guidelines.
                              */}
-                            {presets.length > 0 && (
-                                <button
-                                    onClick={handleClearAllPresets}
-                                    className="icon-btn transition-all"
-                                    style={{
-                                        color: clearConfirmLevel > 0 ? '#EF4444' : 'rgba(239, 68, 68, 0.7)',
-                                        background: clearConfirmLevel > 0 ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-                                        border: clearConfirmLevel > 0 ? '1px solid rgba(239, 68, 68, 0.5)' : 'none',
-                                        padding: clearConfirmLevel > 0 ? '0.25rem 0.5rem' : '0.5rem',
-                                        borderRadius: '0.375rem',
-                                        fontSize: clearConfirmLevel > 0 ? '0.75rem' : undefined,
-                                        fontWeight: clearConfirmLevel > 0 ? 700 : undefined,
-                                        letterSpacing: clearConfirmLevel > 0 ? '0.05em' : undefined
-                                    }}
-                                    title="Clear all presets"
-                                >
-                                    {getClearButtonText()}
-                                </button>
-                            )}
+                            {presets.length > 0 &&
+                                <Button variant="ghost" onClick={handleClearAllPresets} className="px-3 py-1 text-xs h-8">Clear</Button>
+                            }
                         </div>
                     </div>
 
@@ -586,18 +587,17 @@ export function GeneratorPanel({ onCopyPassword }) {
                         </div>
                     )}
 
-                    <div className="flex flex-wrap gap-3 items-center">
+                    <div className="flex flex-wrap gap-6 items-center" style={{ padding: '0.25rem' }}>
                         {presets.map(preset => {
                             const isActive = activePresetId === preset.id;
                             return (
                                 <div
                                     key={preset.id}
-                                    onClick={() => loadPreset(preset)}
-                                    className={`
-                                        group relative flex items-center gap-3 px-4 h-10 rounded-lg cursor-pointer transition-all select-none overflow-hidden
-                                        ${isActive ? 'scale-[1.02]' : 'hover:bg-white/5'}
-                                    `}
+                                    className="group relative flex items-center gap-4 rounded-lg cursor-pointer select-none overflow-hidden preset-item"
                                     style={{
+                                        paddingLeft: '1rem',
+                                        paddingRight: '0.5rem',
+                                        height: '2.5rem',
                                         background: isActive
                                             ? 'linear-gradient(90deg, rgba(var(--primary-rgb), 0.15), rgba(var(--secondary-rgb), 0.05))'
                                             : 'rgba(0, 0, 0, 0.2)',
@@ -606,24 +606,87 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             : '1px solid rgba(255, 255, 255, 0.05)',
                                         boxShadow: isActive
                                             ? '0 0 20px rgba(var(--primary-rgb), 0.15), inset 0 0 10px rgba(var(--primary-rgb), 0.05)'
-                                            : 'none'
+                                            : 'none',
+                                        transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.transform = 'scale(1.1)';
+                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                                        }
                                     }}
                                 >
-                                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary shadow-[0_0_8px_var(--primary)]"></div>}
+                                    {isActive && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: '2px',
+                                            background: 'var(--primary)',
+                                            boxShadow: '0 0 8px var(--primary)'
+                                        }}></div>
+                                    )}
 
-                                    <span className={`text-xs font-bold tracking-wider uppercase ${isActive ? 'text-white' : 'text-muted'}`}
-                                        style={{ textShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'none' }}>
+                                    {/* Preset name - always visible */}
+                                    <span
+                                        onClick={() => !isShiftPressed && loadPreset(preset)}
+                                        className="text-xs font-bold tracking-wider uppercase"
+                                        style={{
+                                            color: isActive ? 'white' : 'var(--text-muted)',
+                                            textShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'none',
+                                            opacity: isShiftPressed ? 0.3 : 1,
+                                            transition: 'opacity 0.2s ease'
+                                        }}
+                                    >
                                         {preset.name}
                                     </span>
 
-                                    <button
-                                        onClick={(e) => deletePreset(preset.id, e)}
-                                        className="icon-btn p-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-1 group-hover:translate-x-0"
-                                        style={{ color: 'rgba(239, 68, 68, 0.7)' }}
-                                        title="Delete preset"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                                    {/* Delete overlay - centered, only visible when Shift is pressed */}
+                                    {isShiftPressed && (
+                                        <button
+                                            onClick={(e) => deletePreset(preset.id, e)}
+                                            className="preset-delete-overlay"
+                                            style={{
+                                                position: 'absolute',
+                                                inset: 0,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: 'rgba(239, 68, 68, 0.05)',
+                                                border: 'none',
+                                                borderRadius: 'inherit',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                                                e.currentTarget.querySelector('svg').style.transform = 'scale(1.15) rotate(-8deg)';
+                                                e.currentTarget.querySelector('svg').style.color = 'rgba(239, 68, 68, 0.7)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)';
+                                                e.currentTarget.querySelector('svg').style.transform = 'scale(1) rotate(0deg)';
+                                                e.currentTarget.querySelector('svg').style.color = 'rgba(239, 68, 68, 0.4)';
+                                            }}
+                                            title="Delete preset"
+                                        >
+                                            <Trash2
+                                                size={16}
+                                                style={{
+                                                    color: 'rgba(239, 68, 68, 0.4)',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            />
+                                        </button>
+                                    )}
                                 </div>
                             );
                         })}
@@ -632,7 +695,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         {!isCreatingPreset && (
                             <button
                                 onClick={() => setIsCreatingPreset(true)}
-                                className="flex items-center gap-2 px-4 h-10 rounded-lg cursor-pointer transition-all text-muted hover:text-primary hover:bg-white/5"
+                                className="flex items-center gap-2 px-4 h-10 rounded-lg cursor-pointer transition-all text-muted"
                                 style={{
                                     background: 'rgba(0, 0, 0, 0.2)',
                                     border: '1px solid rgba(255, 255, 255, 0.1)'
@@ -643,6 +706,28 @@ export function GeneratorPanel({ onCopyPassword }) {
                             </button>
                         )}
                     </div>
+
+                    {/* Hint message for delete functionality - always rendered, visibility controlled */}
+                    {presets.length > 0 && (
+                        <p
+                            className="text-xs text-muted"
+                            style={{
+                                opacity: 0.5,
+                                marginTop: '0.5rem',
+                                visibility: isShiftPressed ? 'hidden' : 'visible',
+                                transition: 'visibility 0s, opacity 0.2s ease',
+                                opacity: isShiftPressed ? 0 : 0.5
+                            }}
+                        >
+                            Hold <kbd style={{
+                                background: 'rgba(255,255,255,0.1)',
+                                padding: '0.1rem 0.4rem',
+                                borderRadius: '4px',
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: '0.7rem'
+                            }}>Shift</kbd> to delete individual presets
+                        </p>
+                    )}
                 </div>
 
                 {/* Divider */}
