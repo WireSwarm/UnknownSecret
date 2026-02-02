@@ -85,10 +85,52 @@ export function GeneratorPanel({ onCopyPassword }) {
     // Local state for slider to prevent regeneration while dragging
     const [sliderLength, setSliderLength] = useState(config.length);
 
+    // Scramble Effect State
+    const [isScrambling, setIsScrambling] = useState(false);
+    const [scrambleText, setScrambleText] = useState('');
+
     // Sync sliderLength when config changes (e.g. presets)
     useEffect(() => {
         setSliderLength(config.length);
     }, [config.length]);
+
+    // --- SCRAMBLE EFFECT LOOP ---
+    useEffect(() => {
+        let animationFrameId;
+
+        const animate = () => {
+            if (isScrambling) {
+                // Generate fake scramble text based on visibility
+                let fakePwd = '';
+                const targetLen = sliderLength;
+
+                if (showPassword) {
+                    // Matrix Style: Random Alphanums
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+                    for (let i = 0; i < targetLen; i++) {
+                        fakePwd += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                } else {
+                    // Hidden Style: Dots that adapt in length
+                    // We can use a different dot char for effect, but classic bullet is fine
+                    fakePwd = '•'.repeat(targetLen);
+                }
+
+                setScrambleText(fakePwd);
+                animationFrameId = requestAnimationFrame(animate);
+            }
+        };
+
+        if (isScrambling) {
+            animationFrameId = requestAnimationFrame(animate);
+        } else {
+            setScrambleText('');
+        }
+
+        return () => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        };
+    }, [isScrambling, sliderLength, showPassword]);
 
     // --- AUTO-SAVE EFFECT ---
     useEffect(() => {
@@ -98,6 +140,11 @@ export function GeneratorPanel({ onCopyPassword }) {
         };
         localStorage.setItem(STORAGE_KEY_PARAMS, JSON.stringify(payload));
     }, [config, activeSet]);
+
+    // ... (rest of the file remains, I will target the render blocks separately if needed, but I can do it in one go if I match context carefully)
+    // Actually, I can't delete a block AND replace a block far away in one 'replace_file_content' call if they are not contiguous.
+    // I must use multi_replace_file_content.
+
 
     // --- PRESETS SAVE EFFECT ---
     useEffect(() => {
@@ -218,6 +265,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
         setResult(res);
         setCopied(false);
+        if (isScrambling) setIsScrambling(false);
     };
 
     // Initial & Watch trigger
@@ -323,10 +371,10 @@ export function GeneratorPanel({ onCopyPassword }) {
                 <div className="w-full max-w-2xl relative" id="password-input-area">
                     <Input
                         id="main-password-input"
-                        value={result.password}
+                        value={isScrambling ? scrambleText : result.password}
                         readOnly
-                        type={showPassword ? "text" : "password"}
-                        className="keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-24" // Added pr-24 for padding
+                        type={showPassword || (isScrambling && showPassword) ? "text" : "password"}
+                        className={`keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-24 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
                         wrapperClassName="mb-1"
                         onClick={copyToClipboard}
                         style={{ cursor: 'pointer', paddingRight: '8.4rem' }}
@@ -404,8 +452,13 @@ export function GeneratorPanel({ onCopyPassword }) {
                         value={sliderLength}
                         min={1}
                         max={config.maxPossible}
-                        onChange={(val) => setSliderLength(val)}
-                        onAfterChange={(val) => setConfig({ ...config, length: val })}
+                        onChange={(val) => {
+                            setSliderLength(val);
+                            if (!isScrambling) setIsScrambling(true);
+                        }}
+                        onAfterChange={(val) => {
+                            setConfig({ ...config, length: val });
+                        }}
                     />
                 </div>
             </div>
