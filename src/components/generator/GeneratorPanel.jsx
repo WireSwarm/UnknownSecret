@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard } from 'lucide-react';
+import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2 } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -7,6 +7,7 @@ import { Slider } from '../ui/Slider';
 import { Toggle } from '../ui/Toggle';
 import { generatePassword, PRESETS, buildCharset, getCharsetSizes } from '../../utils/passwordGen';
 import { EntropyMeter } from './EntropyMeter';
+import { PasswordStats } from './PasswordStats';
 
 export function GeneratorPanel({ onCopyPassword }) {
     // --- PERSISTENCE CONSTANTS ---
@@ -86,6 +87,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [showPassword, setShowPassword] = useState(false);
     const [copied, setCopied] = useState(false);
     const [hasBeenCopied, setHasBeenCopied] = useState(false); // Track if current password was copied
+    const [showStats, setShowStats] = useState(false); // Toggle for stats panel
 
     // Preset creation UI state
     const [isCreatingPreset, setIsCreatingPreset] = useState(false);
@@ -563,26 +565,44 @@ export function GeneratorPanel({ onCopyPassword }) {
                 </div>
             </div>
 
-            {/* Copy Button & Meter */}
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between" id="meter-action-row">
-                <EntropyMeter
-                    entropy={result.entropy}
-                    combinations={result.combinations}
-                    id="entropy-meter"
-                    isPostQuantum={config.isPostQuantum}
-                />
+            {/* Copy Button & Meter & Stats Toggle */}
+            <div className="flex flex-col gap-4" id="meter-action-row">
+                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                    <EntropyMeter
+                        entropy={result.entropy}
+                        combinations={result.combinations}
+                        id="entropy-meter"
+                        isPostQuantum={config.isPostQuantum}
+                    />
 
-                <Button
-                    id="main-copy-btn"
-                    onClick={copyToClipboard}
-                    className={`w-full md:w-auto mt-4 md:mt-0 ${copied ? 'bg-green-500' : ''}`}
-                    variant={copied ? 'ghost' : 'primary'}
-                    style={copied ? { borderColor: '#10B981', color: '#10B981' } : {}}
-                >
-                    {copied ? <Check size={20} id="copied-icon" /> : <Copy size={20} id="copy-icon" />}
-                    {copied ? 'Copied!' : 'Copy Password'}
-                </Button>
+                    <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
+                        {/* Stats Toggle Button */}
+                        <Button
+                            onClick={() => setShowStats(!showStats)}
+                            variant="ghost"
+                            className={`px-3 transition-all duration-300 ${showStats ? 'bg-white/10 text-primary border-primary/30' : 'bg-white/5 border-white/5 text-muted'}`}
+                            title="Toggle Statistics"
+                            style={showStats ? { boxShadow: '0 0 15px rgba(var(--primary-rgb), 0.15)' } : {}}
+                        >
+                            <BarChart2 size={20} className={showStats ? 'text-primary' : ''} />
+                        </Button>
+
+                        <Button
+                            id="main-copy-btn"
+                            onClick={copyToClipboard}
+                            className={`flex-1 md:flex-none ${copied ? 'bg-green-500' : ''}`}
+                            variant={copied ? 'ghost' : 'primary'}
+                            style={copied ? { borderColor: '#10B981', color: '#10B981' } : {}}
+                        >
+                            {copied ? <Check size={20} id="copied-icon" /> : <Copy size={20} id="copy-icon" />}
+                            {copied ? 'Copied!' : 'Copy Password'}
+                        </Button>
+                    </div>
+                </div>
             </div>
+
+            {/* Collapsible Stats Panel - Outside to handle its own spacing animation */}
+            <PasswordStats password={result.password} isOpen={showStats} />
 
             {/* Unified Configuration & Presets Panel */}
             <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="unified-config-card">
@@ -1306,6 +1326,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                     )}
                 </div>
             </GlassCard>
-        </div>
+        </div >
     );
 }
