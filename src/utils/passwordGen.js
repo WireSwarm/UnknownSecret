@@ -277,10 +277,10 @@ export function generatePassword({
 
     const password = buffer.join('');
 
-    // Entropy: H = L * log2(N)
-    // Entropy: H = L * log2(N)
-    // Use actualLength for accurate entropy calculation
-    const entropy = Math.round(actualLength * Math.log2(charsetLen));
+    const combinations = BigInt(charsetLen) ** BigInt(actualLength);
+    // Entropy: round(log2(N^L))
+    // We approximate log2 of a BigInt by taking the length of its binary string representation.
+    const entropy = combinations.toString(2).length;
 
-    return { password, entropy, combinations: BigInt(charsetLen) ** BigInt(actualLength) };
+    return { password, entropy, combinations };
 }
