@@ -189,6 +189,9 @@ export function generatePassword({
         charset = Array.from(charset);
     }
 
+    // Ensure length is a number
+    length = Number(length);
+
     if (!charset || charset.length === 0) return { password: '', entropy: 0 };
 
     // Calculate actual length if randomize is enabled
@@ -265,7 +268,7 @@ export function generatePassword({
 
     // Inject required chars
     if (requiredChars.length > actualLength) {
-        requiredChars = requiredChars.slice(0, length);
+        requiredChars = requiredChars.slice(0, actualLength);
     }
 
     for (let i = 0; i < requiredChars.length; i++) {
@@ -275,7 +278,9 @@ export function generatePassword({
     const password = buffer.join('');
 
     // Entropy: H = L * log2(N)
-    const entropy = Math.round(length * Math.log2(charsetLen));
+    // Entropy: H = L * log2(N)
+    // Use actualLength for accurate entropy calculation
+    const entropy = Math.round(actualLength * Math.log2(charsetLen));
 
-    return { password, entropy, combinations: BigInt(charsetLen) ** BigInt(length) };
+    return { password, entropy, combinations: BigInt(charsetLen) ** BigInt(actualLength) };
 }

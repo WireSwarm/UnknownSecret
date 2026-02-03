@@ -468,7 +468,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 >
                                     {config.randomLength ? (
                                         <>
-                                            ~{sliderLength} <span className="text-[0.8em] font-normal">({result?.password?.length || 0})</span>
+                                            ~{sliderLength} <span className="text-[0.8em] font-normal">({result?.password ? [...result.password].length : 0})</span>
                                         </>
                                     ) : (
                                         sliderLength
