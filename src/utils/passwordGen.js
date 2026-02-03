@@ -179,6 +179,8 @@ export function generatePassword({
     charset = [], // EXPLICITLY EXPECTING AN ARRAY NOW
     mandatoryChars = '', // String of chars that MUST appear
     ensureRobustness = false,
+    randomizeLength = false,
+    lengthDeviation = 5 // Percentage (0-100)
 }) {
     // Safety check if charset is passed as string by legacy code, convert to array
     if (typeof charset === 'string') {
@@ -187,18 +189,31 @@ export function generatePassword({
 
     if (!charset || charset.length === 0) return { password: '', entropy: 0 };
 
-    const buffer = new Array(length);
+    // Calculate actual length if randomize is enabled
+    let actualLength = length;
+    if (randomizeLength && lengthDeviation > 0) {
+        // Example: length=100, deviation=5 -> min=95. Range [95, 100]
+        const minLen = Math.floor(length * (1 - lengthDeviation / 100));
+        // Ensure minLen is at least 1 if length > 0
+        const safeMin = Math.max(1, minLen);
+        const range = length - safeMin + 1;
+        if (range > 0) {
+            actualLength = safeMin + getRandomInt(range);
+        }
+    }
+
+    const buffer = new Array(actualLength);
     const charsetLen = charset.length;
 
     // 1. Fill linearly with random
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < actualLength; i++) {
         // charset is an array of strings (chars), so [i] works correctly for emojis
         buffer[i] = charset[getRandomInt(charsetLen)];
     }
 
     // 2. Handle Mandatory Constraints
     // Collect positions to overwrite (randomly picked)
-    let positions = Array.from({ length }, (_, i) => i);
+    let positions = Array.from({ length: actualLength }, (_, i) => i);
     // Shuffle positions to avoid bias (Fisher-Yates)
     for (let i = positions.length - 1; i > 0; i--) {
         const j = getRandomInt(i + 1);
@@ -229,7 +244,7 @@ export function generatePassword({
     }
 
     // Inject required chars
-    if (requiredChars.length > length) {
+    if (requiredChars.length > actualLength) {
         requiredChars = requiredChars.slice(0, length);
     }
 

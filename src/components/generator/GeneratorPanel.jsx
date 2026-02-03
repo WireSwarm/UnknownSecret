@@ -14,13 +14,16 @@ export function GeneratorPanel({ onCopyPassword }) {
     const STORAGE_KEY_PRESETS = 'usr_gen_presets';
 
     // Default configuration reference
+    // A Global Option is an option available for all charsets.
     const DEFAULT_CONFIG = {
         length: 16,
         tokens: ['ascii'],
         exclude: '',
         include: '',
         ensureCommon: true,
-        maxPossible: 128
+        maxPossible: 128,
+        randomLength: false,
+        lengthDeviation: 5
     };
 
     /**
@@ -83,6 +86,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [clearConfirmLevel, setClearConfirmLevel] = useState(0); // 0: Normal, 1: Sure?, 2: Really?
     const [isShiftPressed, setIsShiftPressed] = useState(false); // Track Shift key for delete buttons
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false); // Advanced section collapsed state
+    const [isEditingPercent, setIsEditingPercent] = useState(false); // State for editing random length percent
 
     // Effect to track Shift key globally
     useEffect(() => {
@@ -260,7 +264,9 @@ export function GeneratorPanel({ onCopyPassword }) {
             length: config.length,
             charset,
             mandatoryChars: config.include,
-            ensureRobustness: config.ensureCommon // Mapped to the new logic
+            ensureRobustness: config.ensureCommon, // Mapped to the new logic
+            randomizeLength: config.randomLength,
+            lengthDeviation: config.lengthDeviation
         });
 
         setResult(res);
@@ -447,7 +453,13 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     onClick={() => setIsEditingLength(true)}
                                     title="Click to edit length"
                                 >
-                                    {sliderLength}
+                                    {config.randomLength ? (
+                                        <>
+                                            ~{sliderLength} <span className="text-[0.8em] font-normal">({result?.password?.length || 0})</span>
+                                        </>
+                                    ) : (
+                                        sliderLength
+                                    )}
                                     <Edit2 size={10} className="opacity-50" />
                                 </div>
                             )}
@@ -595,10 +607,47 @@ export function GeneratorPanel({ onCopyPassword }) {
                             <div className="flex flex-col gap-3" id="options-group">
                                 <h3 className="label-text mb-2" id="options-title">Options</h3>
                                 <Toggle
-                                    id="opt-bidon"
-                                    label="Bidon"
-                                    checked={config.tokens.includes('bidon')}
-                                    onChange={() => { }}
+                                    id="opt-random-length"
+                                    checked={config.randomLength}
+                                    onChange={(v) => {
+                                        setConfig({ ...config, randomLength: v });
+                                    }}
+                                    label={
+                                        <span className="flex items-center gap-1">
+                                            Fuzz Length (~
+                                            {isEditingPercent ? (
+                                                <input
+                                                    autoFocus
+                                                    className="ghost-size-input mx-1"
+                                                    style={{ width: '2rem', textAlign: 'center' }}
+                                                    defaultValue={config.lengthDeviation}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            setIsEditingPercent(false);
+                                                            const val = parseInt(e.target.value, 10);
+                                                            if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, lengthDeviation: val });
+                                                        }
+                                                    }}
+                                                    onBlur={(e) => {
+                                                        setIsEditingPercent(false);
+                                                        const val = parseInt(e.target.value, 10);
+                                                        if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, lengthDeviation: val });
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()} // Prevent toggle click
+                                                    onFocus={(e) => e.target.select()}
+                                                />
+                                            ) : (
+                                                <span
+                                                    className="font-bold cursor-pointer hover:underline mx-1"
+                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingPercent(true); }}
+                                                    title="Click to change deviation %"
+                                                >
+                                                    {config.lengthDeviation}%
+                                                </span>
+                                            )}
+                                            )
+                                        </span>
+                                    }
                                 />
 
                             </div>
