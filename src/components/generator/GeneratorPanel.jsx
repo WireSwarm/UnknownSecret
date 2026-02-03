@@ -28,7 +28,10 @@ export function GeneratorPanel({ onCopyPassword }) {
         minAsciiPercent: 5,
         customCharset: '',
         standardCharsetDisabled: true,
-        customWeight: 0
+        customCharset: '',
+        standardCharsetDisabled: true,
+        customWeight: 0,
+        isPostQuantum: false
     };
 
     /**
@@ -562,7 +565,12 @@ export function GeneratorPanel({ onCopyPassword }) {
 
             {/* Copy Button & Meter */}
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between" id="meter-action-row">
-                <EntropyMeter entropy={result.entropy} combinations={result.combinations} id="entropy-meter" />
+                <EntropyMeter
+                    entropy={result.entropy}
+                    combinations={result.combinations}
+                    id="entropy-meter"
+                    isPostQuantum={config.isPostQuantum}
+                />
 
                 <Button
                     id="main-copy-btn"
@@ -786,6 +794,20 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         animation: 'fadeIn 0.2s ease'
                                     }}
                                 >
+                                    {/* Post-Quantum Toggle */}
+                                    <div className="p-3 rounded-lg border border-white/5 bg-white/5 mb-2">
+                                        <Toggle
+                                            id="opt-post-quantum"
+                                            checked={config.isPostQuantum}
+                                            onChange={(v) => setConfig({ ...config, isPostQuantum: v })}
+                                            label="Post-Quantum Strength"
+                                        />
+                                        <p className="text-xs text-muted mt-2 ml-7">
+                                            Simulates Grover's algorithm impact: effective entropy is halved (N/2).
+                                            Requires 2x length for same strength.
+                                        </p>
+                                    </div>
+
                                     {['emojis', 'all_unicode'].includes(activeSet) && (
                                         <Toggle
                                             id="opt-min-ascii"
