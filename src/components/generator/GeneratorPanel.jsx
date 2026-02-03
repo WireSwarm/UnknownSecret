@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2 } from 'lucide-react';
+import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -27,8 +27,8 @@ export function GeneratorPanel({ onCopyPassword }) {
         ensureMinAscii: false,
         minAsciiPercent: 5,
         customCharset: '',
-        standardCharsetDisabled: false,
-        customWeight: 5
+        standardCharsetDisabled: true,
+        customWeight: 0
     };
 
     /**
@@ -662,7 +662,21 @@ export function GeneratorPanel({ onCopyPassword }) {
                         {/* Left Column: Options */}
                         <div className="flex flex-col gap-6" id="settings-col-1">
                             <div className="flex flex-col gap-3" id="options-group">
-                                <h3 className="label-text mb-2" id="options-title">Options</h3>
+                                <h3
+                                    className="label-text mb-4"
+                                    id="options-title"
+                                    style={{
+                                        borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                        paddingBottom: '0.5rem',
+                                        textTransform: 'uppercase',
+                                        fontSize: '0.85rem',
+                                        letterSpacing: '0.05em',
+                                        color: 'rgba(255,255,255,0.5)',
+                                        fontWeight: 600
+                                    }}
+                                >
+                                    Options
+                                </h3>
                                 <Toggle
                                     id="opt-random-length"
                                     checked={config.randomLength}
@@ -707,129 +721,25 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     }
                                 />
 
-                                {['emojis', 'all_unicode'].includes(activeSet) && (
+
+                                <div
+                                    className="p-3 rounded-lg flex flex-col gap-3 mt-4"
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.03)',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)'
+                                    }}
+                                >
                                     <Toggle
-                                        id="opt-min-ascii"
-                                        checked={config.ensureMinAscii}
-                                        onChange={(v) => {
-                                            setConfig({ ...config, ensureMinAscii: v });
-                                        }}
-                                        label={
-                                            <span className="flex items-center gap-1">
-                                                Guarantee ASCII ({'>='}
-                                                {isEditingAsciiPercent ? (
-                                                    <input
-                                                        autoFocus
-                                                        className="ghost-size-input mx-1"
-                                                        style={{ width: '2rem', textAlign: 'center' }}
-                                                        defaultValue={config.minAsciiPercent}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') {
-                                                                setIsEditingAsciiPercent(false);
-                                                                const val = parseInt(e.target.value, 10);
-                                                                if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
-                                                            }
-                                                        }}
-                                                        onBlur={(e) => {
-                                                            setIsEditingAsciiPercent(false);
-                                                            const val = parseInt(e.target.value, 10);
-                                                            if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
-                                                        }}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        onFocus={(e) => e.target.select()}
-                                                    />
-                                                ) : (
-                                                    <span
-                                                        className="font-bold cursor-pointer hover:underline mx-1"
-                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingAsciiPercent(true); }}
-                                                        title="Click to change min ASCII %"
-                                                    >
-                                                        {config.minAsciiPercent}%
-                                                    </span>
-                                                )}
-                                                )
-                                            </span>
-                                        }
+                                        id="compat-toggle"
+                                        label="Enhance Compatibility"
+                                        checked={config.ensureCommon}
+                                        onChange={(v) => setConfig({ ...config, ensureCommon: v })}
+                                        className="w-full"
                                     />
-                                )}
-
-                                <div className="mt-4 border-t border-white/5 pt-4">
-                                    <h3 className="label-text mb-2">Custom Charset</h3>
-                                    <Input
-                                        id="custom-charset-input"
-                                        placeholder="Add characters (e.g. ñçµ...)"
-                                        value={config.customCharset}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setConfig({
-                                                ...config,
-                                                customCharset: val,
-                                                standardCharsetDisabled: val ? config.standardCharsetDisabled : false
-                                            });
-                                        }}
-                                        className="mb-2"
-                                    />
-
-                                    <Toggle
-                                        id="opt-disable-std"
-                                        label="Disable Standard Charset"
-                                        checked={config.standardCharsetDisabled}
-                                        disabled={!config.customCharset}
-                                        onChange={(v) => {
-                                            setConfig({ ...config, standardCharsetDisabled: v });
-                                            if (v) setActiveSet(null);
-                                        }}
-                                        className={`mb-2 ${!config.customCharset ? 'opacity-50' : ''}`}
-                                    />
-
-                                    {/* Weight Option (Option B) */}
-                                    {!config.standardCharsetDisabled && config.customCharset && (
-                                        <Toggle
-                                            id="opt-custom-weight"
-                                            onChange={(v) => {
-                                                setConfig({ ...config, customWeight: v ? 5 : 0 });
-                                            }}
-                                            checked={config.customWeight > 0}
-                                            label={
-                                                <span className="flex items-center gap-1">
-                                                    Boost Custom Prob. (~
-                                                    {isEditingWeight ? (
-                                                        <input
-                                                            autoFocus
-                                                            className="ghost-size-input mx-1"
-                                                            style={{ width: '2rem', textAlign: 'center' }}
-                                                            defaultValue={config.customWeight || 5}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') {
-                                                                    setIsEditingWeight(false);
-                                                                    const val = parseInt(e.target.value, 10);
-                                                                    if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
-                                                                }
-                                                            }}
-                                                            onBlur={(e) => {
-                                                                setIsEditingWeight(false);
-                                                                const val = parseInt(e.target.value, 10);
-                                                                if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
-                                                            }}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            onFocus={(e) => e.target.select()}
-                                                        />
-                                                    ) : (
-                                                        <span
-                                                            className="font-bold cursor-pointer hover:underline mx-1"
-                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingWeight(true); }}
-                                                            title="Click to change weight %"
-                                                        >
-                                                            {config.customWeight || 5}%
-                                                        </span>
-                                                    )}
-                                                    )
-                                                </span>
-                                            }
-                                        />
-                                    )}
+                                    <p className="text-xs text-muted leading-relaxed" id="compat-desc">
+                                        Guarantees at least one lowercase, uppercase, number, and symbol.
+                                    </p>
                                 </div>
-
                             </div>
                         </div>
 
@@ -837,14 +747,28 @@ export function GeneratorPanel({ onCopyPassword }) {
                         <div className="flex flex-col gap-4" id="settings-col-2">
                             <button
                                 onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-                                className="flex items-center justify-between w-full cursor-pointer"
+                                className="flex items-center justify-between w-full cursor-pointer mb-2"
                                 style={{
                                     background: 'none',
                                     border: 'none',
-                                    padding: 0
+                                    borderBottom: '1px dashed rgba(255,255,255,0.1)',
+                                    padding: 0,
+                                    paddingBottom: '0.5rem'
                                 }}
                             >
-                                <h3 className="label-text" id="advanced-title">Advanced</h3>
+                                <h3
+                                    className="label-text"
+                                    id="advanced-title"
+                                    style={{
+                                        textTransform: 'uppercase',
+                                        fontSize: '0.85rem',
+                                        letterSpacing: '0.05em',
+                                        color: 'rgba(255,255,255,0.5)',
+                                        fontWeight: 600
+                                    }}
+                                >
+                                    Advanced
+                                </h3>
                                 <ChevronDown
                                     size={18}
                                     className="text-muted"
@@ -862,24 +786,145 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         animation: 'fadeIn 0.2s ease'
                                     }}
                                 >
-                                    <div
-                                        className="p-3 rounded-lg flex flex-col gap-3"
-                                        id="compat-area"
-                                        style={{
-                                            background: 'rgba(255, 255, 255, 0.03)',
-                                            border: '1px solid rgba(255, 255, 255, 0.08)'
-                                        }}
-                                    >
+                                    {['emojis', 'all_unicode'].includes(activeSet) && (
                                         <Toggle
-                                            id="compat-toggle"
-                                            label="Enhance Compatibility"
-                                            checked={config.ensureCommon}
-                                            onChange={(v) => setConfig({ ...config, ensureCommon: v })}
-                                            className="w-full"
+                                            id="opt-min-ascii"
+                                            checked={config.ensureMinAscii}
+                                            onChange={(v) => {
+                                                setConfig({ ...config, ensureMinAscii: v });
+                                            }}
+                                            label={
+                                                <span className="flex items-center gap-1">
+                                                    Guarantee ASCII ({'>='}
+                                                    {isEditingAsciiPercent ? (
+                                                        <input
+                                                            autoFocus
+                                                            className="ghost-size-input mx-1"
+                                                            style={{ width: '2rem', textAlign: 'center' }}
+                                                            defaultValue={config.minAsciiPercent}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    setIsEditingAsciiPercent(false);
+                                                                    const val = parseInt(e.target.value, 10);
+                                                                    if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
+                                                                }
+                                                            }}
+                                                            onBlur={(e) => {
+                                                                setIsEditingAsciiPercent(false);
+                                                                const val = parseInt(e.target.value, 10);
+                                                                if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
+                                                            }}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onFocus={(e) => e.target.select()}
+                                                        />
+                                                    ) : (
+                                                        <span
+                                                            className="font-bold cursor-pointer hover:underline mx-1"
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingAsciiPercent(true); }}
+                                                            title="Click to change min ASCII %"
+                                                        >
+                                                            {config.minAsciiPercent}%
+                                                        </span>
+                                                    )}
+                                                    )
+                                                </span>
+                                            }
                                         />
-                                        <p className="text-xs text-muted leading-relaxed" id="compat-desc">
-                                            Guarantees at least one lowercase, uppercase, number, and symbol.
-                                        </p>
+                                    )}
+
+                                    <div className="mt-0 pt-0 mb-4">
+                                        <Input
+                                            id="custom-charset-input"
+                                            label={(!config.standardCharsetDisabled && config.customCharset) ? "Add characters to the charset" : "Custom Charset"}
+                                            placeholder="Add characters (e.g. ñçµ...)"
+                                            value={config.customCharset}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (!val) {
+                                                    setConfig({
+                                                        ...config,
+                                                        customCharset: '',
+                                                        standardCharsetDisabled: true,
+                                                        customWeight: 0
+                                                    });
+                                                } else {
+                                                    setConfig({
+                                                        ...config,
+                                                        customCharset: val
+                                                    });
+                                                }
+                                            }}
+                                            icon={<Keyboard size={14} />}
+                                            className="compact-input mb-3"
+                                            style={{
+                                                padding: '0.6rem 1rem',
+                                                paddingLeft: '2.2rem',
+                                                fontSize: '0.875rem',
+                                                borderRadius: '10px',
+                                                background: 'rgba(255, 255, 255, 0.03)',
+                                                border: '1px solid rgba(255, 255, 255, 0.08)'
+                                            }}
+                                        />
+
+                                        {config.customCharset && (
+                                            <Toggle
+                                                id="opt-enable-std"
+                                                label="Enable Standard Charset"
+                                                checked={!config.standardCharsetDisabled}
+                                                onChange={(v) => {
+                                                    setConfig({ ...config, standardCharsetDisabled: !v });
+                                                    if (!v) setActiveSet(null);
+                                                }}
+                                                className="mb-2 mt-4"
+                                            />
+                                        )}
+
+                                        {/* Weight Option (Option B) */}
+                                        {!config.standardCharsetDisabled && config.customCharset && (
+                                            <Toggle
+                                                id="opt-custom-weight"
+                                                onChange={(v) => {
+                                                    setConfig({ ...config, customWeight: v ? 5 : 0 });
+                                                }}
+                                                checked={config.customWeight > 0}
+                                                label={
+                                                    <span className="flex items-center gap-1">
+                                                        Boost Custom Prob. (~
+                                                        {isEditingWeight ? (
+                                                            <input
+                                                                autoFocus
+                                                                className="ghost-size-input mx-1"
+                                                                style={{ width: '2rem', textAlign: 'center' }}
+                                                                defaultValue={config.customWeight || 5}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        setIsEditingWeight(false);
+                                                                        const val = parseInt(e.target.value, 10);
+                                                                        if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
+                                                                    }
+                                                                }}
+                                                                onBlur={(e) => {
+                                                                    setIsEditingWeight(false);
+                                                                    const val = parseInt(e.target.value, 10);
+                                                                    if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
+                                                                }}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onFocus={(e) => e.target.select()}
+                                                            />
+                                                        ) : (
+                                                            <span
+                                                                className="font-bold cursor-pointer hover:underline mx-1"
+                                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingWeight(true); }}
+                                                                title="Click to change weight %"
+                                                            >
+                                                                {config.customWeight || 5}%
+                                                            </span>
+                                                        )}
+                                                        )
+                                                    </span>
+                                                }
+                                            />
+                                        )}
                                     </div>
 
                                     <Input
@@ -1008,15 +1053,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                     </div>
                 </div>
 
-                {/* Dotted Divider */}
-                <div
-                    style={{
-                        width: '100%',
-                        height: '1px',
-                        borderTop: '1px dashed rgba(255, 255, 255, 0.15)',
-                        margin: '0.5rem 0'
-                    }}
-                ></div>
+
 
                 {/* Section 2: Saved Configurations */}
                 <div className="flex flex-col gap-4" id="presets-section">
