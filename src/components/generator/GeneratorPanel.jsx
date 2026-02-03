@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser } from 'lucide-react';
+import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2 } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -437,17 +437,19 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     defaultValue={config.length}
                                     onKeyDown={handleLengthChange}
                                     onBlur={handleLengthChange}
+                                    onFocus={(e) => e.target.select()}
                                     className="ghost-size-input text-primary font-bold"
                                 />
                             ) : (
-                                <span
-                                    className="font-mono font-bold text-primary cursor-pointer hover:underline"
+                                <div
+                                    className="font-mono font-bold text-primary cursor-pointer hover:underline flex items-center gap-1"
                                     id="current-length-val"
                                     onClick={() => setIsEditingLength(true)}
                                     title="Click to edit length"
                                 >
                                     {sliderLength}
-                                </span>
+                                    <Edit2 size={10} className="opacity-50" />
+                                </div>
                             )}
                             <span className="text-muted" id="length-sep">/</span>
                             {isEditingMax ? (
@@ -457,17 +459,19 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     defaultValue={config.maxPossible}
                                     onKeyDown={handleMaxChange}
                                     onBlur={handleMaxChange}
+                                    onFocus={(e) => e.target.select()}
                                     className="ghost-size-input"
                                 />
                             ) : (
-                                <span
+                                <div
                                     id="max-length-display"
-                                    className="font-mono text-muted cursor-pointer hover:text-primary transition-colors"
+                                    className="font-mono text-muted cursor-pointer hover:text-primary transition-colors flex items-center gap-1"
                                     onClick={() => setIsEditingMax(true)}
-                                    title="Click to edit max"
+                                    title="Click to edit max limit"
                                 >
                                     {config.maxPossible}
-                                </span>
+                                    <Edit2 size={10} className="opacity-50" />
+                                </div>
                             )}
                         </div>
                     </div>
