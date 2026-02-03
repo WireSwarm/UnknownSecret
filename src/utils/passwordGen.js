@@ -176,11 +176,13 @@ function getRandomInt(max) {
  */
 export function generatePassword({
     length = 16,
-    charset = [], // EXPLICITLY EXPECTING AN ARRAY NOW
-    mandatoryChars = '', // String of chars that MUST appear
+    charset = [],
+    mandatoryChars = '',
     ensureRobustness = false,
     randomizeLength = false,
-    lengthDeviation = 5 // Percentage (0-100)
+    lengthDeviation = 5,
+    ensureMinAscii = false,
+    minAsciiPercent = 5
 }) {
     // Safety check if charset is passed as string by legacy code, convert to array
     if (typeof charset === 'string') {
@@ -241,6 +243,24 @@ export function generatePassword({
             const charToInject = constraint.set[getRandomInt(constraint.set.length)];
             requiredChars.push(charToInject);
         });
+    }
+
+    // 4. Handle Minimum ASCII Ratio (Anti-tofu protection)
+    if (ensureMinAscii && minAsciiPercent > 0) {
+        const targetAsciiCount = Math.ceil(actualLength * (minAsciiPercent / 100));
+
+        // Construct a fast ASCII pool (Alphanums + Standard Symbols)
+        // avoiding reconstruction if possible, but string concat is fast enough here
+        const asciiPool = CHAR_SETS.lowercase + CHAR_SETS.uppercase + CHAR_SETS.numbers + CHAR_SETS.symbols;
+        const poolLen = asciiPool.length;
+
+        // Current estimation of ASCII chars already in requiredChars (from ensureRobustness or mandatory)
+        // This is a micro-optimization to avoid over-replacing, though replacing is cheap.
+        // Let's just force inject to be safe and simple.
+
+        for (let i = 0; i < targetAsciiCount; i++) {
+            requiredChars.push(asciiPool[getRandomInt(poolLen)]);
+        }
     }
 
     // Inject required chars

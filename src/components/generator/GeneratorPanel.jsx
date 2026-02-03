@@ -23,7 +23,9 @@ export function GeneratorPanel({ onCopyPassword }) {
         ensureCommon: true,
         maxPossible: 128,
         randomLength: false,
-        lengthDeviation: 5
+        lengthDeviation: 5,
+        ensureMinAscii: false,
+        minAsciiPercent: 5
     };
 
     /**
@@ -87,6 +89,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [isShiftPressed, setIsShiftPressed] = useState(false); // Track Shift key for delete buttons
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false); // Advanced section collapsed state
     const [isEditingPercent, setIsEditingPercent] = useState(false); // State for editing random length percent
+    const [isEditingAsciiPercent, setIsEditingAsciiPercent] = useState(false); // State for editing min ascii percent
 
     // Effect to track Shift key globally
     useEffect(() => {
@@ -266,7 +269,9 @@ export function GeneratorPanel({ onCopyPassword }) {
             mandatoryChars: config.include,
             ensureRobustness: config.ensureCommon, // Mapped to the new logic
             randomizeLength: config.randomLength,
-            lengthDeviation: config.lengthDeviation
+            lengthDeviation: config.lengthDeviation,
+            ensureMinAscii: config.ensureMinAscii,
+            minAsciiPercent: config.minAsciiPercent
         });
 
         setResult(res);
@@ -315,7 +320,15 @@ export function GeneratorPanel({ onCopyPassword }) {
     // Change Set
     const handleSetChange = (setId) => {
         setActiveSet(setId);
-        setConfig({ ...config, tokens: SETS[setId].tokens });
+
+        let newConfig = { ...config, tokens: SETS[setId].tokens };
+
+        // Auto-disable min ASCII if not supported by new set
+        if (!['emojis', 'all_unicode'].includes(setId)) {
+            newConfig.ensureMinAscii = false;
+        }
+
+        setConfig(newConfig);
     };
 
     const handleMaxChange = (e) => {
@@ -649,6 +662,52 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         </span>
                                     }
                                 />
+
+                                {['emojis', 'all_unicode'].includes(activeSet) && (
+                                    <Toggle
+                                        id="opt-min-ascii"
+                                        checked={config.ensureMinAscii}
+                                        onChange={(v) => {
+                                            setConfig({ ...config, ensureMinAscii: v });
+                                        }}
+                                        label={
+                                            <span className="flex items-center gap-1">
+                                                Guarantee ASCII ({'>='}
+                                                {isEditingAsciiPercent ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ghost-size-input mx-1"
+                                                        style={{ width: '2rem', textAlign: 'center' }}
+                                                        defaultValue={config.minAsciiPercent}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                setIsEditingAsciiPercent(false);
+                                                                const val = parseInt(e.target.value, 10);
+                                                                if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
+                                                            }
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            setIsEditingAsciiPercent(false);
+                                                            const val = parseInt(e.target.value, 10);
+                                                            if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
+                                                        }}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        onFocus={(e) => e.target.select()}
+                                                    />
+                                                ) : (
+                                                    <span
+                                                        className="font-bold cursor-pointer hover:underline mx-1"
+                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingAsciiPercent(true); }}
+                                                        title="Click to change min ASCII %"
+                                                    >
+                                                        {config.minAsciiPercent}%
+                                                    </span>
+                                                )}
+                                                )
+                                            </span>
+                                        }
+                                    />
+                                )}
 
                             </div>
                         </div>
