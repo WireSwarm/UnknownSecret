@@ -25,7 +25,10 @@ export function GeneratorPanel({ onCopyPassword }) {
         randomLength: false,
         lengthDeviation: 5,
         ensureMinAscii: false,
-        minAsciiPercent: 5
+        minAsciiPercent: 5,
+        customCharset: '',
+        standardCharsetDisabled: false,
+        customWeight: 5
     };
 
     /**
@@ -90,6 +93,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false); // Advanced section collapsed state
     const [isEditingPercent, setIsEditingPercent] = useState(false); // State for editing random length percent
     const [isEditingAsciiPercent, setIsEditingAsciiPercent] = useState(false); // State for editing min ascii percent
+    const [isEditingWeight, setIsEditingWeight] = useState(false); // State for editing custom charset weight
 
     // Effect to track Shift key globally
     useEffect(() => {
@@ -256,16 +260,52 @@ export function GeneratorPanel({ onCopyPassword }) {
 
     // Generate function
     const handleGenerate = () => {
-        const charset = buildCharset({
-            tokens: config.tokens,
-            exclude: config.exclude,
-            include: config.include
-        });
-        const res = generatePassword({
-            // ... (rest of handleGenerate doesn't change usually but let's be careful with chunk)
+        let finalCharset = [];
 
+        // 1. Standard Pool
+        if (!config.standardCharsetDisabled) {
+            finalCharset = buildCharset({
+                tokens: config.tokens,
+                exclude: config.exclude,
+                include: config.include
+            });
+        }
+
+        // 2. Custom Pool & Weighting
+        if (config.customCharset) {
+            const excludeSet = new Set(config.exclude);
+            const customPool = Array.from(config.customCharset).filter(c => !excludeSet.has(c));
+
+            if (customPool.length > 0) {
+                if (config.standardCharsetDisabled) {
+                    finalCharset = customPool;
+                } else {
+                    // Weighting Logic
+                    const S = finalCharset.length;
+                    const C = customPool.length;
+                    // Cap P at 0.99 to avoid division by zero (infinity) if mixing
+                    let P = Math.min(config.customWeight, 99) / 100;
+
+                    if (S > 0 && P > 0) {
+                        // Formula: k * C / (S + k * C) = P
+                        // k = (P * S) / (C * (1 - P))
+                        let k = (P * S) / (C * (1 - P));
+                        k = Math.max(1, Math.ceil(k));
+
+                        // Add k copies of custom pool
+                        for (let i = 0; i < k; i++) {
+                            finalCharset.push(...customPool);
+                        }
+                    } else {
+                        // Just append once if weight is 0
+                        finalCharset.push(...customPool);
+                    }
+                }
+            }
+        }
+        const res = generatePassword({
             length: config.length,
-            charset,
+            charset: finalCharset,
             mandatoryChars: config.include,
             ensureRobustness: config.ensureCommon, // Mapped to the new logic
             randomizeLength: config.randomLength,
@@ -321,7 +361,11 @@ export function GeneratorPanel({ onCopyPassword }) {
     const handleSetChange = (setId) => {
         setActiveSet(setId);
 
-        let newConfig = { ...config, tokens: SETS[setId].tokens };
+        let newConfig = {
+            ...config,
+            tokens: SETS[setId].tokens,
+            standardCharsetDisabled: false // Reactivate standard charset on manual selection
+        };
 
         // Auto-disable min ASCII if not supported by new set
         if (!['emojis', 'all_unicode'].includes(setId)) {
@@ -708,6 +752,83 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         }
                                     />
                                 )}
+
+                                <div className="mt-4 border-t border-white/5 pt-4">
+                                    <h3 className="label-text mb-2">Custom Charset</h3>
+                                    <Input
+                                        id="custom-charset-input"
+                                        placeholder="Add characters (e.g. ñçµ...)"
+                                        value={config.customCharset}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setConfig({
+                                                ...config,
+                                                customCharset: val,
+                                                standardCharsetDisabled: val ? config.standardCharsetDisabled : false
+                                            });
+                                        }}
+                                        className="mb-2"
+                                    />
+
+                                    <Toggle
+                                        id="opt-disable-std"
+                                        label="Disable Standard Charset"
+                                        checked={config.standardCharsetDisabled}
+                                        disabled={!config.customCharset}
+                                        onChange={(v) => {
+                                            setConfig({ ...config, standardCharsetDisabled: v });
+                                            if (v) setActiveSet(null);
+                                        }}
+                                        className={`mb-2 ${!config.customCharset ? 'opacity-50' : ''}`}
+                                    />
+
+                                    {/* Weight Option (Option B) */}
+                                    {!config.standardCharsetDisabled && config.customCharset && (
+                                        <Toggle
+                                            id="opt-custom-weight"
+                                            onChange={(v) => {
+                                                setConfig({ ...config, customWeight: v ? 5 : 0 });
+                                            }}
+                                            checked={config.customWeight > 0}
+                                            label={
+                                                <span className="flex items-center gap-1">
+                                                    Boost Custom Prob. (~
+                                                    {isEditingWeight ? (
+                                                        <input
+                                                            autoFocus
+                                                            className="ghost-size-input mx-1"
+                                                            style={{ width: '2rem', textAlign: 'center' }}
+                                                            defaultValue={config.customWeight || 5}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    setIsEditingWeight(false);
+                                                                    const val = parseInt(e.target.value, 10);
+                                                                    if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
+                                                                }
+                                                            }}
+                                                            onBlur={(e) => {
+                                                                setIsEditingWeight(false);
+                                                                const val = parseInt(e.target.value, 10);
+                                                                if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
+                                                            }}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onFocus={(e) => e.target.select()}
+                                                        />
+                                                    ) : (
+                                                        <span
+                                                            className="font-bold cursor-pointer hover:underline mx-1"
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingWeight(true); }}
+                                                            title="Click to change weight %"
+                                                        >
+                                                            {config.customWeight || 5}%
+                                                        </span>
+                                                    )}
+                                                    )
+                                                </span>
+                                            }
+                                        />
+                                    )}
+                                </div>
 
                             </div>
                         </div>
