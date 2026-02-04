@@ -860,3 +860,13 @@ input[type=range]::-webkit-slider-runnable-track {
     transform: translateY(0);
   }
 }
+
+/* Confirm Save Button Glow */
+.confirm-save-btn:hover {
+  background: transparent !important;
+  color: #10B981 !important;
+  /* Green text */
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.7));
+  transform: scale(1.15);
+  /* Slight grow */
+}

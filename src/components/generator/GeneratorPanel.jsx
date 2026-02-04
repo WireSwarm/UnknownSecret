@@ -1493,19 +1493,15 @@ export function GeneratorPanel({ onCopyPassword }) {
 
                             <button
                                 onClick={saveCurrentAsPreset}
-                                className="icon-btn transition-all"
+                                className="icon-btn transition-all confirm-save-btn"
                                 style={{
                                     height: '2.5rem',
                                     width: '2.5rem',
-                                    borderRadius: '9999px',
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
                                     color: 'var(--text-muted)',
-                                    backdropFilter: 'blur(4px)'
                                 }}
                                 title="Confirm Save"
                             >
-                                <Check size={18} />
+                                <Check size={24} />
                             </button>
 
                             <button
