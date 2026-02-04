@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -99,6 +99,8 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [isEditingPercent, setIsEditingPercent] = useState(false); // State for editing random length percent
     const [isEditingAsciiPercent, setIsEditingAsciiPercent] = useState(false); // State for editing min ascii percent
     const [isEditingWeight, setIsEditingWeight] = useState(false); // State for editing custom charset weight
+    const [isDraggingOver, setIsDraggingOver] = useState(false); // Track drag state for import drop zone
+    const [importConflict, setImportConflict] = useState(null); // { duplicates: [...], newOnly: [...], all: [...] }
 
     // Effect to track Shift key globally
     useEffect(() => {
@@ -450,6 +452,160 @@ export function GeneratorPanel({ onCopyPassword }) {
         }
     };
 
+    const fileInputRef = useRef(null);
+    const dragCounterRef = useRef(0);
+
+    const exportPresets = () => {
+        const dataToExport = presets.map(p => {
+            const configDiff = {};
+            Object.keys(p.config).forEach(key => {
+                // Use JSON stringify for array comparison to avoid reference issues, strict equality for primitives
+                const isArray = Array.isArray(p.config[key]) && Array.isArray(DEFAULT_CONFIG[key]);
+                const areValuesDifferent = isArray
+                    ? JSON.stringify(p.config[key]) !== JSON.stringify(DEFAULT_CONFIG[key])
+                    : p.config[key] !== DEFAULT_CONFIG[key];
+
+                if (areValuesDifferent) {
+                    configDiff[key] = p.config[key];
+                }
+            });
+
+            return {
+                name: p.name,
+                activeSet: p.activeSet,
+                configDiff
+            };
+        });
+
+        const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'unknown_secret_presets.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const processImportFile = (file) => {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                if (!Array.isArray(importedData)) throw new Error("Invalid format");
+
+                const newPresets = importedData.map(item => ({
+                    id: Date.now() + Math.random(),
+                    name: item.name,
+                    activeSet: item.activeSet,
+                    config: { ...DEFAULT_CONFIG, ...item.configDiff }
+                }));
+
+                // Check for duplicates by name
+                const existingNames = new Set(presets.map(p => p.name.toLowerCase()));
+                const duplicates = newPresets.filter(p => existingNames.has(p.name.toLowerCase()));
+                const newOnly = newPresets.filter(p => !existingNames.has(p.name.toLowerCase()));
+
+                if (duplicates.length > 0) {
+                    // Show conflict modal
+                    setImportConflict({ duplicates, newOnly, all: newPresets });
+                } else {
+                    // No conflicts, import directly
+                    setPresets(prev => [...prev, ...newPresets]);
+                }
+            } catch (err) {
+                console.error("Import failed", err);
+                alert("Failed to import presets: Invalid JSON format");
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const handleImportOverwrite = () => {
+        if (!importConflict) return;
+        const { duplicates, newOnly } = importConflict;
+
+        setPresets(prev => {
+            // Remove existing presets that have the same name as duplicates
+            const duplicateNames = new Set(duplicates.map(d => d.name.toLowerCase()));
+            const filtered = prev.filter(p => !duplicateNames.has(p.name.toLowerCase()));
+            // Add all new presets (both new and the ones that replace)
+            return [...filtered, ...duplicates, ...newOnly];
+        });
+        setImportConflict(null);
+    };
+
+    const handleImportSkip = () => {
+        if (!importConflict) return;
+        const { newOnly } = importConflict;
+
+        // Only add presets that don't conflict
+        if (newOnly.length > 0) {
+            setPresets(prev => [...prev, ...newOnly]);
+        }
+        setImportConflict(null);
+    };
+
+    const handleImportCancel = () => {
+        setImportConflict(null);
+    };
+
+    const importPresets = (e) => {
+        const file = e.target.files[0];
+        processImportFile(file);
+        e.target.value = ''; // Reset input
+    };
+
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        dragCounterRef.current++;
+        if (dragCounterRef.current === 1) {
+            setIsDraggingOver(true);
+        }
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        dragCounterRef.current--;
+        if (dragCounterRef.current === 0) {
+            setIsDraggingOver(false);
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        dragCounterRef.current = 0;
+        setIsDraggingOver(false);
+
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === 'application/json') {
+            processImportFile(file);
+        }
+        // Don't alert for non-JSON, user might drop elsewhere by accident
+    };
+
+    // Global drag-and-drop listeners
+    useEffect(() => {
+        document.addEventListener('dragenter', handleDragEnter);
+        document.addEventListener('dragover', handleDragOver);
+        document.addEventListener('dragleave', handleDragLeave);
+        document.addEventListener('drop', handleDrop);
+
+        return () => {
+            document.removeEventListener('dragenter', handleDragEnter);
+            document.removeEventListener('dragover', handleDragOver);
+            document.removeEventListener('dragleave', handleDragLeave);
+            document.removeEventListener('drop', handleDrop);
+        };
+    }, []);
+
     const getClearButtonText = () => {
         if (clearConfirmLevel === 1) return "Sure?";
         if (clearConfirmLevel === 2) return "REALLY?";
@@ -458,6 +614,115 @@ export function GeneratorPanel({ onCopyPassword }) {
 
     return (
         <div className="flex flex-col gap-6" id="generator-panel">
+            {/* Import Conflict Modal */}
+            {importConflict && (
+                <div
+                    id="import-conflict-overlay"
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0, 0, 0, 0.7)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        animation: 'fadeIn 0.15s ease'
+                    }}
+                    onClick={handleImportCancel}
+                >
+                    <div
+                        id="import-conflict-modal"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(20, 20, 30, 0.98))',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '16px',
+                            padding: '1.5rem',
+                            maxWidth: '400px',
+                            width: '90%',
+                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(var(--primary-rgb), 0.1)'
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                            <AlertCircle size={24} style={{ color: '#FACC15' }} />
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Duplicate Presets Found</h3>
+                            <button
+                                onClick={handleImportCancel}
+                                style={{
+                                    marginLeft: 'auto',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--text-muted)',
+                                    cursor: 'pointer',
+                                    padding: '4px'
+                                }}
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: 1.5 }}>
+                            The following presets already exist:
+                        </p>
+
+                        <div
+                            id="import-conflict-list"
+                            style={{
+                                background: 'rgba(0, 0, 0, 0.3)',
+                                borderRadius: '8px',
+                                padding: '0.75rem',
+                                marginBottom: '1.25rem',
+                                maxHeight: '120px',
+                                overflowY: 'auto'
+                            }}
+                        >
+                            {importConflict.duplicates.map((p, i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        fontSize: '0.8rem',
+                                        padding: '0.35rem 0.5rem',
+                                        color: '#FACC15',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem'
+                                    }}
+                                >
+                                    <span style={{ opacity: 0.6 }}>•</span>
+                                    <span style={{ fontWeight: 500 }}>{p.name}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {importConflict.newOnly.length > 0 && (
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', opacity: 0.8 }}>
+                                {importConflict.newOnly.length} new preset{importConflict.newOnly.length > 1 ? 's' : ''} will be added regardless.
+                            </p>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <Button
+                                id="import-overwrite-btn"
+                                onClick={handleImportOverwrite}
+                                variant="primary"
+                                style={{ flex: 1 }}
+                            >
+                                Overwrite
+                            </Button>
+                            <Button
+                                id="import-skip-btn"
+                                onClick={handleImportSkip}
+                                variant="ghost"
+                                style={{ flex: 1 }}
+                            >
+                                Skip Duplicates
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Centered Output Section */}
             <div className="flex flex-col items-center w-full" id="output-section">
                 <div className="w-full max-w-2xl relative" id="password-input-area">
@@ -1098,23 +1363,83 @@ export function GeneratorPanel({ onCopyPassword }) {
 
 
                 {/* Section 2: Saved Configurations */}
-                <div className="flex flex-col gap-4" id="presets-section">
+                <div
+                    className="flex flex-col gap-4"
+                    id="presets-section"
+                    style={{ position: 'relative' }}
+                >
+                    {/* Drop Zone Overlay */}
+                    {isDraggingOver && (
+                        <div
+                            id="preset-drop-overlay"
+                            style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: 'rgba(var(--primary-rgb), 0.1)',
+                                border: '2px dashed var(--primary)',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 50,
+                                backdropFilter: 'blur(4px)',
+                                animation: 'fadeIn 0.15s ease'
+                            }}
+                        >
+                            <div
+                                id="preset-drop-content"
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    color: 'var(--primary)',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                <Upload size={32} style={{ opacity: 0.8 }} />
+                                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Drop JSON file to import</span>
+                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Presets will be added to your list</span>
+                            </div>
+                        </div>
+                    )}
                     <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-lg font-bold flex items-center gap-2">
-                                <Save size={18} className="text-primary" />
-                                Saved Configurations
-                            </h3>
-                            {/* 
-                             * ⚠️ STYLE NOTE: This project uses vanilla CSS, not Tailwind.
-                             * Use inline styles or classes defined in index.css.
-                             * See .agent/agents.md for guidelines.
-                             */}
+                        <h3 className="text-lg font-bold flex items-center gap-2">
+                            <Save size={18} className="text-primary" />
+                            Saved Configurations
+                        </h3>
+
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="file"
+                                id="preset-import-input"
+                                ref={fileInputRef}
+                                onChange={importPresets}
+                                accept="application/json"
+                                style={{ display: 'none' }}
+                            />
+                            <Button
+                                variant="ghost"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-2 py-1 text-xs h-8 text-muted hover:text-primary"
+                                title="Import Presets"
+                            >
+                                <Upload size={14} />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={exportPresets}
+                                className="px-2 py-1 text-xs h-8 text-muted hover:text-primary"
+                                title="Export Presets"
+                                disabled={presets.length === 0}
+                            >
+                                <Download size={14} />
+                            </Button>
                             {presets.length > 0 &&
                                 <Button
                                     variant="ghost"
                                     onClick={handleClearAllPresets}
-                                    className="px-3 py-1 text-xs h-8"
+                                    className="px-3 py-1 text-xs h-8 ml-1"
                                     style={{
                                         color: clearConfirmLevel > 0 ? 'rgba(239, 68, 68, 1)' : undefined,
                                         borderColor: clearConfirmLevel > 0 ? 'rgba(239, 68, 68, 0.5)' : undefined
