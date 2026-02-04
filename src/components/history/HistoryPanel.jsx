@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Trash2, Edit2, Star, Eye, EyeOff } from 'lucide-react';
+import { Copy, Trash2, Edit2, Star, Eye, EyeOff, Check } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 
@@ -21,6 +21,7 @@ export function HistoryPanel({ history, onUpdateHistory }) {
     const [editingId, setEditingId] = useState(null);
     const [editValue, setEditValue] = useState("");
     const [visiblePasswords, setVisiblePasswords] = useState(new Set());
+    const [toastVisible, setToastVisible] = useState(false);
 
     const toggleVisibility = (id) => {
         setVisiblePasswords(prev => {
@@ -62,6 +63,8 @@ export function HistoryPanel({ history, onUpdateHistory }) {
 
     const handleCopy = (text) => {
         navigator.clipboard.writeText(text);
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 2000);
     };
 
     const clearHistory = () => {
@@ -184,6 +187,43 @@ export function HistoryPanel({ history, onUpdateHistory }) {
                         )}
                     </GlassCard>
                 ))}
+            </div>
+
+            {/* Toast Notification */}
+            <div
+                id="copy-toast"
+                style={{
+                    position: 'fixed',
+                    bottom: '2rem',
+                    left: '50%',
+                    transform: toastVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(100px)',
+                    opacity: toastVisible ? 1 : 0,
+                    backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: 'white',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '9999px',
+                    boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    zIndex: 50,
+                    pointerEvents: 'none',
+                    transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                }}
+            >
+                <div style={{
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    padding: '0.25rem',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <Check size={14} style={{ color: '#34D399' }} strokeWidth={3} />
+                </div>
+                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Copied to clipboard</span>
             </div>
         </div>
     );

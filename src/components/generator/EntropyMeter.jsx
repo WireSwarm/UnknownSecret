@@ -93,7 +93,7 @@ export function EntropyMeter({ entropy, combinations, id, isPostQuantum }) {
                         key={strength}
                         style={{
                             color,
-                            fontSize: isDemon ? '0.9rem' : '0.8rem',
+                            fontSize: isDemon ? '0.8rem' : '0.8rem',
                             fontWeight: isDemon ? 900 : 700,
                             letterSpacing: '0.1em',
                             textShadow: textGlow

@@ -874,7 +874,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         />
                                     )}
 
-                                    <div className="mt-0 pt-0 mb-4">
+                                    <div className="mt-4 pt-0 mb-4">
                                         <Input
                                             id="custom-charset-input"
                                             label={(!config.standardCharsetDisabled && config.customCharset) ? "Add characters to the charset" : "Custom Charset"}
