@@ -102,6 +102,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [importConflict, setImportConflict] = useState(null); // { duplicates: [...], newOnly: [...], all: [...] }
     const [defaultPresets, setDefaultPresets] = useState([]); // Default presets loaded from JSON
 
+
     // Effect to track Shift key globally
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -110,11 +111,18 @@ export function GeneratorPanel({ onCopyPassword }) {
         const handleKeyUp = (e) => {
             if (e.key === 'Shift') setIsShiftPressed(false);
         };
+        // Reset shift state when window loses focus (prevents stuck state)
+        const handleBlur = () => {
+            setIsShiftPressed(false);
+        };
+
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
         };
     }, []);
 
@@ -135,14 +143,15 @@ export function GeneratorPanel({ onCopyPassword }) {
         const loadDefaultPresets = async () => {
             try {
                 // Load the index file that lists all preset files
-                const indexRes = await fetch('/data/default_presets/index.json');
+                const indexRes = await fetch('/data/index_presets.json');
                 const index = await indexRes.json();
 
-                // Load all preset files listed in the index
                 const allPresets = [];
-                for (const filename of index.files) {
+                for (let filename of index.files) {
                     try {
-                        const res = await fetch(`/data/default_presets/${filename}`);
+                        // Clean filename if it starts with ./
+                        const cleanPath = filename.startsWith('./') ? filename.substring(2) : filename;
+                        const res = await fetch(`/data/${cleanPath}`);
                         const presets = await res.json();
 
                         // Process each preset: generate ID and reconstruct full config from configDiff
@@ -1735,7 +1744,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                         <p
                             className="text-xs text-muted"
                             style={{
-                                opacity: 0.5,
                                 marginTop: '0.5rem',
                                 visibility: isShiftPressed ? 'hidden' : 'visible',
                                 transition: 'visibility 0s, opacity 0.2s ease',
