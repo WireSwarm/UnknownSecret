@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X } from 'lucide-react';
+import { RefreshCw, Copy, Check, Eye, EyeOff, Dice5, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X, RotateCcw } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -17,8 +17,8 @@ export function GeneratorPanel({ onCopyPassword }) {
     // Default configuration reference
     // A Global Option is an option available for all charsets.
     const DEFAULT_CONFIG = {
-        length: 16,
-        tokens: ['ascii'],
+        length: 50,
+        tokens: ['ascii_extended'],
         exclude: '',
         include: '',
         ensureCommon: true,
@@ -28,9 +28,7 @@ export function GeneratorPanel({ onCopyPassword }) {
         ensureMinAscii: false,
         minAsciiPercent: 5,
         customCharset: '',
-        standardCharsetDisabled: true,
-        customCharset: '',
-        standardCharsetDisabled: true,
+        standardCharsetDisabled: false,
         customWeight: 0,
         isPostQuantum: false
     };
@@ -68,7 +66,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                 return parsed.activeSet || 'alphanums';
             }
         } catch (e) { }
-        return 'alphanums';
+        return 'ascii_extended';
     });
 
     // Presets State
@@ -450,6 +448,12 @@ export function GeneratorPanel({ onCopyPassword }) {
             setActivePresetId(null);
             setClearConfirmLevel(0);
         }
+    };
+
+    const handleResetConfig = () => {
+        setConfig(DEFAULT_CONFIG);
+        setActiveSet('ascii_extended');
+        setActivePresetId(null);
     };
 
     const fileInputRef = useRef(null);
@@ -876,10 +880,22 @@ export function GeneratorPanel({ onCopyPassword }) {
                 <div className="flex flex-col gap-6" id="config-section">
 
                     {/* Configuration Title */}
-                    <h3 className="text-lg font-bold flex items-center gap-2">
-                        <Sliders size={18} className="text-primary" />
-                        Configuration
-                    </h3>
+                    {/* Configuration Title & Reset */}
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-bold flex items-center gap-2">
+                            <Sliders size={18} className="text-primary" />
+                            Configuration
+                        </h3>
+                        <Button
+                            variant="ghost"
+                            onClick={handleResetConfig}
+                            className="px-2 py-1 text-xs h-7 text-muted hover:text-primary transition-colors"
+                            title="Reset to default configuration"
+                        >
+                            <RotateCcw size={13} className="mr-1.5" />
+                            Reset
+                        </Button>
+                    </div>
 
                     {/* Character Sets with inclusion highlighting */}
                     <div>
@@ -978,7 +994,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     }}
                                     label={
                                         <span className="flex items-center gap-1">
-                                            Fuzz Length (~
+                                            Fuzz Length (down to -
                                             {isEditingPercent ? (
                                                 <input
                                                     autoFocus
