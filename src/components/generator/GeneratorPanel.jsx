@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Slider } from '../ui/Slider';
 import { Toggle } from '../ui/Toggle';
+import { HelpPopover } from '../ui/HelpPopover';
 import { generatePassword, PRESETS, buildCharset, getCharsetSizes } from '../../utils/passwordGen';
 import { EntropyMeter } from './EntropyMeter';
 import { PasswordStats } from './PasswordStats';
@@ -1026,6 +1027,10 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                 </span>
                                             )}
                                             )
+                                            <HelpPopover
+                                                title="Fuzz Length"
+                                                content="Obfuscates usage patterns by slightly randomizing the password length. Useful against white-box attacks (where the attacker knows you use this tool) or to avoid predictable fixed-length patterns."
+                                            />
                                         </span>
                                     }
                                 />
@@ -1040,7 +1045,15 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 >
                                     <Toggle
                                         id="compat-toggle"
-                                        label="Enhance Compatibility"
+                                        label={
+                                            <div className="flex items-center">
+                                                Enhance Compatibility
+                                                <HelpPopover
+                                                    title="Enhance Compatibility"
+                                                    content="Restricts the character set to standard symbols to ensure acceptance across most services, even legacy ones that might reject complex Unicode characters."
+                                                />
+                                            </div>
+                                        }
                                         checked={config.ensureCommon}
                                         onChange={(v) => setConfig({ ...config, ensureCommon: v })}
                                         className="w-full"
@@ -1101,7 +1114,15 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             id="opt-post-quantum"
                                             checked={config.isPostQuantum}
                                             onChange={(v) => setConfig({ ...config, isPostQuantum: v })}
-                                            label="Post-Quantum Strength"
+                                            label={
+                                                <div className="flex items-center">
+                                                    Post-Quantum Strength
+                                                    <HelpPopover
+                                                        title="Post-Quantum Strength"
+                                                        content="Estimates security against future quantum attacks. Since Grover's algorithm effectively halves the bit strength (square root of the search space), we divide the entropy by 2 to measure post-quantum resilience."
+                                                    />
+                                                </div>
+                                            }
                                         />
                                         <p className="text-xs text-muted mt-2 ml-7">
                                             Simulates Grover's algorithm impact: effective entropy is halved (N/2).
@@ -1158,7 +1179,17 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     <div className="mt-4 pt-0 mb-4">
                                         <Input
                                             id="custom-charset-input"
-                                            label={(!config.standardCharsetDisabled && config.customCharset) ? "Add characters to the charset" : "Custom Charset"}
+                                            label={
+                                                <div className="flex items-center gap-1">
+                                                    {(!config.standardCharsetDisabled && config.customCharset) ? "Add characters to the charset" : "Custom Charset"}
+                                                    <HelpPopover
+                                                        title={(!config.standardCharsetDisabled && config.customCharset) ? "Add Characters" : "Custom Charset"}
+                                                        content={(!config.standardCharsetDisabled && config.customCharset)
+                                                            ? "Manually injects specific characters into the generation pool."
+                                                            : "Enables precise control over the allowed characters for specific requirements."}
+                                                    />
+                                                </div>
+                                            }
                                             placeholder="Add characters (e.g. ñçµ...)"
                                             value={config.customCharset}
                                             onChange={(e) => {
@@ -1244,6 +1275,10 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                             </span>
                                                         )}
                                                         )
+                                                        <HelpPopover
+                                                            title="Boost Custom Probability"
+                                                            content="Significantly increases the probability of your custom characters appearing. Useful when the base pool is huge (e.g., Unicode), ensuring your additions aren't statistically drowned out."
+                                                        />
                                                     </span>
                                                 }
                                             />
@@ -1252,7 +1287,15 @@ export function GeneratorPanel({ onCopyPassword }) {
 
                                     <Input
                                         id="must-include-input"
-                                        label="Must Include Characters"
+                                        label={
+                                            <div className="flex items-center gap-1">
+                                                Must Include Characters
+                                                <HelpPopover
+                                                    title="Must Include Characters"
+                                                    content="Guarantees these specific characters appear in the final password. Can also be used as an 'Allowed List' by selecting Alphanumeric mode and pasting accepted symbols here."
+                                                />
+                                            </div>
+                                        }
                                         placeholder="e.g. @ö5"
                                         value={config.include}
                                         onChange={(e) => setConfig({ ...config, include: e.target.value })}
@@ -1301,7 +1344,15 @@ export function GeneratorPanel({ onCopyPassword }) {
 
                                     <Input
                                         id="forbidden-input"
-                                        label="Forbidden Characters"
+                                        label={
+                                            <div className="flex items-center gap-1">
+                                                Forbidden Characters
+                                                <HelpPopover
+                                                    title="Forbidden Characters"
+                                                    content="Removes specific characters from the pool, preventing rejection by services with strict character constraints."
+                                                />
+                                            </div>
+                                        }
                                         placeholder="e.g. I1l0O"
                                         value={config.exclude}
                                         onChange={(e) => setConfig({ ...config, exclude: e.target.value })}
