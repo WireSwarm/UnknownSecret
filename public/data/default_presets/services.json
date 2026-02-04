@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Microsoft",
+        "activeSet": "ascii",
+        "configDiff": {
+            "length": 128,
+            "tokens": [
+                "ascii"
+            ],
+            "ensureCommon": false,
+            "customCharset": "0123456789"
+        }
+    }
+]

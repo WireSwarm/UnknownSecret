@@ -1,0 +1,62 @@
+[
+    {
+        "name": "PIN Code (4)",
+        "activeSet": "alphanums",
+        "configDiff": {
+            "length": 4,
+            "tokens": [
+                "alphanums"
+            ],
+            "ensureCommon": false,
+            "customCharset": "0123456789",
+            "standardCharsetDisabled": true
+        }
+    },
+    {
+        "name": "Memorable (Weak)",
+        "activeSet": "alphanums",
+        "configDiff": {
+            "length": 12,
+            "tokens": [
+                "alphanums"
+            ],
+            "exclude": "0123456789",
+            "ensureCommon": false
+        }
+    },
+    {
+        "name": "WiFi Key",
+        "activeSet": "alphanums",
+        "configDiff": {
+            "length": 24,
+            "tokens": [
+                "alphanums"
+            ],
+            "exclude": "0OIl1",
+            "maxPossible": 64
+        }
+    },
+    {
+        "name": "Strong (Standard)",
+        "activeSet": "ascii",
+        "configDiff": {
+            "length": 20,
+            "tokens": [
+                "ascii"
+            ]
+        }
+    },
+    {
+        "name": "Fort Knox",
+        "activeSet": "symbols_set",
+        "configDiff": {
+            "length": 64,
+            "tokens": [
+                "symbols_set"
+            ],
+            "randomLength": true,
+            "lengthDeviation": 10,
+            "isPostQuantum": true
+        }
+    }
+]

@@ -100,6 +100,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [isEditingWeight, setIsEditingWeight] = useState(false); // State for editing custom charset weight
     const [isDraggingOver, setIsDraggingOver] = useState(false); // Track drag state for import drop zone
     const [importConflict, setImportConflict] = useState(null); // { duplicates: [...], newOnly: [...], all: [...] }
+    const [defaultPresets, setDefaultPresets] = useState([]); // Default presets loaded from JSON
 
     // Effect to track Shift key globally
     useEffect(() => {
@@ -128,6 +129,44 @@ export function GeneratorPanel({ onCopyPassword }) {
     useEffect(() => {
         setSliderLength(config.length);
     }, [config.length]);
+
+    // Load default presets from JSON files in the default_presets folder
+    useEffect(() => {
+        const loadDefaultPresets = async () => {
+            try {
+                // Load the index file that lists all preset files
+                const indexRes = await fetch('/data/default_presets/index.json');
+                const index = await indexRes.json();
+
+                // Load all preset files listed in the index
+                const allPresets = [];
+                for (const filename of index.files) {
+                    try {
+                        const res = await fetch(`/data/default_presets/${filename}`);
+                        const presets = await res.json();
+
+                        // Process each preset: generate ID and reconstruct full config from configDiff
+                        const processedPresets = presets.map(p => ({
+                            id: `def_${p.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+                            name: p.name,
+                            activeSet: p.activeSet,
+                            config: { ...DEFAULT_CONFIG, ...p.configDiff }
+                        }));
+
+                        allPresets.push(...processedPresets);
+                    } catch (err) {
+                        console.error(`Failed to load preset file ${filename}:`, err);
+                    }
+                }
+
+                setDefaultPresets(allPresets);
+            } catch (err) {
+                console.error('Failed to load default presets index:', err);
+            }
+        };
+
+        loadDefaultPresets();
+    }, []);
 
     // --- SCRAMBLE EFFECT LOOP ---
     useEffect(() => {
@@ -1471,9 +1510,9 @@ export function GeneratorPanel({ onCopyPassword }) {
                         </div>
                     )}
                     <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-bold flex items-center gap-2">
+                        <h3 className="text-lg font-bold flex items-center gap-2" id="custom-configs-title">
                             <Save size={18} className="text-primary" />
-                            Saved Configurations
+                            Custom Configurations
                         </h3>
 
                         <div className="flex items-center gap-2">
@@ -1713,6 +1752,80 @@ export function GeneratorPanel({ onCopyPassword }) {
                         </p>
                     )}
                 </div>
+
+                {/* Section 3: Default Configurations */}
+                {defaultPresets.length > 0 && (
+                    <div className="flex flex-col gap-4" id="default-presets-section">
+                        <h3 className="text-lg font-bold flex items-center gap-2" id="default-configs-title">
+                            <Sliders size={18} className="text-primary" />
+                            Default Configurations
+                        </h3>
+
+                        <div className="flex flex-wrap gap-6 items-center" id="default-presets-list" style={{ padding: '0.25rem' }}>
+                            {defaultPresets.map(preset => {
+                                const isActive = activePresetId === preset.id;
+                                return (
+                                    <div
+                                        key={preset.id}
+                                        id={`default-preset-${preset.id}`}
+                                        onClick={() => loadPreset(preset)}
+                                        className="group relative flex items-center gap-4 rounded-lg cursor-pointer select-none overflow-hidden preset-item"
+                                        style={{
+                                            paddingLeft: '1rem',
+                                            paddingRight: '0.5rem',
+                                            height: '2.5rem',
+                                            background: isActive
+                                                ? 'linear-gradient(90deg, rgba(var(--primary-rgb), 0.15), rgba(var(--secondary-rgb), 0.05))'
+                                                : 'rgba(0, 0, 0, 0.2)',
+                                            border: isActive
+                                                ? '1px solid rgba(var(--primary-rgb), 0.5)'
+                                                : '1px solid rgba(255, 255, 255, 0.05)',
+                                            boxShadow: isActive
+                                                ? '0 0 20px rgba(var(--primary-rgb), 0.15), inset 0 0 10px rgba(var(--primary-rgb), 0.05)'
+                                                : 'none',
+                                            transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!isActive) {
+                                                e.currentTarget.style.transform = 'scale(1.1)';
+                                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!isActive) {
+                                                e.currentTarget.style.transform = 'scale(1)';
+                                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                                            }
+                                        }}
+                                    >
+                                        {isActive && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                left: 0,
+                                                top: 0,
+                                                bottom: 0,
+                                                width: '2px',
+                                                background: 'var(--primary)',
+                                                boxShadow: '0 0 8px var(--primary)'
+                                            }}></div>
+                                        )}
+
+                                        <span
+                                            className="text-xs font-bold tracking-wider uppercase"
+                                            style={{
+                                                color: isActive ? 'white' : 'var(--text-muted)',
+                                                textShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'none'
+                                            }}
+                                        >
+                                            {preset.name}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </GlassCard>
         </div >
     );
