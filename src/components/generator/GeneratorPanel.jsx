@@ -138,43 +138,27 @@ export function GeneratorPanel({ onCopyPassword }) {
         setSliderLength(config.length);
     }, [config.length]);
 
-    // Load default presets from JSON files in the default_presets folder
+    // Load default presets from bundled JSON files in src/data/default_presets/
     useEffect(() => {
-        const loadDefaultPresets = async () => {
-            try {
-                // Load the index file that lists all preset files
-                const indexRes = await fetch('/data/index_presets.json');
-                const index = await indexRes.json();
+        // Use Vite's glob import to find all JSON files in the folder at build time
+        const presetModules = import.meta.glob('../../data/default_presets/*.json', { eager: true });
 
-                const allPresets = [];
-                for (let filename of index.files) {
-                    try {
-                        // Clean filename if it starts with ./
-                        const cleanPath = filename.startsWith('./') ? filename.substring(2) : filename;
-                        const res = await fetch(`/data/${cleanPath}`);
-                        const presets = await res.json();
+        const allPresets = [];
 
-                        // Process each preset: generate ID and reconstruct full config from configDiff
-                        const processedPresets = presets.map(p => ({
-                            id: `def_${p.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
-                            name: p.name,
-                            activeSet: p.activeSet,
-                            config: { ...DEFAULT_CONFIG, ...p.configDiff }
-                        }));
-
-                        allPresets.push(...processedPresets);
-                    } catch (err) {
-                        console.error(`Failed to load preset file ${filename}:`, err);
-                    }
-                }
-
-                setDefaultPresets(allPresets);
-            } catch (err) {
-                console.error('Failed to load default presets index:', err);
+        Object.keys(presetModules).forEach(path => {
+            const presets = presetModules[path].default || presetModules[path];
+            if (Array.isArray(presets)) {
+                const processedPresets = presets.map(p => ({
+                    id: `def_${p.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+                    name: p.name,
+                    activeSet: p.activeSet,
+                    config: { ...DEFAULT_CONFIG, ...p.configDiff }
+                }));
+                allPresets.push(...processedPresets);
             }
-        };
+        });
 
-        loadDefaultPresets();
+        setDefaultPresets(allPresets);
     }, []);
 
     // --- SCRAMBLE EFFECT LOOP ---
