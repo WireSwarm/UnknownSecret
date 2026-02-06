@@ -673,6 +673,16 @@ input[data-keeper-lock-id]~.icon-btn {
   outline: none;
   padding: 0;
   margin: 0;
+  -moz-appearance: textfield;
+  /* Firefox */
+  appearance: textfield;
+  /* Standard */
+}
+
+.ghost-size-input::-webkit-outer-spin-button,
+.ghost-size-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* History Item - Pointer and Click styles */

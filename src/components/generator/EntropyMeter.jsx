@@ -112,38 +112,35 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
                         style={{ fontSize: '0.65rem', opacity: 0.8, minWidth: '120px' }}
                         id={id ? `${id}-details` : undefined}
                     >
-                        <div className="flex justify-between items-center" title="UTF-8 Encoded Size (Useful for bcrypt2). Click to edit target size.">
+                        <div className="flex justify-between items-center" title="UTF-8 Encoded Size. Click to set target byte size (for bcrypt, etc).">
                             <span className="opacity-50 mr-2">Size (utf-8):</span>
                             {isEditingBytes ? (
-                                <div className="flex items-center">
-                                    <input
-                                        autoFocus
-                                        type="number"
-                                        className="bg-transparent text-right font-mono text-primary outline-none p-0 border-b border-primary/50"
-                                        style={{ width: '40px', fontSize: 'inherit' }}
-                                        placeholder={utf8Bytes}
-                                        onBlur={(e) => {
-                                            setIsEditingBytes(false);
-                                            const val = parseInt(e.target.value, 10);
-                                            // Only trigger if valid and different enough to matter (though logic is in parent)
-                                            if (!isNaN(val) && val > 0 && onByteChange) {
-                                                onByteChange(val);
-                                            }
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') e.target.blur();
-                                        }}
-                                    />
-                                    <span className="ml-1">bytes</span>
-                                </div>
+                                <input
+                                    autoFocus
+                                    type="number"
+                                    defaultValue={utf8Bytes}
+                                    onBlur={(e) => {
+                                        setIsEditingBytes(false);
+                                        const val = parseInt(e.target.value, 10);
+                                        if (!isNaN(val) && val > 0 && onByteChange) {
+                                            onByteChange(val);
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') e.target.blur();
+                                    }}
+                                    onFocus={(e) => e.target.select()}
+                                    className="ghost-size-input"
+                                    style={{ width: '2.5rem', fontSize: 'inherit' }}
+                                />
                             ) : (
-                                <span
-                                    className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors group"
+                                <div
+                                    className="font-mono cursor-pointer hover:text-primary transition-colors flex items-center gap-1"
                                     onClick={() => setIsEditingBytes(true)}
                                 >
                                     {utf8Bytes} bytes
-                                    <Edit2 size={8} className="opacity-30 group-hover:opacity-100 transition-opacity" />
-                                </span>
+                                    <Edit2 size={8} className="opacity-50" />
+                                </div>
                             )}
                         </div>
 
