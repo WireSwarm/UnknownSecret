@@ -899,6 +899,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                     <EntropyMeter
                         entropy={result.entropy}
                         combinations={result.combinations}
+                        password={result.password}
                         id="entropy-meter"
                         isPostQuantum={config.isPostQuantum}
                     />

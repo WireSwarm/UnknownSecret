@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function EntropyMeter({ entropy, combinations, id, isPostQuantum }) {
+export function EntropyMeter({ entropy, combinations, password, id, isPostQuantum }) {
     // Analyze strength variables
     let strength = 'Very Weak';
     let color = '#EF4444'; // Red
@@ -13,6 +13,8 @@ export function EntropyMeter({ entropy, combinations, id, isPostQuantum }) {
     // Post-Quantum Logic: Effective entropy is halved (Grover's algo: sqrt(N) -> bits/2)
     const safeEntropy = isPostQuantum ? rawEntropy / 2 : rawEntropy;
     const percentage = (safeEntropy / 100) * 100;
+
+    const utf8Bytes = password ? new TextEncoder().encode(password).length : 0;
 
     // Thresholds & Logic
     // New thresholds: VeryWeak<20, Weak<40, Medium<60, Strong<100, Excellent<500, Overkill<2000, Paranoiac<15000, Demon>=15000
@@ -102,18 +104,26 @@ export function EntropyMeter({ entropy, combinations, id, isPostQuantum }) {
                     >
                         {strength}
                     </span>
-                    <span
-                        className="text-muted font-mono"
-                        style={{ fontSize: '0.65rem', opacity: 0.7 }}
-                        id={id ? `${id}-bits ` : undefined}
+                    <div
+                        className="text-muted font-mono flex flex-col gap-0.5 mt-1"
+                        style={{ fontSize: '0.65rem', opacity: 0.8, minWidth: '120px' }}
+                        id={id ? `${id}-details` : undefined}
                     >
-                        {Math.round(safeEntropy)} bits {isPostQuantum && <span className="text-amber-500" title="Post-Quantum">(PQ) </span>}
+                        <div className="flex justify-between items-center" title="Memory usage of the password when encoded in UTF-8. Important for systems with byte-length limits (like bcrypt).">
+                            <span className="opacity-50 mr-2">Size (utf-8):</span>
+                            <span>{utf8Bytes} bytes</span>
+                        </div>
                         {combinations && (
-                            <span className="ml-1" title="Combinations">
-                                • {new Intl.NumberFormat('en-US', { notation: "scientific", maximumSignificantDigits: 3 }).format(combinations)}
-                            </span>
+                            <div className="flex justify-between items-center" title="Total number of possible password combinations with the current character set and length.">
+                                <span className="opacity-50 mr-2">Comb:</span>
+                                <span>{new Intl.NumberFormat('en-US', { notation: "scientific", maximumSignificantDigits: 3 }).format(combinations)}</span>
+                            </div>
                         )}
-                    </span>
+                        <div className="flex justify-between items-center" title="The degree of randomness and unpredictability measured in bits. Higher is stronger.">
+                            <span className="opacity-50 mr-2">Entropy:</span>
+                            <span>{Math.round(safeEntropy)} bits {isPostQuantum && <span className="text-amber-500" title="Post-Quantum Strength (Grover's Algorithm adjusted)">(PQ)</span>}</span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Center: Label "Security Strength" - positioned above bar */}
