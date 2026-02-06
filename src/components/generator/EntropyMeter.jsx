@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Edit2 } from 'lucide-react';
 
-export function EntropyMeter({ entropy, combinations, password, id, isPostQuantum }) {
+export function EntropyMeter({ entropy, combinations, password, id, isPostQuantum, onByteChange }) {
+    const [isEditingBytes, setIsEditingBytes] = useState(false);
+
     // Analyze strength variables
     let strength = 'Very Weak';
     let color = '#EF4444'; // Red
@@ -109,10 +112,41 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
                         style={{ fontSize: '0.65rem', opacity: 0.8, minWidth: '120px' }}
                         id={id ? `${id}-details` : undefined}
                     >
-                        <div className="flex justify-between items-center" title="Memory usage of the password when encoded in UTF-8. Important for systems with byte-length limits (like bcrypt).">
+                        <div className="flex justify-between items-center" title="UTF-8 Encoded Size (Useful for bcrypt2). Click to edit target size.">
                             <span className="opacity-50 mr-2">Size (utf-8):</span>
-                            <span>{utf8Bytes} bytes</span>
+                            {isEditingBytes ? (
+                                <div className="flex items-center">
+                                    <input
+                                        autoFocus
+                                        type="number"
+                                        className="bg-transparent text-right font-mono text-primary outline-none p-0 border-b border-primary/50"
+                                        style={{ width: '40px', fontSize: 'inherit' }}
+                                        placeholder={utf8Bytes}
+                                        onBlur={(e) => {
+                                            setIsEditingBytes(false);
+                                            const val = parseInt(e.target.value, 10);
+                                            // Only trigger if valid and different enough to matter (though logic is in parent)
+                                            if (!isNaN(val) && val > 0 && onByteChange) {
+                                                onByteChange(val);
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') e.target.blur();
+                                        }}
+                                    />
+                                    <span className="ml-1">bytes</span>
+                                </div>
+                            ) : (
+                                <span
+                                    className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors group"
+                                    onClick={() => setIsEditingBytes(true)}
+                                >
+                                    {utf8Bytes} bytes
+                                    <Edit2 size={8} className="opacity-30 group-hover:opacity-100 transition-opacity" />
+                                </span>
+                            )}
                         </div>
+
                         {combinations && (
                             <div className="flex justify-between items-center" title="Total number of possible password combinations with the current character set and length.">
                                 <span className="opacity-50 mr-2">Comb:</span>
@@ -199,6 +233,6 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
                     to { background-position: 500px 0; }
                 }
             `}</style>
-        </div>
+        </div >
     );
 }

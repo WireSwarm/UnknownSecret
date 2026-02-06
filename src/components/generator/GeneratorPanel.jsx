@@ -57,7 +57,11 @@ export function GeneratorPanel({ onCopyPassword }) {
         customCharset: '',
         standardCharsetDisabled: false,
         customWeight: 0,
-        isPostQuantum: false
+        customCharset: '',
+        standardCharsetDisabled: false,
+        customWeight: 0,
+        isPostQuantum: false,
+        targetByteSize: null // null = length mode, number = byte mode
     };
 
     /**
@@ -375,10 +379,19 @@ export function GeneratorPanel({ onCopyPassword }) {
             randomizeLength: config.randomLength,
             lengthDeviation: config.lengthDeviation,
             ensureMinAscii: config.ensureMinAscii,
-            minAsciiPercent: config.minAsciiPercent
+            lengthDeviation: config.lengthDeviation,
+            ensureMinAscii: config.ensureMinAscii,
+            minAsciiPercent: config.minAsciiPercent,
+            targetByteSize: config.targetByteSize
         });
 
         setResult(res);
+
+        // If in byte mode, sync slider to actual length
+        if (config.targetByteSize && res.password) {
+            setSliderLength(res.password.length);
+        }
+
         setCopied(false);
         setHasBeenCopied(false);
         if (isScrambling) setIsScrambling(false);
@@ -444,7 +457,7 @@ export function GeneratorPanel({ onCopyPassword }) {
             let val = parseInt(e.target.value, 10);
             if (!isNaN(val) && val > 0) {
                 // Cap it at something reasonable if needed, or leave it to user
-                setConfig(prev => ({ ...prev, maxPossible: val, length: Math.min(prev.length, val) }));
+                setConfig(prev => ({ ...prev, maxPossible: val, length: Math.min(prev.length, val), targetByteSize: null }));
             }
             setIsEditingMax(false);
         }
@@ -457,12 +470,17 @@ export function GeneratorPanel({ onCopyPassword }) {
                 // If new length > max, update max as well
                 setConfig(prev => {
                     const newMax = Math.max(prev.maxPossible, val);
-                    return { ...prev, length: val, maxPossible: newMax };
+                    return { ...prev, length: val, maxPossible: newMax, targetByteSize: null };
                 });
             }
             setIsEditingLength(false);
         }
     }
+
+    const handleByteChange = (bytes) => {
+        // Switch to Byte Mode
+        setConfig({ ...config, targetByteSize: bytes });
+    };
 
 
     // Preset handlers
@@ -884,10 +902,14 @@ export function GeneratorPanel({ onCopyPassword }) {
                         max={config.maxPossible}
                         onChange={(val) => {
                             setSliderLength(val);
+                            // If dragging slider, switch back to Length Mode
+                            if (config.targetByteSize !== null) {
+                                setConfig(prev => ({ ...prev, length: val, targetByteSize: null }));
+                            }
                             if (!isScrambling) setIsScrambling(true);
                         }}
                         onAfterChange={(val) => {
-                            setConfig({ ...config, length: val });
+                            setConfig({ ...config, length: val, targetByteSize: null });
                         }}
                     />
                 </div>
@@ -902,6 +924,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         password={result.password}
                         id="entropy-meter"
                         isPostQuantum={config.isPostQuantum}
+                        onByteChange={handleByteChange}
                     />
 
                     <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
