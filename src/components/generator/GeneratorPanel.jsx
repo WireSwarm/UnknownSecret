@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X, RotateCcw, Search } from 'lucide-react';
+import { RefreshCw, Copy, Check, Eye, EyeOff, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X, RotateCcw, Search, ExternalLink } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 const DiceIcon = ({ size = 22, className = "" }) => (
     <svg
@@ -131,7 +132,22 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [isDraggingOver, setIsDraggingOver] = useState(false); // Track drag state for import drop zone
     const [importConflict, setImportConflict] = useState(null); // { duplicates: [...], newOnly: [...], all: [...] }
     const [defaultPresets, setDefaultPresets] = useState([]); // Default presets loaded from JSON
+    const [isInspecting, setIsInspecting] = useState(false); // Character Inspection Mode
 
+    // Cursor follower for inspect mode
+    const cursorFollowerRef = useRef(null);
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (cursorFollowerRef.current && isInspecting) {
+                // Position 15px to right and 15px up from cursor
+                cursorFollowerRef.current.style.transform = `translate(${e.clientX + 12}px, ${e.clientY - 12}px)`;
+            }
+        };
+        if (isInspecting) {
+            window.addEventListener('mousemove', handleMouseMove);
+        }
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, [isInspecting]);
 
     // Effect to track Shift key globally
     useEffect(() => {
@@ -162,7 +178,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     // Scramble Effect State
     const [isScrambling, setIsScrambling] = useState(false);
     const [scrambleText, setScrambleText] = useState('');
-    const [isInspecting, setIsInspecting] = useState(false); // Character Inspection Mode
+    // isInspecting moved up
 
     // Sync sliderLength when config changes (e.g. presets)
     useEffect(() => {
@@ -378,8 +394,6 @@ export function GeneratorPanel({ onCopyPassword }) {
             mandatoryChars: config.include,
             ensureRobustness: config.ensureCommon, // Mapped to the new logic
             randomizeLength: config.randomLength,
-            lengthDeviation: config.lengthDeviation,
-            ensureMinAscii: config.ensureMinAscii,
             lengthDeviation: config.lengthDeviation,
             ensureMinAscii: config.ensureMinAscii,
             minAsciiPercent: config.minAsciiPercent,
@@ -821,7 +835,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     display: 'block'
                                 }}
                             >
-                                {(isScrambling ? scrambleText : result.password).split('').map((char, idx) => (
+                                {Array.from(isScrambling ? scrambleText : result.password).map((char, idx) => (
                                     <span
                                         key={idx}
                                         className="char-inspect-item radiant-text"
@@ -831,12 +845,48 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             window.open(`https://www.compart.com/en/unicode/U+${hex}`, '_blank');
                                             setIsInspecting(false);
                                         }}
+                                        onMouseEnter={() => {
+                                            if (cursorFollowerRef.current) cursorFollowerRef.current.style.opacity = '1';
+                                        }}
+                                        onMouseLeave={() => {
+                                            if (cursorFollowerRef.current) cursorFollowerRef.current.style.opacity = '0';
+                                        }}
                                         title={showPassword ? `U+${char.codePointAt(0).toString(16).toUpperCase()} - Click to inspect` : 'Click to reveal Unicode info'}
                                     >
                                         {showPassword ? (char === ' ' ? '\u00A0' : char) : '•'}
                                     </span>
                                 ))}
                             </div>
+
+                            {/* Cursor Follower */}
+                            {isInspecting && createPortal(
+                                <div
+                                    ref={cursorFollowerRef}
+                                    style={{
+                                        position: 'fixed',
+                                        top: 0,
+                                        left: 0,
+                                        pointerEvents: 'none',
+                                        zIndex: 9999,
+                                        opacity: 0,
+                                        transition: 'opacity 0.15s ease',
+                                        willChange: 'transform, opacity'
+                                    }}
+                                >
+                                    <div
+                                        className="flex items-center justify-center p-1.5 rounded-full"
+                                        style={{
+                                            background: 'rgba(79, 70, 229, 0.9)', // Primary color with opacity
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            color: 'white'
+                                        }}
+                                    >
+                                        <ExternalLink size={14} strokeWidth={2.5} />
+                                    </div>
+                                </div>,
+                                document.body
+                            )}
 
                             <div className="absolute right-3 flex items-center h-full gap-2" id="inspection-right-content">
                                 <button
@@ -1269,18 +1319,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         </p>
                                     </div>
 
-                                    {/* Character Inspector Button */}
-                                    <div className="mb-2">
-                                        <Button
-                                            variant="ghost"
-                                            className="w-full justify-start text-xs h-9 bg-white/5 hover:bg-white/10 border border-white/5"
-                                            onClick={() => setIsInspecting(true)}
-                                            title="Inspect individual characters"
-                                        >
-                                            <Search size={14} className="mr-2 text-primary" />
-                                            Inspect Characters
-                                        </Button>
-                                    </div>
+
 
                                     {['emojis', 'all_unicode'].includes(activeSet) && (
                                         <Toggle
@@ -1573,6 +1612,19 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Character Inspector Button */}
+                                    <div className="mt-1">
+                                        <Button
+                                            variant="ghost"
+                                            className="w-full justify-start text-xs h-9 bg-white/5 hover:bg-white/10 border border-white/5"
+                                            onClick={() => setIsInspecting(true)}
+                                            title="Inspect individual characters"
+                                        >
+                                            <Search size={14} className="mr-2 text-primary" />
+                                            Inspect Characters
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
                         </div>

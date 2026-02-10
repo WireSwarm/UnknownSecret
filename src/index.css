@@ -910,16 +910,6 @@ input[type=range]::-webkit-slider-runnable-track {
   transform: scale(2.5);
   /* Pure magnification */
   z-index: 100;
-  color: var(--primary);
-  -webkit-text-fill-color: initial;
-  /* Reset radiant effect */
-  background-clip: border-box;
-  /* Reset clip so background box is visible */
-  -webkit-background-clip: border-box;
-  text-shadow: 0 0 15px rgba(var(--primary-rgb), 0.8);
-  background: rgba(20, 20, 30, 0.95);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  border-radius: 2px;
 }
 
 .char-inspect-item:active {
