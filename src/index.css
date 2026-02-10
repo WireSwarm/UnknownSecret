@@ -881,3 +881,48 @@ input[type=range]::-webkit-slider-runnable-track {
   transform: scale(1.15);
   /* Slight grow */
 }
+
+/* Character Inspection Mode */
+.char-inspect-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  /* Pointer select */
+}
+
+.char-inspect-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  z-index: 1;
+  min-width: 0.6em;
+  /* Ensure narrow chars are clickable */
+  padding: 0 1px;
+  border-radius: 4px;
+  /* color: inherit; - let radiant-text handle it or fall back to parent */
+}
+
+.char-inspect-item:hover {
+  transform: scale(2.5);
+  /* Pure magnification */
+  z-index: 100;
+  color: var(--primary);
+  -webkit-text-fill-color: initial;
+  /* Reset radiant effect */
+  background-clip: border-box;
+  /* Reset clip so background box is visible */
+  -webkit-background-clip: border-box;
+  text-shadow: 0 0 15px rgba(var(--primary-rgb), 0.8);
+  background: rgba(20, 20, 30, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+}
+
+.char-inspect-item:active {
+  transform: scale(2.2);
+  color: var(--secondary);
+}

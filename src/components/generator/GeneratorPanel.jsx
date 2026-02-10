@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X, RotateCcw } from 'lucide-react';
+import { RefreshCw, Copy, Check, Eye, EyeOff, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X, RotateCcw, Search } from 'lucide-react';
 
 const DiceIcon = ({ size = 22, className = "" }) => (
     <svg
@@ -162,6 +162,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     // Scramble Effect State
     const [isScrambling, setIsScrambling] = useState(false);
     const [scrambleText, setScrambleText] = useState('');
+    const [isInspecting, setIsInspecting] = useState(false); // Character Inspection Mode
 
     // Sync sliderLength when config changes (e.g. presets)
     useEffect(() => {
@@ -807,19 +808,39 @@ export function GeneratorPanel({ onCopyPassword }) {
             {/* Centered Output Section */}
             <div className="flex flex-col items-center w-full" id="output-section">
                 <div className="w-full max-w-2xl relative" id="password-input-area">
-                    <Input
-                        id="main-password-input"
-                        value={isScrambling ? scrambleText : result.password}
-                        readOnly
-                        type={showPassword || (isScrambling && showPassword) ? "text" : "password"}
-                        className={`keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-24 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
-                        wrapperClassName="mb-1"
-                        onClick={copyToClipboard}
-                        style={{ cursor: 'pointer', paddingRight: '8.4rem' }}
-                        rightElement={
-                            <>
+                    {isInspecting ? (
+                        <div className="input-wrapper relative mb-1" id="inspection-wrapper">
+                            <div
+                                className={`input-field keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-24 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
+                                style={{
+                                    paddingRight: '8.4rem',
+                                    cursor: 'crosshair',
+                                    userSelect: 'none',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    display: 'block'
+                                }}
+                            >
+                                {(isScrambling ? scrambleText : result.password).split('').map((char, idx) => (
+                                    <span
+                                        key={idx}
+                                        className="char-inspect-item radiant-text"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const hex = char.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+                                            window.open(`https://www.compart.com/en/unicode/U+${hex}`, '_blank');
+                                            setIsInspecting(false);
+                                        }}
+                                        title={showPassword ? `U+${char.codePointAt(0).toString(16).toUpperCase()} - Click to inspect` : 'Click to reveal Unicode info'}
+                                    >
+                                        {showPassword ? (char === ' ' ? '\u00A0' : char) : '•'}
+                                    </span>
+                                ))}
+                            </div>
+
+                            <div className="absolute right-3 flex items-center h-full gap-2" id="inspection-right-content">
                                 <button
-                                    id="toggle-visibility-btn"
+                                    id="toggle-visibility-btn-inspect"
                                     onClick={(e) => { e.stopPropagation(); setShowPassword(!showPassword); }}
                                     className="icon-btn"
                                     title={showPassword ? "Hide" : "Show"}
@@ -827,16 +848,47 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
                                 </button>
                                 <button
-                                    id="regen-password-btn"
+                                    id="regen-password-btn-inspect"
                                     onClick={(e) => { e.stopPropagation(); handleGenerate(); }}
                                     className="icon-btn icon-btn-primary"
                                     title="Regenerate"
                                 >
                                     <DiceIcon size={22} />
                                 </button>
-                            </>
-                        }
-                    />
+                            </div>
+                        </div>
+                    ) : (
+                        <Input
+                            id="main-password-input"
+                            value={isScrambling ? scrambleText : result.password}
+                            readOnly
+                            type={showPassword || (isScrambling && showPassword) ? "text" : "password"}
+                            className={`keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-24 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
+                            wrapperClassName="mb-1"
+                            onClick={copyToClipboard}
+                            style={{ cursor: 'pointer', paddingRight: '8.4rem' }}
+                            rightElement={
+                                <>
+                                    <button
+                                        id="toggle-visibility-btn"
+                                        onClick={(e) => { e.stopPropagation(); setShowPassword(!showPassword); }}
+                                        className="icon-btn"
+                                        title={showPassword ? "Hide" : "Show"}
+                                    >
+                                        {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                                    </button>
+                                    <button
+                                        id="regen-password-btn"
+                                        onClick={(e) => { e.stopPropagation(); handleGenerate(); }}
+                                        className="icon-btn icon-btn-primary"
+                                        title="Regenerate"
+                                    >
+                                        <DiceIcon size={22} />
+                                    </button>
+                                </>
+                            }
+                        />
+                    )}
                 </div>
 
                 {/* Password Length Slider: directly below the input */}
@@ -1191,7 +1243,13 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     }}
                                 >
                                     {/* Post-Quantum Toggle */}
-                                    <div className="p-3 rounded-lg border border-white/5 bg-white/5 mb-2">
+                                    <div
+                                        className="p-3 rounded-lg flex flex-col gap-2 mb-2"
+                                        style={{
+                                            background: 'rgba(255, 255, 255, 0.03)',
+                                            border: '1px solid rgba(255, 255, 255, 0.08)'
+                                        }}
+                                    >
                                         <Toggle
                                             id="opt-post-quantum"
                                             checked={config.isPostQuantum}
@@ -1206,10 +1264,22 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                 </div>
                                             }
                                         />
-                                        <p className="text-xs text-muted mt-2 ml-7">
+                                        <p className="text-xs text-muted leading-relaxed ml-7 mt-1">
                                             Simulates Grover's algorithm impact: effective entropy is halved (N/2).
-                                            Requires 2x length for same strength.
                                         </p>
+                                    </div>
+
+                                    {/* Character Inspector Button */}
+                                    <div className="mb-2">
+                                        <Button
+                                            variant="ghost"
+                                            className="w-full justify-start text-xs h-9 bg-white/5 hover:bg-white/10 border border-white/5"
+                                            onClick={() => setIsInspecting(true)}
+                                            title="Inspect individual characters"
+                                        >
+                                            <Search size={14} className="mr-2 text-primary" />
+                                            Inspect Characters
+                                        </Button>
                                     </div>
 
                                     {['emojis', 'all_unicode'].includes(activeSet) && (
