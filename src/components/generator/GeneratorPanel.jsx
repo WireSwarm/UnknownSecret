@@ -36,6 +36,7 @@ import { HelpPopover } from '../ui/HelpPopover';
 import { generatePassword, PRESETS, buildCharset, getCharsetSizes } from '../../utils/passwordGen';
 import { EntropyMeter } from './EntropyMeter';
 import { PasswordStats } from './PasswordStats';
+import { UnicodeChecker } from './UnicodeChecker';
 
 export function GeneratorPanel({ onCopyPassword }) {
     // --- PERSISTENCE CONSTANTS ---
@@ -1991,6 +1992,8 @@ export function GeneratorPanel({ onCopyPassword }) {
                     </div>
                 )}
             </GlassCard>
+
+            <UnicodeChecker />
         </div >
     );
 }
