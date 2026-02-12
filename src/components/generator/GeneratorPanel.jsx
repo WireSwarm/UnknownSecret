@@ -1558,13 +1558,14 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                     setConfig({
                                                         ...config,
                                                         customCharset: '',
-                                                        standardCharsetDisabled: true,
+                                                        standardCharsetDisabled: false,
                                                         customWeight: 0
                                                     });
                                                 } else {
                                                     setConfig({
                                                         ...config,
-                                                        customCharset: val
+                                                        customCharset: val,
+                                                        standardCharsetDisabled: true
                                                     });
                                                 }
                                             }}
