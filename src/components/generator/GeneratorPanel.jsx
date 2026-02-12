@@ -141,6 +141,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
     // Cursor follower for inspect mode
     const cursorFollowerRef = useRef(null);
+    const unicodeCheckerRef = useRef(null);
     useEffect(() => {
         const handleMouseMove = (e) => {
             if (cursorFollowerRef.current && isInspecting) {
@@ -1212,13 +1213,38 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 >
                                     <div className="flex items-start gap-2">
                                         <TriangleAlert size={14} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
-                                        <div className="flex flex-col gap-1 pr-4">
-                                            <span style={{ fontSize: '0.8rem', color: '#FEF9C3', fontWeight: 600 }}>
-                                                Compatibility Check
-                                            </span>
-                                            <p style={{ fontSize: '0.75rem', color: 'rgba(254, 249, 195, 0.8)', lineHeight: 1.5, margin: 0 }}>
-                                                Not all backends fully support UTF-8. While most modern systems do, some legacy systems might replace complex symbols with generic replacement characters, which could significantly drastically reduce the actual entropy/strength of your password without you knowing.
-                                            </p>
+                                        <div className="flex flex-col gap-2 pr-4 flex-1">
+                                            <div>
+                                                <span style={{ fontSize: '0.8rem', color: '#FEF9C3', fontWeight: 600 }}>
+                                                    Compatibility Check
+                                                </span>
+                                                <p style={{ fontSize: '0.75rem', color: 'rgba(254, 249, 195, 0.8)', lineHeight: 1.5, margin: 0 }}>
+                                                    Not all backends fully support UTF-8. Legacy systems might replace complex symbols, reducing password strength.
+                                                    <br />
+                                                    Please follow the steps in the <b>Unicode Compatibility Check</b> card below.
+                                                </p>
+                                            </div>
+
+                                            <Button
+                                                onClick={() => {
+                                                    unicodeCheckerRef.current?.open();
+                                                    // Small timeout to allow expansion animation to start/layout to update
+                                                    setTimeout(() => {
+                                                        const el = document.getElementById('unicode-compatibility-section');
+                                                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                    }, 100);
+                                                }}
+                                                size="sm"
+                                                variant="ghost"
+                                                className="self-start h-auto py-1 px-2 text-xs"
+                                                style={{
+                                                    background: 'rgba(254, 249, 195, 0.15)',
+                                                    color: '#FEF9C3',
+                                                    border: '1px solid rgba(254, 249, 195, 0.3)'
+                                                }}
+                                            >
+                                                Go to Compatibility Check
+                                            </Button>
                                         </div>
                                     </div>
 
@@ -1271,7 +1297,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     }}
                                     label={
                                         <span className="flex items-center gap-1">
-                                            Fuzz Length (down to -
+                                            Randomize Length (down to -
                                             {isEditingPercent ? (
                                                 <input
                                                     autoFocus
@@ -1304,7 +1330,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             )}
                                             )
                                             <HelpPopover
-                                                title="Fuzz Length"
+                                                title="Randomize Length"
                                                 content="Obfuscates usage patterns by slightly randomizing the password length. Useful against white-box attacks (where the attacker knows you use this tool) or to avoid predictable fixed-length patterns."
                                             />
                                         </span>
@@ -1313,6 +1339,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
 
                                 <div
+                                    id="compatibility-section"
                                     className="p-3 rounded-lg flex flex-col gap-3 mt-4"
                                     style={{
                                         background: 'rgba(255, 255, 255, 0.03)',
@@ -2084,7 +2111,9 @@ export function GeneratorPanel({ onCopyPassword }) {
                 )}
             </GlassCard>
 
-            <UnicodeChecker />
+            <div id="unicode-compatibility-section">
+                <UnicodeChecker ref={unicodeCheckerRef} />
+            </div>
         </div >
     );
 }

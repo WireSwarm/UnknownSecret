@@ -98,11 +98,16 @@ const CheckerField = ({ label, value, index, status, description, isControl, onR
     </div>
 );
 
-export function UnicodeChecker() {
+export const UnicodeChecker = React.forwardRef((props, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const [basePassword, setBasePassword] = useState('');
     const [suffix, setSuffix] = useState('');
     const [copiedIndex, setCopiedIndex] = useState(null);
+
+    // Expose open method to parent
+    React.useImperativeHandle(ref, () => ({
+        open: () => setIsOpen(true)
+    }));
 
     // Initial generation
     useEffect(() => {
@@ -216,4 +221,4 @@ export function UnicodeChecker() {
             )}
         </GlassCard>
     );
-}
+});
