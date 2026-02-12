@@ -502,8 +502,13 @@ export function GeneratorPanel({ onCopyPassword }) {
         if (e.key === 'Enter' || e.type === 'blur') {
             let val = parseInt(e.target.value, 10);
             if (!isNaN(val) && val > 0) {
+                if (config.ensureCommon && val < 4) val = 4;
                 // Cap it at something reasonable if needed, or leave it to user
-                setConfig(prev => ({ ...prev, maxPossible: val, length: Math.min(prev.length, val), targetByteSize: null }));
+                setConfig(prev => {
+                    let newLen = Math.min(prev.length, val);
+                    if (prev.ensureCommon && newLen < 4) newLen = 4;
+                    return { ...prev, maxPossible: val, length: newLen, targetByteSize: null };
+                });
             }
             setIsEditingMax(false);
         }
@@ -513,6 +518,7 @@ export function GeneratorPanel({ onCopyPassword }) {
         if (e.key === 'Enter' || e.type === 'blur') {
             let val = parseInt(e.target.value, 10);
             if (!isNaN(val) && val > 0) {
+                if (config.ensureCommon && val < 4) val = 4;
                 // If new length > max, update max as well
                 setConfig(prev => {
                     const newMax = Math.max(prev.maxPossible, val);
@@ -1031,7 +1037,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                     <Slider
                         id="length-slider"
                         value={sliderLength}
-                        min={1}
+                        min={config.ensureCommon ? 4 : 1}
                         max={config.maxPossible}
                         onChange={(val) => {
                             setSliderLength(val);
@@ -1408,7 +1414,13 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             </div>
                                         }
                                         checked={config.ensureCommon}
-                                        onChange={(v) => setConfig({ ...config, ensureCommon: v })}
+                                        onChange={(v) => {
+                                            setConfig(prev => ({
+                                                ...prev,
+                                                ensureCommon: v,
+                                                length: (v && prev.length < 4) ? 4 : prev.length
+                                            }));
+                                        }}
                                         className="w-full"
                                     />
                                     <p className="text-xs text-muted leading-relaxed" id="compat-desc">
