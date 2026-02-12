@@ -89,8 +89,39 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
         gap: '0.75rem'
     };
 
+    // Helper for staggered animations
+    const getSlideInStyle = (delay, isMountingAnimation = true) => ({
+        opacity: isOpen ? 1 : 0,
+        transform: isOpen ? 'translateY(0)' : 'translateY(10px)',
+        transition: `all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${delay}ms`,
+        animation: isMountingAnimation ? `spectacularEntrance 0.8s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms backwards` : 'none'
+    });
+
     return (
         <div style={containerStyle} id="password-stats-container">
+            <style>
+                {`
+                    @keyframes spectacularEntrance {
+                        0% { 
+                            opacity: 0; 
+                            transform: translateY(30px) scale(0.9); 
+                            filter: blur(10px);
+                        }
+                        50% { 
+                            opacity: 1; 
+                            transform: translateY(-5px) scale(1.03); 
+                            filter: blur(0px);
+                        }
+                        75% {
+                            transform: translateY(3px) scale(0.98);
+                        }
+                        100% { 
+                            opacity: 1; 
+                            transform: translateY(0) scale(1); 
+                        }
+                    }
+                `}
+            </style>
             <div style={innerStyle}>
                 <div style={gridStyle} id="password-stats-grid">
                     {statItems.map((item, index) => {
@@ -225,21 +256,30 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                 {/* ZXCVBN Section */}
                 {(debouncedResult || isCalculating) && (
                     <div style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }} id="zxcvbn-stats">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'rgba(255,255,255,0.8)' }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            marginBottom: '1rem',
+                            color: 'rgba(255,255,255,0.8)',
+                            ...getSlideInStyle(350)
+                        }}>
                             <Activity size={16} />
                             <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Security Analysis</h3>
                         </div>
 
-                        <CrackTimeDisplay
-                            times={debouncedResult ? debouncedResult.crack_times_seconds : {
-                                online_throttling_100_per_hour: 0,
-                                online_no_throttling_10_per_second: 0,
-                                offline_fast_hashing_1e10_per_second: 0,
-                                offline_slow_hashing_1e4_per_second: 0
-                            }}
-                            isPostQuantum={isPostQuantum}
-                            isLoading={isCalculating}
-                        />
+                        <div style={getSlideInStyle(450)}>
+                            <CrackTimeDisplay
+                                times={debouncedResult ? debouncedResult.crack_times_seconds : {
+                                    online_throttling_100_per_hour: 0,
+                                    online_no_throttling_10_per_second: 0,
+                                    offline_fast_hashing_1e10_per_second: 0,
+                                    offline_slow_hashing_1e4_per_second: 0
+                                }}
+                                isPostQuantum={isPostQuantum}
+                                isLoading={isCalculating}
+                            />
+                        </div>
 
                         {/* Algorithm Info */}
                         <div style={{
@@ -251,7 +291,8 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                             display: 'flex',
                             gap: '0.75rem',
                             fontSize: '0.8rem',
-                            color: 'rgba(255,255,255,0.7)'
+                            color: 'rgba(255,255,255,0.7)',
+                            ...getSlideInStyle(550)
                         }}>
                             <BookOpen size={16} style={{ flexShrink: 0, marginTop: '2px', opacity: 0.7 }} />
                             <div>
@@ -264,7 +305,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                         </div>
 
                         {!isCalculating && debouncedResult && (
-                            <>
+                            <div style={getSlideInStyle(650)}>
                                 {debouncedResult.feedback?.warning && (
                                     <div
                                         id="zxcvbn-warning"
@@ -299,7 +340,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                                         </ul>
                                     </div>
                                 )}
-                            </>
+                            </div>
                         )}
                     </div>
                 )}
