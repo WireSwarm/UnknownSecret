@@ -134,6 +134,13 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [importConflict, setImportConflict] = useState(null); // { duplicates: [...], newOnly: [...], all: [...] }
     const [defaultPresets, setDefaultPresets] = useState([]); // Default presets loaded from JSON
     const [isInspecting, setIsInspecting] = useState(false); // Character Inspection Mode
+    const [showUtf8Warning, setShowUtf8Warning] = useState(() => {
+        try {
+            return sessionStorage.getItem('hide_utf8_warning') !== 'true';
+        } catch (e) {
+            return true;
+        }
+    });
 
     // Cursor follower for inspect mode
     const cursorFollowerRef = useRef(null);
@@ -1016,6 +1023,45 @@ export function GeneratorPanel({ onCopyPassword }) {
                         }}
                     />
                 </div>
+
+                {/* Cond 1: Bcrypt Warning */}
+                {/* Only check length match if NOT in byte mode already */}
+                {!config.targetByteSize && config.length === 72 && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii') && (
+                    <div
+                        id="bcrypt-warning-container"
+                        className="w-full max-w-2xl mt-4 p-3 rounded-lg flex items-start gap-3"
+                        style={{
+                            background: 'rgba(234, 179, 8, 0.1)',
+                            border: '1px solid rgba(234, 179, 8, 0.25)',
+                            animation: 'fadeIn 0.3s ease'
+                        }}
+                    >
+                        <TriangleAlert id="bcrypt-warning-icon" size={18} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
+                        <div id="bcrypt-warning-text-content" className="flex flex-col gap-2 flex-1">
+                            <div>
+                                <h4 id="bcrypt-warning-title" className="text-sm font-bold m-0" style={{ color: '#FEF9C3' }}>Possible Bcrypt Truncation</h4>
+                                <p id="bcrypt-warning-desc" className="text-xs leading-relaxed m-0" style={{ color: 'rgba(254, 249, 195, 0.8)' }}>
+                                    If the site enforces a 72-character limit, it likely uses Bcrypt (72-byte limit).
+                                    Since you are using non-ASCII characters (multibyte), a 72-character password will exceed 72 bytes and be truncated.
+                                </p>
+                            </div>
+                            <Button
+                                id="bcrypt-fix-btn"
+                                onClick={() => handleByteChange(72)}
+                                size="sm"
+                                variant="ghost"
+                                className="self-start h-auto py-1 px-2 text-xs"
+                                style={{
+                                    background: 'rgba(254, 249, 195, 0.15)',
+                                    color: '#FEF9C3',
+                                    border: '1px solid rgba(254, 249, 195, 0.3)'
+                                }}
+                            >
+                                Set to 72 Bytes
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Copy Button & Meter & Stats Toggle */}
@@ -1156,6 +1202,54 @@ export function GeneratorPanel({ onCopyPassword }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="settings-grid">
                         {/* Left Column: Options */}
                         <div className="flex flex-col gap-6" id="settings-col-1">
+                            {/* Cond 2: UTF-8 Compatibility Warning (MOVED HERE) */}
+                            {showUtf8Warning && config.standardCharsetDisabled !== true && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii_extended') && (
+                                <div
+                                    id="utf8-warning-alert"
+                                    className="rounded-lg overflow-hidden p-3 relative"
+                                    style={{
+                                        background: 'rgba(234, 179, 8, 0.05)',
+                                        border: '1px solid rgba(234, 179, 8, 0.15)',
+                                        animation: 'fadeIn 0.3s ease'
+                                    }}
+                                >
+                                    <div className="flex items-start gap-2">
+                                        <TriangleAlert size={14} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
+                                        <div className="flex flex-col gap-1 pr-4">
+                                            <span style={{ fontSize: '0.8rem', color: '#FEF9C3', fontWeight: 600 }}>
+                                                Compatibility Check
+                                            </span>
+                                            <p style={{ fontSize: '0.75rem', color: 'rgba(254, 249, 195, 0.8)', lineHeight: 1.5, margin: 0 }}>
+                                                Not all backends fully support UTF-8. While most modern systems do, some legacy systems might replace complex symbols with generic replacement characters, which could significantly drastically reduce the actual entropy/strength of your password without you knowing.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            setShowUtf8Warning(false);
+                                            sessionStorage.setItem('hide_utf8_warning', 'true');
+                                        }}
+                                        className="absolute text-[#FEF9C3] hover:bg-[rgba(255,255,255,0.05)] transition-all rounded px-1.5 py-0.5"
+                                        style={{
+                                            top: '8px',
+                                            right: '8px',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontSize: '0.65rem',
+                                            opacity: 0.5,
+                                            fontWeight: 500
+                                        }}
+                                        title="Dismiss warning"
+                                        onMouseEnter={(e) => e.target.style.opacity = '1'}
+                                        onMouseLeave={(e) => e.target.style.opacity = '0.5'}
+                                    >
+                                        Hide
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="flex flex-col gap-3" id="options-group">
                                 <h3
                                     className="label-text mb-4"
