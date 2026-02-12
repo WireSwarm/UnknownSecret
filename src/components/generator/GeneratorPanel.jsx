@@ -327,7 +327,32 @@ export function GeneratorPanel({ onCopyPassword }) {
     // State for tracking hovered set (for inclusion highlighting)
     const [hoveredSet, setHoveredSet] = useState(null);
 
+    // --- EXPANDABLE CHARSETS LOGIC ---
+    const [areCharsetsExpanded, setAreCharsetsExpanded] = useState(() => {
+        try {
+            return sessionStorage.getItem('usr_charsets_expanded') === 'true';
+        } catch (e) {
+            return false;
+        }
+    });
+
+    const handleExpandCharsets = () => {
+        setAreCharsetsExpanded(true);
+        sessionStorage.setItem('usr_charsets_expanded', 'true');
+    };
+
+    // Auto-expand if active set is beyond the visible threshold (ascii)
+    useEffect(() => {
+        const asciiIndex = SETS_ORDER.indexOf('ascii');
+        const activeIndex = SETS_ORDER.indexOf(activeSet);
+        if (activeIndex > asciiIndex && !areCharsetsExpanded) {
+            setAreCharsetsExpanded(true);
+            sessionStorage.setItem('usr_charsets_expanded', 'true');
+        }
+    }, [activeSet, areCharsetsExpanded]);
+
     // Helper: Check if a set is included in another based on position (left = included in right)
+
     const isSetHighlighted = (setKey) => {
         const setIndex = SETS_ORDER.indexOf(setKey);
         const activeIndex = SETS_ORDER.indexOf(activeSet);
@@ -1131,7 +1156,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                     <div>
                         <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
                         <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
-                            {SETS_ORDER.map(key => {
+                            {(areCharsetsExpanded ? SETS_ORDER : SETS_ORDER.slice(0, SETS_ORDER.indexOf('ascii') + 1)).map(key => {
                                 const highlightState = isSetHighlighted(key);
                                 const isActive = highlightState === 'active';
                                 const isIncluded = highlightState === 'included';
@@ -1194,7 +1219,32 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     </button>
                                 );
                             })}
+                            {!areCharsetsExpanded && (
+                                <button
+                                    onClick={handleExpandCharsets}
+                                    className="charset-selector-btn rounded-full transition-all px-3 py-2 text-sm cursor-pointer flex items-center justify-center"
+                                    title="Show more character sets"
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        color: 'var(--text-muted)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                        e.currentTarget.style.color = 'var(--primary)';
+                                        e.currentTarget.style.borderColor = 'rgba(var(--primary-rgb), 0.3)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                        e.currentTarget.style.color = 'var(--text-muted)';
+                                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                    }}
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            )}
                         </div>
+
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="settings-grid">
