@@ -47,7 +47,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     // A Global Option is an option available for all charsets.
     const DEFAULT_CONFIG = {
         length: 50,
-        tokens: ['ascii_extended'],
+        tokens: ['ascii'],
         exclude: '',
         include: '',
         ensureCommon: true,
@@ -59,11 +59,8 @@ export function GeneratorPanel({ onCopyPassword }) {
         customCharset: '',
         standardCharsetDisabled: false,
         customWeight: 0,
-        customCharset: '',
-        standardCharsetDisabled: false,
-        customWeight: 0,
         isPostQuantum: false,
-        targetByteSize: null // null = length mode, number = byte mode
+        targetByteSize: 72 // null = length mode, number = byte mode
     };
 
     /**
@@ -99,7 +96,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                 return parsed.activeSet || 'alphanums';
             }
         } catch (e) { }
-        return 'ascii_extended';
+        return 'ascii';
     });
 
     // Presets State
@@ -292,13 +289,13 @@ export function GeneratorPanel({ onCopyPassword }) {
             id: 'ascii',
             name: 'Ascii',
             tokens: ['ascii'],
-            description: '+ Full ASCII table (U+0000-00FF)'
+            description: '+ All the basic symbols (U+0000-00FF)'
         },
         ascii_extended: {
             id: 'ascii_extended',
             name: 'Ascii Extended',
             tokens: ['ascii_extended'],
-            description: '+ Latin Extended A & B (U+0100-024F)'
+            description: '+ More symbols (Latin Extended A & B (U+0100-024F))'
         },
         symbols_set: {
             id: 'symbols_set',
@@ -552,7 +549,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
     const handleResetConfig = () => {
         setConfig(DEFAULT_CONFIG);
-        setActiveSet('ascii_extended');
+        setActiveSet('ascii');
         setActivePresetId(null);
     };
 
