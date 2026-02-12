@@ -1,11 +1,12 @@
-import React, { useMemo } from 'react';
-import { Type, ArrowUpCircle, Hash, Smile, Zap, Check } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Type, ArrowUpCircle, Hash, Smile, Zap, Check, Shield, Info, X } from 'lucide-react';
 
 export function PasswordStats({ password, isOpen }) {
+    const [showBcryptInfo, setShowBcryptInfo] = useState(false);
 
     // Calculate stats ensuring we handle surrogate pairs (emojis) correctly
     const stats = useMemo(() => {
-        if (!password) return { lower: 0, upper: 0, number: 0, emoji: 0, symbol: 0 };
+        if (!password) return { lower: 0, upper: 0, number: 0, emoji: 0, symbol: 0, bytes: 0 };
 
         const chars = Array.from(password);
         const total = chars.length;
@@ -25,7 +26,8 @@ export function PasswordStats({ password, isOpen }) {
         });
 
         const symbol = total - (lower + upper + number + emoji);
-        return { lower, upper, number, emoji, symbol };
+        const bytes = new TextEncoder().encode(password).length;
+        return { lower, upper, number, emoji, symbol, bytes };
     }, [password]);
 
     const statItems = [
@@ -33,7 +35,15 @@ export function PasswordStats({ password, isOpen }) {
         { label: 'Uppercase', count: stats.upper, icon: ArrowUpCircle },
         { label: 'Numbers', count: stats.number, icon: Hash },
         { label: 'Emojis', count: stats.emoji, icon: Smile },
-        { label: 'Symbols', count: stats.symbol, icon: Zap }
+        { label: 'Symbols', count: stats.symbol, icon: Zap },
+        {
+            label: 'Bcrypt',
+            count: (password && stats.bytes <= 72) ? 1 : 0,
+            icon: Shield,
+            hideCount: true,
+            onClick: () => setShowBcryptInfo(prev => !prev),
+            isInteractive: true
+        }
     ];
 
     // Container style - handles the collapse/expand animation
@@ -55,7 +65,7 @@ export function PasswordStats({ password, isOpen }) {
     // Grid layout for stats
     const gridStyle = {
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
+        gridTemplateColumns: 'repeat(6, 1fr)',
         gap: '0.75rem'
     };
 
@@ -80,7 +90,8 @@ export function PasswordStats({ password, isOpen }) {
                             boxShadow: isActive ? '0 0 12px rgba(16, 185, 129, 0.15)' : 'none',
                             opacity: isOpen ? 1 : 0,
                             transform: isOpen ? 'translateY(0)' : 'translateY(1rem)',
-                            transition: `all 0.5s ease ${index * 50}ms`
+                            transition: `all 0.5s ease ${index * 50}ms`,
+                            cursor: item.isInteractive ? 'pointer' : 'default'
                         };
 
                         const iconBoxStyle = {
@@ -106,7 +117,12 @@ export function PasswordStats({ password, isOpen }) {
                         };
 
                         return (
-                            <div key={item.label} style={cardStyle} id={`stat-${item.label.toLowerCase()}`}>
+                            <div
+                                key={item.label}
+                                style={cardStyle}
+                                id={`stat-${item.label.toLowerCase()}`}
+                                onClick={item.onClick}
+                            >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
                                     <div style={iconBoxStyle}>
                                         <Icon size={14} />
@@ -124,14 +140,16 @@ export function PasswordStats({ password, isOpen }) {
                                         }}>
                                             {item.label}
                                         </span>
-                                        <span style={{
-                                            fontSize: '0.95rem',
-                                            fontWeight: 700,
-                                            fontFamily: 'monospace',
-                                            lineHeight: 1
-                                        }}>
-                                            {item.count}
-                                        </span>
+                                        {!item.hideCount && (
+                                            <span style={{
+                                                fontSize: '0.95rem',
+                                                fontWeight: 700,
+                                                fontFamily: 'monospace',
+                                                lineHeight: 1
+                                            }}>
+                                                {item.count}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 
@@ -142,6 +160,47 @@ export function PasswordStats({ password, isOpen }) {
                         );
                     })}
                 </div>
+
+                {showBcryptInfo && (
+                    <div
+                        style={{
+                            marginTop: '1rem',
+                            padding: '0.75rem',
+                            borderRadius: '0.5rem',
+                            background: 'rgba(59, 130, 246, 0.1)', // Blue tint
+                            border: '1px solid rgba(59, 130, 246, 0.25)',
+                            display: 'flex',
+                            alignItems: 'start',
+                            gap: '0.75rem',
+                            animation: 'fadeIn 0.3s ease',
+                            position: 'relative'
+                        }}
+                    >
+                        <Info size={18} style={{ color: '#60A5FA', flexShrink: 0, marginTop: '2px' }} />
+                        <div style={{ flex: 1 }}>
+                            <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#DBEAFE' }}>
+                                Bcrypt Compatibility
+                            </h4>
+                            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', lineHeight: 1.5, color: '#BFDBFE' }}>
+                                Ensures your password is not truncated by systems using Bcrypt.
+                                The checked status means your password size is <b>≤ 72 bytes</b>.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setShowBcryptInfo(false)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'rgba(255,255,255,0.4)',
+                                cursor: 'pointer',
+                                padding: '2px'
+                            }}
+                            className="hover:text-white transition-colors"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
