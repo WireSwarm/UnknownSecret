@@ -1136,6 +1136,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                 password={result.password}
                 isOpen={showStats}
                 enableEmojiStats={SETS_ORDER.indexOf(activeSet) >= SETS_ORDER.indexOf('emojis')}
+                isPostQuantum={config.isPostQuantum}
             />
 
             {/* Unified Configuration & Presets Panel */}
