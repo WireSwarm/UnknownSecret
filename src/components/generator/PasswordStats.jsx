@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Type, ArrowUpCircle, Hash, Smile, Zap, Check, Shield, Info, X } from 'lucide-react';
 
-export function PasswordStats({ password, isOpen }) {
+export function PasswordStats({ password, isOpen, enableEmojiStats = true }) {
     const [showBcryptInfo, setShowBcryptInfo] = useState(false);
 
     // Calculate stats ensuring we handle surrogate pairs (emojis) correctly
@@ -22,7 +22,7 @@ export function PasswordStats({ password, isOpen }) {
             if (lowerRegex.test(char)) lower++;
             else if (upperRegex.test(char)) upper++;
             else if (numberRegex.test(char)) number++;
-            else if (emojiRegex.test(char)) emoji++;
+            else if (enableEmojiStats && emojiRegex.test(char)) emoji++;
         });
 
         const symbol = total - (lower + upper + number + emoji);

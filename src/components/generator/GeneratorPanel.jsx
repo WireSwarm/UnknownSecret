@@ -1132,7 +1132,11 @@ export function GeneratorPanel({ onCopyPassword }) {
             </div>
 
             {/* Collapsible Stats Panel - Outside to handle its own spacing animation */}
-            <PasswordStats password={result.password} isOpen={showStats} />
+            <PasswordStats
+                password={result.password}
+                isOpen={showStats}
+                enableEmojiStats={SETS_ORDER.indexOf(activeSet) >= SETS_ORDER.indexOf('emojis')}
+            />
 
             {/* Unified Configuration & Presets Panel */}
             <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="unified-config-card">
