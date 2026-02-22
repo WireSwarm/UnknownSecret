@@ -142,17 +142,64 @@ export function GeneratorPanel({ onCopyPassword }) {
     // Cursor follower for inspect mode
     const cursorFollowerRef = useRef(null);
     const unicodeCheckerRef = useRef(null);
+    const inspectScrollRef = useRef(null);
+
     useEffect(() => {
+        let animationFrameId;
+        let pX = 0;
+        let pY = 0;
+
         const handleMouseMove = (e) => {
+            pX = e.clientX;
+            pY = e.clientY;
             if (cursorFollowerRef.current && isInspecting) {
                 // Position 15px to right and 15px up from cursor
-                cursorFollowerRef.current.style.transform = `translate(${e.clientX + 12}px, ${e.clientY - 12}px)`;
+                cursorFollowerRef.current.style.transform = `translate(${pX + 12}px, ${pY - 12}px)`;
             }
         };
+
+        const checkScroll = () => {
+            if (isInspecting && inspectScrollRef.current) {
+                const el = inspectScrollRef.current;
+                const rect = el.getBoundingClientRect();
+
+                // Only consider scrolling if mouse is horizontally within the window bounds
+                // And vertically roughly over the element. 
+                if (pY >= rect.top - 20 && pY <= rect.bottom + 20) {
+                    const leftEdge = rect.left;
+                    const rightEdge = rect.right;
+
+                    const EDGE_SIZE = 60; // Zone in px that triggers scrolling
+                    const MAX_SPEED = 6;
+
+                    let speed = 0;
+                    if (pX >= leftEdge && pX <= leftEdge + EDGE_SIZE) {
+                        const intensity = 1 - ((pX - leftEdge) / EDGE_SIZE);
+                        speed = -(MAX_SPEED * intensity);
+                    } else if (pX <= rightEdge && pX >= rightEdge - EDGE_SIZE) {
+                        const intensity = 1 - ((rightEdge - pX) / EDGE_SIZE);
+                        speed = (MAX_SPEED * intensity);
+                    }
+
+                    if (speed !== 0) {
+                        el.scrollLeft += speed;
+                    }
+                }
+            }
+            if (isInspecting) {
+                animationFrameId = requestAnimationFrame(checkScroll);
+            }
+        };
+
         if (isInspecting) {
             window.addEventListener('mousemove', handleMouseMove);
+            animationFrameId = requestAnimationFrame(checkScroll);
         }
-        return () => window.removeEventListener('mousemove', handleMouseMove);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        };
     }, [isInspecting]);
 
     // Effect to track Shift key globally
@@ -862,37 +909,46 @@ export function GeneratorPanel({ onCopyPassword }) {
                     {isInspecting ? (
                         <div className="input-wrapper relative mb-1" id="inspection-wrapper">
                             <div
-                                className={`input-field keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-32 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
+                                className={`input-field keeper-ignore text-2xl font-bold tracking-wider radiant-text input-rounded pr-32 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
                                 style={{
                                     paddingRight: '11rem',
                                     cursor: 'crosshair',
                                     userSelect: 'none',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    display: 'block'
+                                    display: 'flex',
+                                    alignItems: 'center'
                                 }}
                             >
-                                {Array.from(isScrambling ? scrambleText : result.password).map((char, idx) => (
-                                    <span
-                                        key={idx}
-                                        className="char-inspect-item radiant-text"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const hex = char.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
-                                            window.open(`https://www.compart.com/en/unicode/U+${hex}`, '_blank');
-                                            setIsInspecting(false);
-                                        }}
-                                        onMouseEnter={() => {
-                                            if (cursorFollowerRef.current) cursorFollowerRef.current.style.opacity = '1';
-                                        }}
-                                        onMouseLeave={() => {
-                                            if (cursorFollowerRef.current) cursorFollowerRef.current.style.opacity = '0';
-                                        }}
-                                        title={showPassword ? `U+${char.codePointAt(0).toString(16).toUpperCase()} - Click to inspect` : 'Click to reveal Unicode info'}
-                                    >
-                                        {showPassword ? (char === ' ' ? '\u00A0' : char) : '•'}
-                                    </span>
-                                ))}
+                                <div
+                                    ref={inspectScrollRef}
+                                    style={{
+                                        width: '100%',
+                                        overflow: 'hidden',
+                                        whiteSpace: 'nowrap',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    {Array.from(isScrambling ? scrambleText : result.password).map((char, idx) => (
+                                        <span
+                                            key={idx}
+                                            className="char-inspect-item radiant-text"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const hex = char.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+                                                window.open(`https://www.compart.com/en/unicode/U+${hex}`, '_blank');
+                                                setIsInspecting(false);
+                                            }}
+                                            onMouseEnter={() => {
+                                                if (cursorFollowerRef.current) cursorFollowerRef.current.style.opacity = '1';
+                                            }}
+                                            onMouseLeave={() => {
+                                                if (cursorFollowerRef.current) cursorFollowerRef.current.style.opacity = '0';
+                                            }}
+                                            title={showPassword ? `U+${char.codePointAt(0).toString(16).toUpperCase()} - Click to inspect` : 'Click to reveal Unicode info'}
+                                        >
+                                            {showPassword ? (char === ' ' ? '\u00A0' : char) : '•'}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Cursor Follower */}
