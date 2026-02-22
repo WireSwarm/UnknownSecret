@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { RefreshCw, Copy, Check, Eye, EyeOff, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X, RotateCcw, Search, ExternalLink } from 'lucide-react';
+import { RefreshCw, Settings, Copy, Check, Eye, EyeOff, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X, RotateCcw, Search, ExternalLink } from 'lucide-react';
 import { createPortal } from 'react-dom';
-
 const DiceIcon = ({ size = 22, className = "" }) => (
     <svg
         width={size}
@@ -37,12 +36,19 @@ import { generatePassword, PRESETS, buildCharset, getCharsetSizes } from '../../
 import { EntropyMeter } from './EntropyMeter';
 import { PasswordStats } from './PasswordStats';
 import { UnicodeChecker } from './UnicodeChecker';
-
+const CheckboxOption = ({ id, label, checked, onChange, disabled }) => (
+    <label htmlFor={id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/10 hover:bg-white/10'}`} style={{ border: '1px solid', borderColor: checked ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(255,255,255,0.1)', opacity: disabled ? 0.5 : 1 }}>
+        <div className={`w-4 h-4 rounded flex items-center justify-center transition-colors ${checked ? 'bg-primary border-primary text-white' : 'border-2 border-white/20 bg-black/20'}`}>
+            {checked && <Check size={12} strokeWidth={3} />}
+        </div>
+        <input type="checkbox" id={id} style={{ display: 'none' }} checked={checked} onChange={onChange} disabled={disabled} />
+        <span className="text-xs font-semibold tracking-wide text-white/90 select-none flex-1">{label}</span>
+    </label>
+);
 export function GeneratorPanel({ onCopyPassword }) {
     // --- PERSISTENCE CONSTANTS ---
     const STORAGE_KEY_PARAMS = 'usr_gen_params';
     const STORAGE_KEY_PRESETS = 'usr_gen_presets';
-
     // Default configuration reference
     // A Global Option is an option available for all charsets.
     const DEFAULT_CONFIG = {
@@ -60,9 +66,13 @@ export function GeneratorPanel({ onCopyPassword }) {
         standardCharsetDisabled: false,
         customWeight: 0,
         isPostQuantum: false,
-        targetByteSize: 72 // null = length mode, number = byte mode
+        targetByteSize: 72, // null = length mode, number = byte mode
+        lower: true,
+        upper: true,
+        numbers: true,
+        basic: true,
+        advanced: true
     };
-
     /**
      * STATE INITIALIZATION WITH PERSISTENCE
      * 
@@ -73,7 +83,6 @@ export function GeneratorPanel({ onCopyPassword }) {
      *    to prevent undefined values for new settings on existing users' machines.
      * 3. No specific action is needed for saving, as the entire `config` object is serialized.
      */
-
     const [config, setConfig] = useState(() => {
         try {
             const saved = localStorage.getItem(STORAGE_KEY_PARAMS);
@@ -87,7 +96,6 @@ export function GeneratorPanel({ onCopyPassword }) {
         }
         return DEFAULT_CONFIG;
     });
-
     const [activeSet, setActiveSet] = useState(() => {
         try {
             const saved = localStorage.getItem(STORAGE_KEY_PARAMS);
@@ -98,7 +106,6 @@ export function GeneratorPanel({ onCopyPassword }) {
         } catch (e) { }
         return 'ascii';
     });
-
     // Presets State
     const [presets, setPresets] = useState(() => {
         try {
@@ -108,7 +115,6 @@ export function GeneratorPanel({ onCopyPassword }) {
             return [];
         }
     });
-
     const [isEditingMax, setIsEditingMax] = useState(false);
     const [isEditingLength, setIsEditingLength] = useState(false);
     const [result, setResult] = useState({ password: '', entropy: 0 });
@@ -116,7 +122,6 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [copied, setCopied] = useState(false);
     const [hasBeenCopied, setHasBeenCopied] = useState(false); // Track if current password was copied
     const [showStats, setShowStats] = useState(false); // Toggle for stats panel
-
     // Preset creation UI state
     const [isCreatingPreset, setIsCreatingPreset] = useState(false);
     const [newPresetName, setNewPresetName] = useState('');
@@ -138,17 +143,14 @@ export function GeneratorPanel({ onCopyPassword }) {
             return true;
         }
     });
-
     // Cursor follower for inspect mode
     const cursorFollowerRef = useRef(null);
     const unicodeCheckerRef = useRef(null);
     const inspectScrollRef = useRef(null);
-
     useEffect(() => {
         let animationFrameId;
         let pX = 0;
         let pY = 0;
-
         const handleMouseMove = (e) => {
             pX = e.clientX;
             pY = e.clientY;
@@ -157,21 +159,17 @@ export function GeneratorPanel({ onCopyPassword }) {
                 cursorFollowerRef.current.style.transform = `translate(${pX + 12}px, ${pY - 12}px)`;
             }
         };
-
         const checkScroll = () => {
             if (isInspecting && inspectScrollRef.current) {
                 const el = inspectScrollRef.current;
                 const rect = el.getBoundingClientRect();
-
                 // Only consider scrolling if mouse is horizontally within the window bounds
                 // And vertically roughly over the element. 
                 if (pY >= rect.top - 20 && pY <= rect.bottom + 20) {
                     const leftEdge = rect.left;
                     const rightEdge = rect.right;
-
                     const EDGE_SIZE = 60; // Zone in px that triggers scrolling
                     const MAX_SPEED = 6;
-
                     let speed = 0;
                     if (pX >= leftEdge && pX <= leftEdge + EDGE_SIZE) {
                         const intensity = 1 - ((pX - leftEdge) / EDGE_SIZE);
@@ -180,7 +178,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                         const intensity = 1 - ((rightEdge - pX) / EDGE_SIZE);
                         speed = (MAX_SPEED * intensity);
                     }
-
                     if (speed !== 0) {
                         el.scrollLeft += speed;
                     }
@@ -190,18 +187,15 @@ export function GeneratorPanel({ onCopyPassword }) {
                 animationFrameId = requestAnimationFrame(checkScroll);
             }
         };
-
         if (isInspecting) {
             window.addEventListener('mousemove', handleMouseMove);
             animationFrameId = requestAnimationFrame(checkScroll);
         }
-
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
         };
     }, [isInspecting]);
-
     // Effect to track Shift key globally
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -214,7 +208,6 @@ export function GeneratorPanel({ onCopyPassword }) {
         const handleBlur = () => {
             setIsShiftPressed(false);
         };
-
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
         window.addEventListener('blur', handleBlur);
@@ -224,27 +217,21 @@ export function GeneratorPanel({ onCopyPassword }) {
             window.removeEventListener('blur', handleBlur);
         };
     }, []);
-
     // Local state for slider to prevent regeneration while dragging
     const [sliderLength, setSliderLength] = useState(config.length);
-
     // Scramble Effect State
     const [isScrambling, setIsScrambling] = useState(false);
     const [scrambleText, setScrambleText] = useState('');
     // isInspecting moved up
-
     // Sync sliderLength when config changes (e.g. presets)
     useEffect(() => {
         setSliderLength(config.length);
     }, [config.length]);
-
     // Load default presets from bundled JSON files in src/data/default_presets/
     useEffect(() => {
         // Use Vite's glob import to find all JSON files in the folder at build time
         const presetModules = import.meta.glob('../../data/default_presets/*.json', { eager: true });
-
         const allPresets = [];
-
         Object.keys(presetModules).forEach(path => {
             const presets = presetModules[path].default || presetModules[path];
             if (Array.isArray(presets)) {
@@ -257,20 +244,16 @@ export function GeneratorPanel({ onCopyPassword }) {
                 allPresets.push(...processedPresets);
             }
         });
-
         setDefaultPresets(allPresets);
     }, []);
-
     // --- SCRAMBLE EFFECT LOOP ---
     useEffect(() => {
         let animationFrameId;
-
         const animate = () => {
             if (isScrambling) {
                 // Generate fake scramble text based on visibility
                 let fakePwd = '';
                 const targetLen = sliderLength;
-
                 if (showPassword) {
                     // Matrix Style: Random Alphanums
                     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
@@ -282,23 +265,19 @@ export function GeneratorPanel({ onCopyPassword }) {
                     // We can use a different dot char for effect, but classic bullet is fine
                     fakePwd = '•'.repeat(targetLen);
                 }
-
                 setScrambleText(fakePwd);
                 animationFrameId = requestAnimationFrame(animate);
             }
         };
-
         if (isScrambling) {
             animationFrameId = requestAnimationFrame(animate);
         } else {
             setScrambleText('');
         }
-
         return () => {
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
         };
     }, [isScrambling, sliderLength, showPassword]);
-
     // --- AUTO-SAVE EFFECT ---
     useEffect(() => {
         const payload = {
@@ -307,25 +286,18 @@ export function GeneratorPanel({ onCopyPassword }) {
         };
         localStorage.setItem(STORAGE_KEY_PARAMS, JSON.stringify(payload));
     }, [config, activeSet]);
-
     // ... (rest of the file remains, I will target the render blocks separately if needed, but I can do it in one go if I match context carefully)
     // Actually, I can't delete a block AND replace a block far away in one 'replace_file_content' call if they are not contiguous.
     // I must use multi_replace_file_content.
-
-
     // --- PRESETS SAVE EFFECT ---
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
     }, [presets]);
-
-
     // Predefined Sets with linear inclusion hierarchy (left to right = small to large)
     // Each set includes all sets to its LEFT (like ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ)
     const SETS_ORDER = ['alphanums', 'ascii', 'ascii_extended', 'symbols_set', 'active_languages', 'emojis', 'all_unicode'];
-
     // Get exact charset sizes (computed once and cached)
     const charsetSizes = useMemo(() => getCharsetSizes(), []);
-
     const SETS = {
         alphanums: {
             id: 'alphanums',
@@ -370,10 +342,8 @@ export function GeneratorPanel({ onCopyPassword }) {
             description: '+ Full BMP (CJK, Technical...)'
         }
     };
-
     // State for tracking hovered set (for inclusion highlighting)
     const [hoveredSet, setHoveredSet] = useState(null);
-
     // --- EXPANDABLE CHARSETS LOGIC ---
     const [areCharsetsExpanded, setAreCharsetsExpanded] = useState(() => {
         try {
@@ -382,12 +352,10 @@ export function GeneratorPanel({ onCopyPassword }) {
             return false;
         }
     });
-
     const handleExpandCharsets = () => {
         setAreCharsetsExpanded(true);
         sessionStorage.setItem('usr_charsets_expanded', 'true');
     };
-
     // Auto-expand if active set is beyond the visible threshold (ascii)
     useEffect(() => {
         const asciiIndex = SETS_ORDER.indexOf('ascii');
@@ -397,34 +365,26 @@ export function GeneratorPanel({ onCopyPassword }) {
             sessionStorage.setItem('usr_charsets_expanded', 'true');
         }
     }, [activeSet, areCharsetsExpanded]);
-
     // Helper: Check if a set is included in another based on position (left = included in right)
-
     const isSetHighlighted = (setKey) => {
         const setIndex = SETS_ORDER.indexOf(setKey);
         const activeIndex = SETS_ORDER.indexOf(activeSet);
         const hoveredIndex = hoveredSet ? SETS_ORDER.indexOf(hoveredSet) : -1;
-
         // Always highlight the active set
         if (activeSet === setKey) return 'active';
-
         // Check if this set is to the LEFT of the hovered set (meaning it's included)
         if (hoveredSet && setIndex < hoveredIndex) {
             return 'included';
         }
-
         // Check if this set is to the LEFT of the active set (meaning it's a child)
         if (setIndex < activeIndex) {
             return 'child';
         }
-
         return null;
     };
-
     // Generate function
     const handleGenerate = () => {
         let finalCharset = [];
-
         // 1. Standard Pool
         if (!config.standardCharsetDisabled) {
             finalCharset = buildCharset({
@@ -433,12 +393,10 @@ export function GeneratorPanel({ onCopyPassword }) {
                 include: config.include
             });
         }
-
         // 2. Custom Pool & Weighting
         if (config.customCharset) {
             const excludeSet = new Set(config.exclude);
             const customPool = Array.from(config.customCharset).filter(c => !excludeSet.has(c));
-
             if (customPool.length > 0) {
                 if (config.standardCharsetDisabled) {
                     finalCharset = customPool;
@@ -448,13 +406,11 @@ export function GeneratorPanel({ onCopyPassword }) {
                     const C = customPool.length;
                     // Cap P at 0.99 to avoid division by zero (infinity) if mixing
                     let P = Math.min(config.customWeight, 99) / 100;
-
                     if (S > 0 && P > 0) {
                         // Formula: k * C / (S + k * C) = P
                         // k = (P * S) / (C * (1 - P))
                         let k = (P * S) / (C * (1 - P));
                         k = Math.max(1, Math.ceil(k));
-
                         // Add k copies of custom pool
                         for (let i = 0; i < k; i++) {
                             finalCharset.push(...customPool);
@@ -477,19 +433,15 @@ export function GeneratorPanel({ onCopyPassword }) {
             minAsciiPercent: config.minAsciiPercent,
             targetByteSize: config.targetByteSize
         });
-
         setResult(res);
-
         // If in byte mode, sync slider to actual length
         if (config.targetByteSize && res.password) {
             setSliderLength(res.password.length);
         }
-
         setCopied(false);
         setHasBeenCopied(false);
         if (isScrambling) setIsScrambling(false);
     };
-
     // Calculate conflicts between Must Include and Forbidden
     const getConflictChars = () => {
         if (!config.include || !config.exclude) return [];
@@ -497,22 +449,16 @@ export function GeneratorPanel({ onCopyPassword }) {
         const excludeSet = new Set(config.exclude);
         return [...includeSet].filter(x => excludeSet.has(x));
     };
-
     const conflictChars = getConflictChars();
     const hasConflict = conflictChars.length > 0;
-
-
-
     // Initial & Watch trigger
     useEffect(() => {
         handleGenerate();
     }, [config]);
-
     const copyToClipboard = () => {
         if (!result.password) return;
         navigator.clipboard.writeText(result.password);
         setCopied(true);
-
         // Pass a flag indicating if this exact password instance was already copied
         if (onCopyPassword) {
             onCopyPassword({
@@ -521,30 +467,65 @@ export function GeneratorPanel({ onCopyPassword }) {
                 alreadyCopied: hasBeenCopied
             });
         }
-
         setHasBeenCopied(true);
         // Reset copied state after 2s
         setTimeout(() => setCopied(false), 2000);
     };
-
     // Change Set
     const handleSetChange = (setId) => {
         setActiveSet(setId);
-
         let newConfig = {
             ...config,
-            tokens: SETS[setId].tokens,
+            tokens: SETS[setId] ? SETS[setId].tokens : config.tokens,
             standardCharsetDisabled: false // Reactivate standard charset on manual selection
         };
-
         // Auto-disable min ASCII if not supported by new set
         if (!['emojis', 'all_unicode'].includes(setId)) {
             newConfig.ensureMinAscii = false;
         }
-
+        if (setId && SETS_ORDER.indexOf(setId) >= SETS_ORDER.indexOf('ascii')) {
+            newConfig.lower = true;
+            newConfig.upper = true;
+            newConfig.numbers = true;
+            newConfig.basic = true;
+            newConfig.advanced = true;
+        } else if (setId === 'alphanums') {
+            newConfig.lower = true;
+            newConfig.upper = true;
+            newConfig.numbers = true;
+            newConfig.basic = false;
+            newConfig.advanced = false;
+        }
         setConfig(newConfig);
     };
-
+    const handleCheckboxToggle = (field) => {
+        let newActiveSet = null;
+        setConfig(prev => {
+            const next = { ...prev, [field]: !prev[field] };
+            // Auto-select `activeSet` for the UI
+            const isAlphanum = next.lower && next.upper && next.numbers && !next.basic && !next.advanced;
+            const isAscii = next.lower && next.upper && next.numbers && next.basic && next.advanced;
+            if (isAlphanum) {
+                newActiveSet = 'alphanums';
+                next.tokens = ['alphanums'];
+            } else if (isAscii) {
+                newActiveSet = 'ascii';
+                next.tokens = ['ascii'];
+            } else {
+                newActiveSet = null;
+                let customTokens = [];
+                if (next.lower) customTokens.push('lowercase');
+                if (next.upper) customTokens.push('uppercase');
+                if (next.numbers) customTokens.push('numbers');
+                if (next.basic) customTokens.push('basic_symbols');
+                if (next.advanced) customTokens.push('advanced_symbols');
+                next.tokens = customTokens;
+            }
+            return next;
+        });
+        // Timeout to update active set without breaking setConfig queue
+        setTimeout(() => setActiveSet(newActiveSet), 0);
+    };
     const handleMaxChange = (e) => {
         if (e.key === 'Enter' || e.type === 'blur') {
             let val = parseInt(e.target.value, 10);
@@ -560,7 +541,6 @@ export function GeneratorPanel({ onCopyPassword }) {
             setIsEditingMax(false);
         }
     };
-
     const handleLengthChange = (e) => {
         if (e.key === 'Enter' || e.type === 'blur') {
             let val = parseInt(e.target.value, 10);
@@ -575,42 +555,34 @@ export function GeneratorPanel({ onCopyPassword }) {
             setIsEditingLength(false);
         }
     }
-
     const handleByteChange = (bytes) => {
         // Switch to Byte Mode
         setConfig({ ...config, targetByteSize: bytes });
     };
-
-
     // Preset handlers
     const saveCurrentAsPreset = () => {
         if (!newPresetName.trim()) return;
-
         const newPreset = {
             id: Date.now(),
             name: newPresetName.trim(),
             config: { ...config },
             activeSet
         };
-
         setPresets([...presets, newPreset]);
         setNewPresetName('');
         setIsCreatingPreset(false);
         setActivePresetId(newPreset.id);
     };
-
     const loadPreset = (preset) => {
         setConfig(preset.config);
         setActiveSet(preset.activeSet);
         setActivePresetId(preset.id);
     };
-
     const deletePreset = (id, e) => {
         e.stopPropagation();
         setPresets(presets.filter(p => p.id !== id));
         if (activePresetId === id) setActivePresetId(null);
     };
-
     const handleClearAllPresets = () => {
         if (clearConfirmLevel === 0) {
             setClearConfirmLevel(1);
@@ -625,16 +597,13 @@ export function GeneratorPanel({ onCopyPassword }) {
             setClearConfirmLevel(0);
         }
     };
-
     const handleResetConfig = () => {
         setConfig(DEFAULT_CONFIG);
         setActiveSet('ascii');
         setActivePresetId(null);
     };
-
     const fileInputRef = useRef(null);
     const dragCounterRef = useRef(0);
-
     const exportPresets = () => {
         const dataToExport = presets.map(p => {
             const configDiff = {};
@@ -644,19 +613,16 @@ export function GeneratorPanel({ onCopyPassword }) {
                 const areValuesDifferent = isArray
                     ? JSON.stringify(p.config[key]) !== JSON.stringify(DEFAULT_CONFIG[key])
                     : p.config[key] !== DEFAULT_CONFIG[key];
-
                 if (areValuesDifferent) {
                     configDiff[key] = p.config[key];
                 }
             });
-
             return {
                 name: p.name,
                 activeSet: p.activeSet,
                 configDiff
             };
         });
-
         const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -667,28 +633,23 @@ export function GeneratorPanel({ onCopyPassword }) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-
     const processImportFile = (file) => {
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const importedData = JSON.parse(event.target.result);
                 if (!Array.isArray(importedData)) throw new Error("Invalid format");
-
                 const newPresets = importedData.map(item => ({
                     id: Date.now() + Math.random(),
                     name: item.name,
                     activeSet: item.activeSet,
                     config: { ...DEFAULT_CONFIG, ...item.configDiff }
                 }));
-
                 // Check for duplicates by name
                 const existingNames = new Set(presets.map(p => p.name.toLowerCase()));
                 const duplicates = newPresets.filter(p => existingNames.has(p.name.toLowerCase()));
                 const newOnly = newPresets.filter(p => !existingNames.has(p.name.toLowerCase()));
-
                 if (duplicates.length > 0) {
                     // Show conflict modal
                     setImportConflict({ duplicates, newOnly, all: newPresets });
@@ -703,11 +664,9 @@ export function GeneratorPanel({ onCopyPassword }) {
         };
         reader.readAsText(file);
     };
-
     const handleImportOverwrite = () => {
         if (!importConflict) return;
         const { duplicates, newOnly } = importConflict;
-
         setPresets(prev => {
             // Remove existing presets that have the same name as duplicates
             const duplicateNames = new Set(duplicates.map(d => d.name.toLowerCase()));
@@ -717,28 +676,23 @@ export function GeneratorPanel({ onCopyPassword }) {
         });
         setImportConflict(null);
     };
-
     const handleImportSkip = () => {
         if (!importConflict) return;
         const { newOnly } = importConflict;
-
         // Only add presets that don't conflict
         if (newOnly.length > 0) {
             setPresets(prev => [...prev, ...newOnly]);
         }
         setImportConflict(null);
     };
-
     const handleImportCancel = () => {
         setImportConflict(null);
     };
-
     const importPresets = (e) => {
         const file = e.target.files[0];
         processImportFile(file);
         e.target.value = ''; // Reset input
     };
-
     const handleDragEnter = (e) => {
         e.preventDefault();
         dragCounterRef.current++;
@@ -746,11 +700,9 @@ export function GeneratorPanel({ onCopyPassword }) {
             setIsDraggingOver(true);
         }
     };
-
     const handleDragOver = (e) => {
         e.preventDefault();
     };
-
     const handleDragLeave = (e) => {
         e.preventDefault();
         dragCounterRef.current--;
@@ -758,26 +710,22 @@ export function GeneratorPanel({ onCopyPassword }) {
             setIsDraggingOver(false);
         }
     };
-
     const handleDrop = (e) => {
         e.preventDefault();
         dragCounterRef.current = 0;
         setIsDraggingOver(false);
-
         const file = e.dataTransfer.files[0];
         if (file && file.type === 'application/json') {
             processImportFile(file);
         }
         // Don't alert for non-JSON, user might drop elsewhere by accident
     };
-
     // Global drag-and-drop listeners
     useEffect(() => {
         document.addEventListener('dragenter', handleDragEnter);
         document.addEventListener('dragover', handleDragOver);
         document.addEventListener('dragleave', handleDragLeave);
         document.addEventListener('drop', handleDrop);
-
         return () => {
             document.removeEventListener('dragenter', handleDragEnter);
             document.removeEventListener('dragover', handleDragOver);
@@ -785,13 +733,11 @@ export function GeneratorPanel({ onCopyPassword }) {
             document.removeEventListener('drop', handleDrop);
         };
     }, []);
-
     const getClearButtonText = () => {
         if (clearConfirmLevel === 1) return "Sure?";
         if (clearConfirmLevel === 2) return "REALLY?";
         return "Clear";
     };
-
     return (
         <div className="flex flex-col gap-6" id="generator-panel">
             {/* Import Conflict Modal */}
@@ -841,11 +787,9 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 <X size={18} />
                             </button>
                         </div>
-
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: 1.5 }}>
                             The following presets already exist:
                         </p>
-
                         <div
                             id="import-conflict-list"
                             style={{
@@ -874,13 +818,11 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 </div>
                             ))}
                         </div>
-
                         {importConflict.newOnly.length > 0 && (
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', opacity: 0.8 }}>
                                 {importConflict.newOnly.length} new preset{importConflict.newOnly.length > 1 ? 's' : ''} will be added regardless.
                             </p>
                         )}
-
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
                             <Button
                                 id="import-overwrite-btn"
@@ -902,7 +844,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                     </div>
                 </div>
             )}
-
             {/* Centered Output Section */}
             <div className="flex flex-col items-center w-full" id="output-section">
                 <div className="w-full max-w-2xl relative" id="password-input-area">
@@ -950,7 +891,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     ))}
                                 </div>
                             </div>
-
                             {/* Cursor Follower */}
                             {isInspecting && createPortal(
                                 <div
@@ -980,7 +920,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 </div>,
                                 document.body
                             )}
-
                             <div className="absolute right-3 flex items-center h-full gap-2" id="inspection-right-content">
                                 <button
                                     id="toggle-inspect-btn-active"
@@ -1050,7 +989,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                         />
                     )}
                 </div>
-
                 {/* Password Length Slider: directly below the input */}
                 <div className="w-full max-w-2xl mt-4" id="length-slider-area">
                     <div className="flex justify-between items-center mb-1" id="length-label-row">
@@ -1125,7 +1063,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                         }}
                     />
                 </div>
-
                 {/* Cond 1: Bcrypt Warning */}
                 {/* Only check length match if NOT in byte mode already */}
                 {!config.targetByteSize && config.length === 72 && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii') && (
@@ -1165,7 +1102,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                     </div>
                 )}
             </div>
-
             {/* Copy Button & Meter & Stats Toggle */}
             <div className="flex flex-col gap-4" id="meter-action-row">
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
@@ -1177,7 +1113,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                         isPostQuantum={config.isPostQuantum}
                         onByteChange={handleByteChange}
                     />
-
                     <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
                         {/* Stats Toggle Button */}
                         <Button
@@ -1189,7 +1124,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                         >
                             <BarChart2 size={20} className={showStats ? 'text-primary' : ''} />
                         </Button>
-
                         <Button
                             id="main-copy-btn"
                             onClick={copyToClipboard}
@@ -1203,7 +1137,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                     </div>
                 </div>
             </div>
-
             {/* Collapsible Stats Panel - Outside to handle its own spacing animation */}
             <PasswordStats
                 password={result.password}
@@ -1211,13 +1144,358 @@ export function GeneratorPanel({ onCopyPassword }) {
                 enableEmojiStats={SETS_ORDER.indexOf(activeSet) >= SETS_ORDER.indexOf('emojis')}
                 isPostQuantum={config.isPostQuantum}
             />
-
             {/* Unified Configuration & Presets Panel */}
-            <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="unified-config-card">
-
+            {/* Presets and Default Configs Card */}
+            <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="presets-glass-card">
+                {/* Section 2: Saved Configurations */}
+                <div
+                    className="flex flex-col gap-4"
+                    id="presets-section"
+                    style={{ position: 'relative' }}
+                >
+                    {/* Drop Zone Overlay */}
+                    {isDraggingOver && (
+                        <div
+                            id="preset-drop-overlay"
+                            style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: 'rgba(var(--primary-rgb), 0.1)',
+                                border: '2px dashed var(--primary)',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 50,
+                                backdropFilter: 'blur(4px)',
+                                animation: 'fadeIn 0.15s ease'
+                            }}
+                        >
+                            <div
+                                id="preset-drop-content"
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    color: 'var(--primary)',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                <Upload size={32} style={{ opacity: 0.8 }} />
+                                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Drop JSON file to import</span>
+                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Presets will be added to your list</span>
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-bold flex items-center gap-2" id="custom-configs-title">
+                            <Save size={18} className="text-primary" />
+                            Custom Configurations
+                        </h3>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="file"
+                                id="preset-import-input"
+                                ref={fileInputRef}
+                                onChange={importPresets}
+                                accept="application/json"
+                                style={{ display: 'none' }}
+                            />
+                            <Button
+                                variant="ghost"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-2 py-1 text-xs h-8 text-muted hover:text-primary"
+                                title="Import Presets"
+                            >
+                                <Upload size={14} />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={exportPresets}
+                                className="px-2 py-1 text-xs h-8 text-muted hover:text-primary"
+                                title="Export Presets"
+                                disabled={presets.length === 0}
+                            >
+                                <Download size={14} />
+                            </Button>
+                            {presets.length > 0 &&
+                                <Button
+                                    variant="ghost"
+                                    onClick={handleClearAllPresets}
+                                    className="px-3 py-1 text-xs h-8 ml-1"
+                                    style={{
+                                        color: clearConfirmLevel > 0 ? 'rgba(239, 68, 68, 1)' : undefined,
+                                        borderColor: clearConfirmLevel > 0 ? 'rgba(239, 68, 68, 0.5)' : undefined
+                                    }}
+                                >
+                                    {getClearButtonText()}
+                                </Button>
+                            }
+                        </div>
+                    </div>
+                    {isCreatingPreset && (
+                        <div className="flex gap-2 items-center w-full animate-in fade-in slide-in-from-top-2 mb-3">
+                            <div className="flex-1 relative group">
+                                <input
+                                    autoFocus
+                                    placeholder="Configuration name..."
+                                    value={newPresetName}
+                                    onChange={(e) => setNewPresetName(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && saveCurrentAsPreset()}
+                                    className="w-full transition-all"
+                                    style={{
+                                        height: '2.5rem',
+                                        padding: '0 1rem',
+                                        borderRadius: '9999px',
+                                        background: 'rgba(0, 0, 0, 0.4)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        outline: 'none',
+                                        fontSize: '0.875rem',
+                                        color: 'white',
+                                        backdropFilter: 'blur(4px)'
+                                    }}
+                                />
+                            </div>
+                            <button
+                                onClick={saveCurrentAsPreset}
+                                className="icon-btn transition-all confirm-save-btn"
+                                style={{
+                                    height: '2.5rem',
+                                    width: '2.5rem',
+                                    color: 'var(--text-muted)',
+                                }}
+                                title="Confirm Save"
+                            >
+                                <Check size={24} />
+                            </button>
+                            <button
+                                onClick={() => setIsCreatingPreset(false)}
+                                className="icon-btn transition-colors"
+                                style={{
+                                    height: '2.5rem',
+                                    width: '2.5rem',
+                                    borderRadius: '9999px',
+                                    color: 'rgba(239, 68, 68, 0.7)'
+                                }}
+                                title="Cancel"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                    )}
+                    <div className="flex flex-wrap gap-6 items-center" style={{ padding: '0.25rem' }}>
+                        {presets.map(preset => {
+                            const isActive = activePresetId === preset.id;
+                            return (
+                                <div
+                                    key={preset.id}
+                                    onClick={() => !isShiftPressed && loadPreset(preset)}
+                                    className="group relative flex items-center gap-4 rounded-lg cursor-pointer select-none overflow-hidden preset-item"
+                                    style={{
+                                        paddingLeft: '1rem',
+                                        paddingRight: '0.5rem',
+                                        height: '2.5rem',
+                                        background: isActive
+                                            ? 'linear-gradient(90deg, rgba(var(--primary-rgb), 0.15), rgba(var(--secondary-rgb), 0.05))'
+                                            : 'rgba(0, 0, 0, 0.2)',
+                                        border: isActive
+                                            ? '1px solid rgba(var(--primary-rgb), 0.5)'
+                                            : '1px solid rgba(255, 255, 255, 0.05)',
+                                        boxShadow: isActive
+                                            ? '0 0 20px rgba(var(--primary-rgb), 0.15), inset 0 0 10px rgba(var(--primary-rgb), 0.05)'
+                                            : 'none',
+                                        transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.transform = 'scale(1.1)';
+                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                                        }
+                                    }}
+                                >
+                                    {isActive && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: '2px',
+                                            background: 'var(--primary)',
+                                            boxShadow: '0 0 8px var(--primary)'
+                                        }}></div>
+                                    )}
+                                    {/* Preset name - always visible */}
+                                    <span
+                                        className="text-xs font-bold tracking-wider uppercase"
+                                        style={{
+                                            color: isActive ? 'white' : 'var(--text-muted)',
+                                            textShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'none',
+                                            opacity: isShiftPressed ? 0.3 : 1,
+                                            transition: 'opacity 0.2s ease'
+                                        }}
+                                    >
+                                        {preset.name}
+                                    </span>
+                                    {/* Delete overlay - centered, only visible when Shift is pressed */}
+                                    {isShiftPressed && (
+                                        <button
+                                            onClick={(e) => deletePreset(preset.id, e)}
+                                            className="preset-delete-overlay"
+                                            style={{
+                                                position: 'absolute',
+                                                inset: 0,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: 'rgba(239, 68, 68, 0.05)',
+                                                border: 'none',
+                                                borderRadius: 'inherit',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                                                e.currentTarget.querySelector('svg').style.transform = 'scale(1.15) rotate(-8deg)';
+                                                e.currentTarget.querySelector('svg').style.color = 'rgba(239, 68, 68, 0.7)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)';
+                                                e.currentTarget.querySelector('svg').style.transform = 'scale(1) rotate(0deg)';
+                                                e.currentTarget.querySelector('svg').style.color = 'rgba(239, 68, 68, 0.4)';
+                                            }}
+                                            title="Delete preset"
+                                        >
+                                            <Trash2
+                                                size={16}
+                                                style={{
+                                                    color: 'rgba(239, 68, 68, 0.4)',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            />
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        {/* Save Current Config Button - Tech Style */}
+                        {!isCreatingPreset && (
+                            <button
+                                onClick={() => setIsCreatingPreset(true)}
+                                className="flex items-center gap-2 px-4 h-10 rounded-lg cursor-pointer transition-all text-muted"
+                                style={{
+                                    background: 'rgba(0, 0, 0, 0.2)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                                }}
+                            >
+                                <Plus size={16} />
+                                <span className="font-semibold text-xs uppercase tracking-wider">Save Current</span>
+                            </button>
+                        )}
+                    </div>
+                    {/* Hint message for delete functionality - always rendered, visibility controlled */}
+                    {presets.length > 0 && (
+                        <p
+                            className="text-xs text-muted"
+                            style={{
+                                marginTop: '0.5rem',
+                                visibility: isShiftPressed ? 'hidden' : 'visible',
+                                transition: 'visibility 0s, opacity 0.2s ease',
+                                opacity: isShiftPressed ? 0 : 0.5
+                            }}
+                        >
+                            Hold <kbd style={{
+                                background: 'rgba(255,255,255,0.1)',
+                                padding: '0.1rem 0.4rem',
+                                borderRadius: '4px',
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: '0.7rem'
+                            }}>Shift</kbd> to delete individual presets
+                        </p>
+                    )}
+                </div>
+                {/* Section 3: Default Configurations */}
+                {defaultPresets.length > 0 && (
+                    <div className="flex flex-col gap-4" id="default-presets-section">
+                        <h3 className="text-lg font-bold flex items-center gap-2" id="default-configs-title">
+                            <Sliders size={18} className="text-primary" />
+                            Default Configurations
+                        </h3>
+                        <div className="flex flex-wrap gap-6 items-center" id="default-presets-list" style={{ padding: '0.25rem' }}>
+                            {defaultPresets.map(preset => {
+                                const isActive = activePresetId === preset.id;
+                                return (
+                                    <div
+                                        key={preset.id}
+                                        id={`default-preset-${preset.id}`}
+                                        onClick={() => loadPreset(preset)}
+                                        className="group relative flex items-center gap-4 rounded-lg cursor-pointer select-none overflow-hidden preset-item"
+                                        style={{
+                                            paddingLeft: '1rem',
+                                            paddingRight: '0.5rem',
+                                            height: '2.5rem',
+                                            background: isActive
+                                                ? 'linear-gradient(90deg, rgba(var(--primary-rgb), 0.15), rgba(var(--secondary-rgb), 0.05))'
+                                                : 'rgba(0, 0, 0, 0.2)',
+                                            border: isActive
+                                                ? '1px solid rgba(var(--primary-rgb), 0.5)'
+                                                : '1px solid rgba(255, 255, 255, 0.05)',
+                                            boxShadow: isActive
+                                                ? '0 0 20px rgba(var(--primary-rgb), 0.15), inset 0 0 10px rgba(var(--primary-rgb), 0.05)'
+                                                : 'none',
+                                            transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!isActive) {
+                                                e.currentTarget.style.transform = 'scale(1.1)';
+                                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!isActive) {
+                                                e.currentTarget.style.transform = 'scale(1)';
+                                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                                            }
+                                        }}
+                                    >
+                                        {isActive && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                left: 0,
+                                                top: 0,
+                                                bottom: 0,
+                                                width: '2px',
+                                                background: 'var(--primary)',
+                                                boxShadow: '0 0 8px var(--primary)'
+                                            }}></div>
+                                        )}
+                                        <span
+                                            className="text-xs font-bold tracking-wider uppercase"
+                                            style={{
+                                                color: isActive ? 'white' : 'var(--text-muted)',
+                                                textShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'none'
+                                            }}
+                                        >
+                                            {preset.name}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
                 {/* Section 1: Configuration (The Workspace) */}
+            </GlassCard>
+            <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="unified-config-card">
                 <div className="flex flex-col gap-6" id="config-section">
-
                     {/* Configuration Title */}
                     {/* Configuration Title & Reset */}
                     <div className="flex justify-between items-center">
@@ -1235,102 +1513,14 @@ export function GeneratorPanel({ onCopyPassword }) {
                             Reset
                         </Button>
                     </div>
-
-                    {/* Character Sets with inclusion highlighting */}
-                    <div>
-                        <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
-                        <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
-                            {(areCharsetsExpanded ? SETS_ORDER : SETS_ORDER.slice(0, SETS_ORDER.indexOf('ascii') + 1)).map(key => {
-                                const highlightState = isSetHighlighted(key);
-                                const isActive = highlightState === 'active';
-                                const isIncluded = highlightState === 'included';
-                                const isChild = highlightState === 'child';
-                                const isHovered = hoveredSet === key;
-
-                                return (
-                                    <button
-                                        id={`charset-btn-${key}`}
-                                        key={key}
-                                        onClick={() => handleSetChange(key)}
-                                        onMouseEnter={() => setHoveredSet(key)}
-                                        onMouseLeave={() => setHoveredSet(null)}
-                                        className="charset-selector-btn rounded-full transition-all px-4 py-2 text-sm cursor-pointer"
-                                        title={`${SETS[key].description}\n${charsetSizes[key]?.toLocaleString() || '?'} characters`}
-                                        style={{
-                                            background: isActive
-                                                ? 'var(--primary)'
-                                                : isHovered
-                                                    ? 'rgba(var(--primary-rgb), 0.35)'
-                                                    : isIncluded
-                                                        ? 'rgba(var(--primary-rgb), 0.2)'
-                                                        : isChild
-                                                            ? 'rgba(var(--primary-rgb), 0.15)'
-                                                            : 'rgba(0, 0, 0, 0.2)',
-                                            color: isActive
-                                                ? 'white'
-                                                : isHovered
-                                                    ? 'white'
-                                                    : isIncluded
-                                                        ? 'rgba(255, 255, 255, 0.9)'
-                                                        : isChild
-                                                            ? 'rgba(255, 255, 255, 0.8)'
-                                                            : 'var(--text-muted)',
-                                            border: isActive
-                                                ? '1px solid var(--primary)'
-                                                : isHovered
-                                                    ? '1px solid rgba(var(--primary-rgb), 0.7)'
-                                                    : isIncluded
-                                                        ? '1px solid rgba(var(--primary-rgb), 0.4)'
-                                                        : isChild
-                                                            ? '1px solid rgba(var(--primary-rgb), 0.3)'
-                                                            : '1px solid rgba(255, 255, 255, 0.1)',
-                                            boxShadow: isActive
-                                                ? '0 0 15px rgba(var(--primary-rgb), 0.4)'
-                                                : isHovered
-                                                    ? '0 0 12px rgba(var(--primary-rgb), 0.35)'
-                                                    : isIncluded
-                                                        ? '0 0 8px rgba(var(--primary-rgb), 0.25)'
-                                                        : 'none',
-                                            transform: isHovered
-                                                ? 'scale(1.08)'
-                                                : isIncluded
-                                                    ? 'scale(1.02)'
-                                                    : 'scale(1)',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                    >
-                                        {SETS[key].name}
-                                    </button>
-                                );
-                            })}
-                            {!areCharsetsExpanded && (
-                                <button
-                                    onClick={handleExpandCharsets}
-                                    className="charset-selector-btn rounded-full transition-all px-3 py-2 text-sm cursor-pointer flex items-center justify-center"
-                                    title="Show more character sets"
-                                    style={{
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        color: 'var(--text-muted)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                                        e.currentTarget.style.color = 'var(--primary)';
-                                        e.currentTarget.style.borderColor = 'rgba(var(--primary-rgb), 0.3)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                                        e.currentTarget.style.color = 'var(--text-muted)';
-                                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                                    }}
-                                >
-                                    <Plus size={16} />
-                                </button>
-                            )}
-                        </div>
-
+                    {/* Component-based Checkboxes */}
+                    <div className="flex flex-wrap gap-2 mb-2 mt-2 justify-center">
+                        <CheckboxOption id="chk-lower" label="Minuscules (a-z)" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
+                        <CheckboxOption id="chk-upper" label="Majuscules (A-Z)" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
+                        <CheckboxOption id="chk-numbers" label="Chiffres (0-9)" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
+                        <CheckboxOption id="chk-basic" label="Symboles basiques" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
+                        <CheckboxOption id="chk-advanced" label="Symboles avancés" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="settings-grid">
                         {/* Left Column: Options */}
                         <div className="flex flex-col gap-6" id="settings-col-1">
@@ -1358,7 +1548,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                     Please follow the steps in the <b>Unicode Compatibility Check</b> card below.
                                                 </p>
                                             </div>
-
                                             <Button
                                                 onClick={() => {
                                                     unicodeCheckerRef.current?.open();
@@ -1381,7 +1570,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             </Button>
                                         </div>
                                     </div>
-
                                     <button
                                         onClick={() => {
                                             setShowUtf8Warning(false);
@@ -1406,7 +1594,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     </button>
                                 </div>
                             )}
-
                             <div className="flex flex-col gap-3" id="options-group">
                                 <h3
                                     className="label-text mb-4"
@@ -1470,8 +1657,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         </span>
                                     }
                                 />
-
-
                                 <div
                                     id="compatibility-section"
                                     className="p-3 rounded-lg flex flex-col gap-3 mt-4"
@@ -1507,7 +1692,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 </div>
                             </div>
                         </div>
-
                         {/* Right Column: Advanced (Collapsible) */}
                         <div className="flex flex-col gap-4" id="settings-col-2">
                             <button
@@ -1543,7 +1727,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     }}
                                 />
                             </button>
-
                             {isAdvancedOpen && (
                                 <div
                                     className="flex flex-col gap-3"
@@ -1577,9 +1760,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             Simulates Grover's algorithm impact: effective entropy is halved (N/2).
                                         </p>
                                     </div>
-
-
-
                                     {['emojis', 'all_unicode'].includes(activeSet) && (
                                         <Toggle
                                             id="opt-min-ascii"
@@ -1625,7 +1805,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             }
                                         />
                                     )}
-
                                     <div className="mt-4 pt-0 mb-4">
                                         <Input
                                             id="custom-charset-input"
@@ -1670,7 +1849,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                 border: '1px solid rgba(255, 255, 255, 0.08)'
                                             }}
                                         />
-
                                         {config.customCharset && (
                                             <Toggle
                                                 id="opt-enable-std"
@@ -1683,7 +1861,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                 className="mb-2 mt-4"
                                             />
                                         )}
-
                                         {/* Weight Option (Option B) */}
                                         {!config.standardCharsetDisabled && config.customCharset && (
                                             <Toggle
@@ -1735,7 +1912,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             />
                                         )}
                                     </div>
-
                                     <Input
                                         id="must-include-input"
                                         label={
@@ -1790,9 +1966,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             border: hasConflict ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)'
                                         }}
                                     />
-
-
-
                                     <Input
                                         id="forbidden-input"
                                         label={
@@ -1847,7 +2020,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             border: hasConflict ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)'
                                         }}
                                     />
-
                                     {hasConflict && (
                                         <div
                                             style={{
@@ -1872,375 +2044,105 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             </div>
                                         </div>
                                     )}
-
+                                    {/* Character Sets with inclusion highlighting */}
+                                    <div>
+                                        <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
+                                        <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
+                                            {(areCharsetsExpanded ? SETS_ORDER : SETS_ORDER.slice(0, SETS_ORDER.indexOf('ascii') + 1)).map(key => {
+                                                const highlightState = isSetHighlighted(key);
+                                                const isActive = highlightState === 'active';
+                                                const isIncluded = highlightState === 'included';
+                                                const isChild = highlightState === 'child';
+                                                const isHovered = hoveredSet === key;
+                                                return (
+                                                    <button
+                                                        id={`charset-btn-${key}`}
+                                                        key={key}
+                                                        onClick={() => handleSetChange(key)}
+                                                        onMouseEnter={() => setHoveredSet(key)}
+                                                        onMouseLeave={() => setHoveredSet(null)}
+                                                        className="charset-selector-btn rounded-full transition-all px-4 py-2 text-sm cursor-pointer"
+                                                        title={`${SETS[key].description}\n${charsetSizes[key]?.toLocaleString() || '?'} characters`}
+                                                        style={{
+                                                            background: isActive
+                                                                ? 'var(--primary)'
+                                                                : isHovered
+                                                                    ? 'rgba(var(--primary-rgb), 0.35)'
+                                                                    : isIncluded
+                                                                        ? 'rgba(var(--primary-rgb), 0.2)'
+                                                                        : isChild
+                                                                            ? 'rgba(var(--primary-rgb), 0.15)'
+                                                                            : 'rgba(0, 0, 0, 0.2)',
+                                                            color: isActive
+                                                                ? 'white'
+                                                                : isHovered
+                                                                    ? 'white'
+                                                                    : isIncluded
+                                                                        ? 'rgba(255, 255, 255, 0.9)'
+                                                                        : isChild
+                                                                            ? 'rgba(255, 255, 255, 0.8)'
+                                                                            : 'var(--text-muted)',
+                                                            border: isActive
+                                                                ? '1px solid var(--primary)'
+                                                                : isHovered
+                                                                    ? '1px solid rgba(var(--primary-rgb), 0.7)'
+                                                                    : isIncluded
+                                                                        ? '1px solid rgba(var(--primary-rgb), 0.4)'
+                                                                        : isChild
+                                                                            ? '1px solid rgba(var(--primary-rgb), 0.3)'
+                                                                            : '1px solid rgba(255, 255, 255, 0.1)',
+                                                            boxShadow: isActive
+                                                                ? '0 0 15px rgba(var(--primary-rgb), 0.4)'
+                                                                : isHovered
+                                                                    ? '0 0 12px rgba(var(--primary-rgb), 0.35)'
+                                                                    : isIncluded
+                                                                        ? '0 0 8px rgba(var(--primary-rgb), 0.25)'
+                                                                        : 'none',
+                                                            transform: isHovered
+                                                                ? 'scale(1.08)'
+                                                                : isIncluded
+                                                                    ? 'scale(1.02)'
+                                                                    : 'scale(1)',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                    >
+                                                        {SETS[key].name}
+                                                    </button>
+                                                );
+                                            })}
+                                            {!areCharsetsExpanded && (
+                                                <button
+                                                    onClick={handleExpandCharsets}
+                                                    className="charset-selector-btn rounded-full transition-all px-3 py-2 text-sm cursor-pointer flex items-center justify-center"
+                                                    title="Show more character sets"
+                                                    style={{
+                                                        background: 'rgba(255, 255, 255, 0.05)',
+                                                        color: 'var(--text-muted)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                                        e.currentTarget.style.color = 'var(--primary)';
+                                                        e.currentTarget.style.borderColor = 'rgba(var(--primary-rgb), 0.3)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                                        e.currentTarget.style.color = 'var(--text-muted)';
+                                                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                                    }}
+                                                >
+                                                    <Plus size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                     {/* Character Inspector Button has been moved to main input */}
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
-
-
-
-                {/* Section 2: Saved Configurations */}
-                <div
-                    className="flex flex-col gap-4"
-                    id="presets-section"
-                    style={{ position: 'relative' }}
-                >
-                    {/* Drop Zone Overlay */}
-                    {isDraggingOver && (
-                        <div
-                            id="preset-drop-overlay"
-                            style={{
-                                position: 'absolute',
-                                inset: 0,
-                                background: 'rgba(var(--primary-rgb), 0.1)',
-                                border: '2px dashed var(--primary)',
-                                borderRadius: '12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 50,
-                                backdropFilter: 'blur(4px)',
-                                animation: 'fadeIn 0.15s ease'
-                            }}
-                        >
-                            <div
-                                id="preset-drop-content"
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    color: 'var(--primary)',
-                                    textAlign: 'center'
-                                }}
-                            >
-                                <Upload size={32} style={{ opacity: 0.8 }} />
-                                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Drop JSON file to import</span>
-                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Presets will be added to your list</span>
-                            </div>
-                        </div>
-                    )}
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-bold flex items-center gap-2" id="custom-configs-title">
-                            <Save size={18} className="text-primary" />
-                            Custom Configurations
-                        </h3>
-
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="file"
-                                id="preset-import-input"
-                                ref={fileInputRef}
-                                onChange={importPresets}
-                                accept="application/json"
-                                style={{ display: 'none' }}
-                            />
-                            <Button
-                                variant="ghost"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="px-2 py-1 text-xs h-8 text-muted hover:text-primary"
-                                title="Import Presets"
-                            >
-                                <Upload size={14} />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={exportPresets}
-                                className="px-2 py-1 text-xs h-8 text-muted hover:text-primary"
-                                title="Export Presets"
-                                disabled={presets.length === 0}
-                            >
-                                <Download size={14} />
-                            </Button>
-                            {presets.length > 0 &&
-                                <Button
-                                    variant="ghost"
-                                    onClick={handleClearAllPresets}
-                                    className="px-3 py-1 text-xs h-8 ml-1"
-                                    style={{
-                                        color: clearConfirmLevel > 0 ? 'rgba(239, 68, 68, 1)' : undefined,
-                                        borderColor: clearConfirmLevel > 0 ? 'rgba(239, 68, 68, 0.5)' : undefined
-                                    }}
-                                >
-                                    {getClearButtonText()}
-                                </Button>
-                            }
-                        </div>
-                    </div>
-
-                    {isCreatingPreset && (
-                        <div className="flex gap-2 items-center w-full animate-in fade-in slide-in-from-top-2 mb-3">
-                            <div className="flex-1 relative group">
-                                <input
-                                    autoFocus
-                                    placeholder="Configuration name..."
-                                    value={newPresetName}
-                                    onChange={(e) => setNewPresetName(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && saveCurrentAsPreset()}
-                                    className="w-full transition-all"
-                                    style={{
-                                        height: '2.5rem',
-                                        padding: '0 1rem',
-                                        borderRadius: '9999px',
-                                        background: 'rgba(0, 0, 0, 0.4)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        outline: 'none',
-                                        fontSize: '0.875rem',
-                                        color: 'white',
-                                        backdropFilter: 'blur(4px)'
-                                    }}
-                                />
-                            </div>
-
-                            <button
-                                onClick={saveCurrentAsPreset}
-                                className="icon-btn transition-all confirm-save-btn"
-                                style={{
-                                    height: '2.5rem',
-                                    width: '2.5rem',
-                                    color: 'var(--text-muted)',
-                                }}
-                                title="Confirm Save"
-                            >
-                                <Check size={24} />
-                            </button>
-
-                            <button
-                                onClick={() => setIsCreatingPreset(false)}
-                                className="icon-btn transition-colors"
-                                style={{
-                                    height: '2.5rem',
-                                    width: '2.5rem',
-                                    borderRadius: '9999px',
-                                    color: 'rgba(239, 68, 68, 0.7)'
-                                }}
-                                title="Cancel"
-                            >
-                                <Trash2 size={18} />
-                            </button>
-                        </div>
-                    )}
-
-                    <div className="flex flex-wrap gap-6 items-center" style={{ padding: '0.25rem' }}>
-                        {presets.map(preset => {
-                            const isActive = activePresetId === preset.id;
-                            return (
-                                <div
-                                    key={preset.id}
-                                    onClick={() => !isShiftPressed && loadPreset(preset)}
-                                    className="group relative flex items-center gap-4 rounded-lg cursor-pointer select-none overflow-hidden preset-item"
-                                    style={{
-                                        paddingLeft: '1rem',
-                                        paddingRight: '0.5rem',
-                                        height: '2.5rem',
-                                        background: isActive
-                                            ? 'linear-gradient(90deg, rgba(var(--primary-rgb), 0.15), rgba(var(--secondary-rgb), 0.05))'
-                                            : 'rgba(0, 0, 0, 0.2)',
-                                        border: isActive
-                                            ? '1px solid rgba(var(--primary-rgb), 0.5)'
-                                            : '1px solid rgba(255, 255, 255, 0.05)',
-                                        boxShadow: isActive
-                                            ? '0 0 20px rgba(var(--primary-rgb), 0.15), inset 0 0 10px rgba(var(--primary-rgb), 0.05)'
-                                            : 'none',
-                                        transform: isActive ? 'scale(1.05)' : 'scale(1)',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (!isActive) {
-                                            e.currentTarget.style.transform = 'scale(1.1)';
-                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (!isActive) {
-                                            e.currentTarget.style.transform = 'scale(1)';
-                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-                                        }
-                                    }}
-                                >
-                                    {isActive && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            left: 0,
-                                            top: 0,
-                                            bottom: 0,
-                                            width: '2px',
-                                            background: 'var(--primary)',
-                                            boxShadow: '0 0 8px var(--primary)'
-                                        }}></div>
-                                    )}
-
-                                    {/* Preset name - always visible */}
-                                    <span
-                                        className="text-xs font-bold tracking-wider uppercase"
-                                        style={{
-                                            color: isActive ? 'white' : 'var(--text-muted)',
-                                            textShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'none',
-                                            opacity: isShiftPressed ? 0.3 : 1,
-                                            transition: 'opacity 0.2s ease'
-                                        }}
-                                    >
-                                        {preset.name}
-                                    </span>
-
-                                    {/* Delete overlay - centered, only visible when Shift is pressed */}
-                                    {isShiftPressed && (
-                                        <button
-                                            onClick={(e) => deletePreset(preset.id, e)}
-                                            className="preset-delete-overlay"
-                                            style={{
-                                                position: 'absolute',
-                                                inset: 0,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                background: 'rgba(239, 68, 68, 0.05)',
-                                                border: 'none',
-                                                borderRadius: 'inherit',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
-                                                e.currentTarget.querySelector('svg').style.transform = 'scale(1.15) rotate(-8deg)';
-                                                e.currentTarget.querySelector('svg').style.color = 'rgba(239, 68, 68, 0.7)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)';
-                                                e.currentTarget.querySelector('svg').style.transform = 'scale(1) rotate(0deg)';
-                                                e.currentTarget.querySelector('svg').style.color = 'rgba(239, 68, 68, 0.4)';
-                                            }}
-                                            title="Delete preset"
-                                        >
-                                            <Trash2
-                                                size={16}
-                                                style={{
-                                                    color: 'rgba(239, 68, 68, 0.4)',
-                                                    transition: 'all 0.2s ease'
-                                                }}
-                                            />
-                                        </button>
-                                    )}
-                                </div>
-                            );
-                        })}
-
-                        {/* Save Current Config Button - Tech Style */}
-                        {!isCreatingPreset && (
-                            <button
-                                onClick={() => setIsCreatingPreset(true)}
-                                className="flex items-center gap-2 px-4 h-10 rounded-lg cursor-pointer transition-all text-muted"
-                                style={{
-                                    background: 'rgba(0, 0, 0, 0.2)',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                                }}
-                            >
-                                <Plus size={16} />
-                                <span className="font-semibold text-xs uppercase tracking-wider">Save Current</span>
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Hint message for delete functionality - always rendered, visibility controlled */}
-                    {presets.length > 0 && (
-                        <p
-                            className="text-xs text-muted"
-                            style={{
-                                marginTop: '0.5rem',
-                                visibility: isShiftPressed ? 'hidden' : 'visible',
-                                transition: 'visibility 0s, opacity 0.2s ease',
-                                opacity: isShiftPressed ? 0 : 0.5
-                            }}
-                        >
-                            Hold <kbd style={{
-                                background: 'rgba(255,255,255,0.1)',
-                                padding: '0.1rem 0.4rem',
-                                borderRadius: '4px',
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: '0.7rem'
-                            }}>Shift</kbd> to delete individual presets
-                        </p>
-                    )}
-                </div>
-
-                {/* Section 3: Default Configurations */}
-                {defaultPresets.length > 0 && (
-                    <div className="flex flex-col gap-4" id="default-presets-section">
-                        <h3 className="text-lg font-bold flex items-center gap-2" id="default-configs-title">
-                            <Sliders size={18} className="text-primary" />
-                            Default Configurations
-                        </h3>
-
-                        <div className="flex flex-wrap gap-6 items-center" id="default-presets-list" style={{ padding: '0.25rem' }}>
-                            {defaultPresets.map(preset => {
-                                const isActive = activePresetId === preset.id;
-                                return (
-                                    <div
-                                        key={preset.id}
-                                        id={`default-preset-${preset.id}`}
-                                        onClick={() => loadPreset(preset)}
-                                        className="group relative flex items-center gap-4 rounded-lg cursor-pointer select-none overflow-hidden preset-item"
-                                        style={{
-                                            paddingLeft: '1rem',
-                                            paddingRight: '0.5rem',
-                                            height: '2.5rem',
-                                            background: isActive
-                                                ? 'linear-gradient(90deg, rgba(var(--primary-rgb), 0.15), rgba(var(--secondary-rgb), 0.05))'
-                                                : 'rgba(0, 0, 0, 0.2)',
-                                            border: isActive
-                                                ? '1px solid rgba(var(--primary-rgb), 0.5)'
-                                                : '1px solid rgba(255, 255, 255, 0.05)',
-                                            boxShadow: isActive
-                                                ? '0 0 20px rgba(var(--primary-rgb), 0.15), inset 0 0 10px rgba(var(--primary-rgb), 0.05)'
-                                                : 'none',
-                                            transform: isActive ? 'scale(1.05)' : 'scale(1)',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            if (!isActive) {
-                                                e.currentTarget.style.transform = 'scale(1.1)';
-                                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                                            }
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            if (!isActive) {
-                                                e.currentTarget.style.transform = 'scale(1)';
-                                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-                                            }
-                                        }}
-                                    >
-                                        {isActive && (
-                                            <div style={{
-                                                position: 'absolute',
-                                                left: 0,
-                                                top: 0,
-                                                bottom: 0,
-                                                width: '2px',
-                                                background: 'var(--primary)',
-                                                boxShadow: '0 0 8px var(--primary)'
-                                            }}></div>
-                                        )}
-
-                                        <span
-                                            className="text-xs font-bold tracking-wider uppercase"
-                                            style={{
-                                                color: isActive ? 'white' : 'var(--text-muted)',
-                                                textShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'none'
-                                            }}
-                                        >
-                                            {preset.name}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
             </GlassCard>
-
             <div id="unicode-compatibility-section">
                 <UnicodeChecker ref={unicodeCheckerRef} />
             </div>

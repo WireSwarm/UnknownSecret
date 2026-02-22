@@ -111,7 +111,17 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
         }
     }
 
-    // Build pool by including all sets up to and including maxLevel
+    // Add explicit individual toggles
+    if (tokens.includes('lowercase')) pool += CHAR_SETS.lowercase;
+    if (tokens.includes('uppercase')) pool += CHAR_SETS.uppercase;
+    if (tokens.includes('numbers')) pool += CHAR_SETS.numbers;
+    if (tokens.includes('basic_symbols')) pool += CHAR_SETS.symbols; // standard ascii symbols
+    if (tokens.includes('advanced_symbols')) {
+        const exclude = new Set(CHAR_SETS.lowercase + CHAR_SETS.uppercase + CHAR_SETS.numbers + CHAR_SETS.symbols);
+        const asciiRest = addSafeRange(0x0000, 0x007F);
+        pool += Array.from(asciiRest).filter(c => !exclude.has(c)).join('');
+    }
+
     // Level 0: alphanums (a-z, A-Z, 0-9) = 62 chars
     if (maxLevel >= 0) {
         pool += CHAR_SETS.lowercase + CHAR_SETS.uppercase + CHAR_SETS.numbers;
