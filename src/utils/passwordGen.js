@@ -13,14 +13,28 @@ const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => 
 
 const DENYLIST_RANGES = unicodeDenylistData.denylist;
 
+// Pre-process denylist for O(log N) lookup instead of O(N)
 function isInDenyList(codePoint) {
-    for (const entry of DENYLIST_RANGES) {
+    let low = 0;
+    let high = DENYLIST_RANGES.length - 1;
+
+    while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        const entry = DENYLIST_RANGES[mid];
+
         if (codePoint >= entry.start && codePoint <= entry.end) {
             return true;
+        } else if (codePoint < entry.start) {
+            high = mid - 1;
+        } else {
+            low = mid + 1;
         }
     }
     return false;
 }
+
+// Global cache for expensive chunks
+const rangeCache = {};
 
 export const PRESETS = {
     alphanums: { id: 'alphanums', name: 'Alphanums', tokens: ['alphanums'] },
@@ -62,8 +76,11 @@ export function getCharsetSizes() {
 export function buildCharset({ tokens = [], excludeChars = '', includeChars = '' }) {
     let pool = '';
 
-    // Helper to safely add ranges excluding denied chars
+    // Helper to safely add ranges excluding denied chars (with caching for large ranges)
     const addSafeRange = (start, end) => {
+        const cacheKey = `${start}-${end}`;
+        if (rangeCache[cacheKey]) return rangeCache[cacheKey];
+
         let localPool = '';
         for (let i = start; i <= end; i++) {
             if (!isInDenyList(i)) {
@@ -73,6 +90,11 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
                     // Ignore invalid code points
                 }
             }
+        }
+
+        // Cache if the loop range is large to prevent UI freezes on subsequent generations
+        if (end - start > 1000) {
+            rangeCache[cacheKey] = localPool;
         }
         return localPool;
     };
@@ -95,16 +117,18 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
         pool += CHAR_SETS.lowercase + CHAR_SETS.uppercase + CHAR_SETS.numbers;
     }
 
-    // Level 1: ascii - Full 8-bit ASCII table (ISO 8859-1 / Latin-1)
-    // U+0000 to U+00FF = 256 code points (includes control chars filtered by denylist)
+    // Level 1: ascii - Standard 7-bit ASCII table
+    // U+0000 to U+007F = 128 code points (includes control chars filtered by denylist)
     if (maxLevel >= 1) {
-        pool += addSafeRange(0x0000, 0x00FF);
+        pool += addSafeRange(0x0000, 0x007F);
     }
 
-    // Level 2: ascii_extended - Adds Latin Extended-A and Latin Extended-B
+    // Level 2: ascii_extended - Adds Latin-1 Supplement, Latin Extended-A and Latin Extended-B
+    // Latin-1 Supplement: U+0080 to U+00FF (128 chars)
     // Latin Extended-A: U+0100 to U+017F (128 chars)
     // Latin Extended-B: U+0180 to U+024F (208 chars)
     if (maxLevel >= 2) {
+        pool += addSafeRange(0x0080, 0x00FF); // Latin-1 Supplement
         pool += addSafeRange(0x0100, 0x017F); // Latin Extended-A
         pool += addSafeRange(0x0180, 0x024F); // Latin Extended-B
     }
@@ -136,7 +160,7 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
     if (maxLevel >= 6) {
         pool += addSafeRange(0x0001, 0xD7FF);
         pool += addSafeRange(0xE000, 0xFFFD);
-        pool += addSafeRange(0x1F300, 0x1FAFF);
+        // Emojis are already added in level 5, so we don't need to add them again since all_unicode includes it
     }
 
     // Add custom includes
@@ -146,7 +170,7 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
 
     // Remove exclusions
     if (excludeChars) {
-        const excludeSet = new Set(excludeChars.split(''));
+        const excludeSet = new Set(Array.from(excludeChars));
         // Splitting a huge string is slow. 
         // If pool is massive (Unicode), this is bad. 
         // Optimization: If pool > 10000, maybe do regex? 
