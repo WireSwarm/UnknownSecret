@@ -862,9 +862,9 @@ export function GeneratorPanel({ onCopyPassword }) {
                     {isInspecting ? (
                         <div className="input-wrapper relative mb-1" id="inspection-wrapper">
                             <div
-                                className={`input-field keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-24 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
+                                className={`input-field keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-32 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
                                 style={{
-                                    paddingRight: '8.4rem',
+                                    paddingRight: '11rem',
                                     cursor: 'crosshair',
                                     userSelect: 'none',
                                     whiteSpace: 'nowrap',
@@ -927,6 +927,15 @@ export function GeneratorPanel({ onCopyPassword }) {
 
                             <div className="absolute right-3 flex items-center h-full gap-2" id="inspection-right-content">
                                 <button
+                                    id="toggle-inspect-btn-active"
+                                    onClick={(e) => { e.stopPropagation(); setIsInspecting(false); }}
+                                    className="icon-btn"
+                                    style={{ color: 'var(--primary)', textShadow: '0 0 10px rgba(var(--primary-rgb), 0.5)' }}
+                                    title="Stop Inspecting"
+                                >
+                                    <Search size={22} />
+                                </button>
+                                <button
                                     id="toggle-visibility-btn-inspect"
                                     onClick={(e) => { e.stopPropagation(); setShowPassword(!showPassword); }}
                                     className="icon-btn"
@@ -950,12 +959,20 @@ export function GeneratorPanel({ onCopyPassword }) {
                             value={isScrambling ? scrambleText : result.password}
                             readOnly
                             type={showPassword || (isScrambling && showPassword) ? "text" : "password"}
-                            className={`keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-24 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
+                            className={`keeper-ignore text-center text-2xl font-bold tracking-wider radiant-text input-rounded pr-32 ${isScrambling ? 'text-primary/70 animate-pulse' : ''}`}
                             wrapperClassName="mb-1"
                             onClick={copyToClipboard}
-                            style={{ cursor: 'pointer', paddingRight: '8.4rem' }}
+                            style={{ cursor: 'pointer', paddingRight: '11rem' }}
                             rightElement={
                                 <>
+                                    <button
+                                        id="toggle-inspect-btn"
+                                        onClick={(e) => { e.stopPropagation(); setIsInspecting(true); setShowPassword(true); }}
+                                        className="icon-btn"
+                                        title="Inspect Characters"
+                                    >
+                                        <Search size={22} />
+                                    </button>
                                     <button
                                         id="toggle-visibility-btn"
                                         onClick={(e) => { e.stopPropagation(); setShowPassword(!showPassword); }}
@@ -1800,18 +1817,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         </div>
                                     )}
 
-                                    {/* Character Inspector Button */}
-                                    <div className="mt-1">
-                                        <Button
-                                            variant="ghost"
-                                            className="w-full justify-start text-xs h-9 bg-white/5 hover:bg-white/10 border border-white/5"
-                                            onClick={() => setIsInspecting(true)}
-                                            title="Inspect individual characters"
-                                        >
-                                            <Search size={14} className="mr-2 text-primary" />
-                                            Inspect Characters
-                                        </Button>
-                                    </div>
+                                    {/* Character Inspector Button has been moved to main input */}
                                 </div>
                             )}
                         </div>
