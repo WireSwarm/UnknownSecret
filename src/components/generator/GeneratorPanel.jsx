@@ -147,6 +147,16 @@ export function GeneratorPanel({ onCopyPassword }) {
     const cursorFollowerRef = useRef(null);
     const unicodeCheckerRef = useRef(null);
     const inspectScrollRef = useRef(null);
+
+    // Watch for config changes: auto-select matching preset, or deselect if none match
+    useEffect(() => {
+        const allPresets = [...defaultPresets, ...presets];
+        const matchingPreset = allPresets.find(p =>
+            p.activeSet === activeSet &&
+            JSON.stringify(p.config) === JSON.stringify(config)
+        );
+        setActivePresetId(matchingPreset ? matchingPreset.id : null);
+    }, [config, activeSet, presets, defaultPresets]);
     useEffect(() => {
         let animationFrameId;
         let pX = 0;
@@ -574,7 +584,18 @@ export function GeneratorPanel({ onCopyPassword }) {
         setActivePresetId(newPreset.id);
     };
     const loadPreset = (preset) => {
-        setConfig(preset.config);
+        // Ensure the config object loaded contains all updated checkbox booleans
+        const newConfig = { ...preset.config };
+        // Sync checkboxes if tokens exist
+        if (newConfig.tokens) {
+            newConfig.lower = newConfig.tokens.includes('alphanums') || newConfig.tokens.includes('ascii') || newConfig.tokens.includes('lowercase');
+            newConfig.upper = newConfig.tokens.includes('alphanums') || newConfig.tokens.includes('ascii') || newConfig.tokens.includes('uppercase');
+            newConfig.numbers = newConfig.tokens.includes('alphanums') || newConfig.tokens.includes('ascii') || newConfig.tokens.includes('numbers');
+            newConfig.basic = newConfig.tokens.includes('ascii') || newConfig.tokens.includes('basic_symbols');
+            newConfig.advanced = newConfig.tokens.includes('ascii') || newConfig.tokens.includes('advanced_symbols');
+        }
+
+        setConfig(newConfig);
         setActiveSet(preset.activeSet);
         setActivePresetId(preset.id);
     };
