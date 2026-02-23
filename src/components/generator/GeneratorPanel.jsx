@@ -37,9 +37,9 @@ import { EntropyMeter } from './EntropyMeter';
 import { PasswordStats } from './PasswordStats';
 import { UnicodeChecker } from './UnicodeChecker';
 const CheckboxOption = ({ id, label, checked, onChange, disabled }) => (
-    <label htmlFor={id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/10 hover:bg-white/10'}`} style={{ border: '1px solid', borderColor: checked ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(255,255,255,0.1)', opacity: disabled ? 0.5 : 1 }}>
-        <div className={`w-4 h-4 rounded flex items-center justify-center transition-colors ${checked ? 'bg-primary border-primary text-white' : 'border-2 border-white/20 bg-black/20'}`}>
-            {checked && <Check size={12} strokeWidth={3} />}
+    <label htmlFor={id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary/10 hover:bg-primary/20' : 'bg-white/5 hover:bg-white/10'}`} style={{ border: '1px solid', borderColor: checked ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(255,255,255,0.1)', opacity: disabled ? 0.5 : 1, boxSizing: 'border-box' }}>
+        <div style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0, border: checked ? '2px solid var(--primary)' : '2px solid rgba(255,255,255,0.2)', backgroundColor: checked ? 'var(--primary)' : 'rgba(0,0,0,0.2)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease', boxSizing: 'border-box' }}>
+            {checked && <Check size={12} strokeWidth={3} style={{ color: 'white' }} />}
         </div>
         <input type="checkbox" id={id} style={{ display: 'none' }} checked={checked} onChange={onChange} disabled={disabled} />
         <span className="text-xs font-semibold tracking-wide text-white/90 select-none flex-1">{label}</span>
