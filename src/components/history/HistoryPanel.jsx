@@ -118,75 +118,79 @@ export function HistoryPanel({ history, onUpdateHistory }) {
                 }
             </div>
 
-            <div className="flex flex-col gap-2 overflow-y-auto pr-2 flex-1 min-h-0" id="history-items-container">
-                {history.length === 0 && <p className="text-muted text-center py-8" id="history-empty-msg">No history yet.<br /><span className="text-xs">Generated passwords will appear here when copied.</span></p>}
-                {sortedHistory.map(item => (
-                    <GlassCard
-                        key={item.id}
-                        className="p-3 flex items-center justify-between group hover:bg-white-5 transition-colors history-item"
-                        id={`history-item-${item.id}`}
-                        onClick={() => handleCopy(item.password)}
-                    >
-                        {editingId === item.id ? (
-                            <input
-                                autoFocus
-                                className="w-full bg-transparent border-none outline-none text-sm font-semibold text-primary placeholder-muted py-1"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                onBlur={() => saveRename(item.id)}
-                                onKeyDown={(e) => handleKeyDown(e, item.id)}
-                                onClick={(e) => e.stopPropagation()}
-                                placeholder="Name"
-                                style={{
-                                    height: '2.5rem', // Matched to original content height (~40px) to prevent jump
-                                    background: 'transparent',
-                                    border: 'none',
-                                    outline: 'none',
-                                    boxShadow: 'none'
-                                }}
-                            />
-                        ) : (
-                            <>
-                                <div className="flex-1 overflow-hidden" id={`history-item-content-${item.id}`}>
-                                    <div className="flex flex-col" id={`history-item-stack-${item.id}`}>
-                                        {/* Swap: Name on top, Password below */}
-                                        <div className="flex items-center gap-2 mb-1" id={`history-item-meta-${item.id}`}>
-                                            {item.favorite && <Star size={12} className="text-yellow-400 fill-yellow-400" id={`history-fav-icon-${item.id}`} />}
-                                            {item.name ? (
-                                                <div className="flex items-center gap-2 w-full">
-                                                    <span className="text-xs font-semibold text-primary truncate" id={`history-name-${item.id}`}>{item.name}</span>
-                                                    <div className="flex items-center gap-1 ml-auto">
-                                                        <span className="text-[10px] text-muted opacity-50 whitespace-nowrap" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+            <div className="overflow-y-auto pr-2 flex-1 min-h-0" id="history-scroll-wrapper">
+                <div className="flex flex-col gap-4 pb-4" id="history-items-container">
+                    {/* Séparateur pour éviter que le scale du premier élément ne soit rogné */}
+                    <div style={{ height: '0.75rem', flexShrink: 0 }}></div>
+                    {history.length === 0 && <p className="text-muted text-center py-8" id="history-empty-msg">No history yet.<br /><span className="text-xs">Generated passwords will appear here when copied.</span></p>}
+                    {sortedHistory.map(item => (
+                        <GlassCard
+                            key={item.id}
+                            className="p-3 flex items-center justify-between group hover:bg-white-5 transition-colors history-item"
+                            id={`history-item-${item.id}`}
+                            onClick={() => handleCopy(item.password)}
+                        >
+                            {editingId === item.id ? (
+                                <input
+                                    autoFocus
+                                    className="w-full bg-transparent border-none outline-none text-sm font-semibold text-primary placeholder-muted py-1"
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    onBlur={() => saveRename(item.id)}
+                                    onKeyDown={(e) => handleKeyDown(e, item.id)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    placeholder="Name"
+                                    style={{
+                                        height: '2.5rem', // Matched to original content height (~40px) to prevent jump
+                                        background: 'transparent',
+                                        border: 'none',
+                                        outline: 'none',
+                                        boxShadow: 'none'
+                                    }}
+                                />
+                            ) : (
+                                <>
+                                    <div className="flex-1 overflow-hidden" id={`history-item-content-${item.id}`}>
+                                        <div className="flex flex-col" id={`history-item-stack-${item.id}`}>
+                                            {/* Swap: Name on top, Password below */}
+                                            <div className="flex items-center gap-2 mb-1" id={`history-item-meta-${item.id}`}>
+                                                {item.favorite && <Star size={12} className="text-yellow-400 fill-yellow-400" id={`history-fav-icon-${item.id}`} />}
+                                                {item.name ? (
+                                                    <div className="flex items-center gap-2 w-full">
+                                                        <span className="text-xs font-semibold text-primary truncate" id={`history-name-${item.id}`}>{item.name}</span>
+                                                        <div className="flex items-center gap-1 ml-auto">
+                                                            <span className="text-[10px] text-muted opacity-50 whitespace-nowrap" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                                            <button onClick={(e) => { e.stopPropagation(); startEditing(item.id, item.name); }} className="icon-btn icon-btn-primary p-0 h-4 w-4 opacity-50 hover:opacity-100" id={`history-rename-btn-${item.id}`}><Edit2 size={10} /></button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 w-full">
+                                                        <span className="text-xs text-muted opacity-50" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
                                                         <button onClick={(e) => { e.stopPropagation(); startEditing(item.id, item.name); }} className="icon-btn icon-btn-primary p-0 h-4 w-4 opacity-50 hover:opacity-100" id={`history-rename-btn-${item.id}`}><Edit2 size={10} /></button>
                                                     </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-2 w-full">
-                                                    <span className="text-xs text-muted opacity-50" id={`history-time-${item.id}`}>{new Date(item.timestamp).toLocaleTimeString()}</span>
-                                                    <button onClick={(e) => { e.stopPropagation(); startEditing(item.id, item.name); }} className="icon-btn icon-btn-primary p-0 h-4 w-4 opacity-50 hover:opacity-100" id={`history-rename-btn-${item.id}`}><Edit2 size={10} /></button>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
+                                            <span className="font-mono text-sm truncate block password-trunc" title={visiblePasswords.has(item.id) ? "" : "Click eye to reveal"} id={`history-pwd-${item.id}`}>
+                                                {visiblePasswords.has(item.id) ? item.password : "••••••••••••••••"}
+                                            </span>
                                         </div>
-                                        <span className="font-mono text-sm truncate block password-trunc" title={visiblePasswords.has(item.id) ? "" : "Click eye to reveal"} id={`history-pwd-${item.id}`}>
-                                            {visiblePasswords.has(item.id) ? item.password : "••••••••••••••••"}
-                                        </span>
                                     </div>
-                                </div>
-                                <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()} id={`history-actions-${item.id}`}>
-                                    {/* Item copy is already handled by card click, but keeping explicit icons if needed, or removing padding to avoid double click */}
-                                    <button onClick={() => toggleVisibility(item.id)} className="icon-btn" id={`history-visibility-btn-${item.id}`}>
-                                        {visiblePasswords.has(item.id) ? <EyeOff size={16} /> : <Eye size={16} />}
-                                    </button>
-                                    <button onClick={() => handleToggleFavorite(item.id)} className="icon-btn icon-btn-secondary" id={`history-fav-btn-${item.id}`}>
-                                        <Star size={18} className={item.favorite ? "fill-yellow-400 text-yellow-400" : ""} />
-                                    </button>
-                                    {/* Edit button moved to header */}
-                                    <button onClick={() => handleDelete(item.id)} className="icon-btn" style={{ color: 'rgba(239, 68, 68, 0.7)' }} id={`history-delete-btn-${item.id}`}><Trash2 size={18} /></button>
-                                </div>
-                            </>
-                        )}
-                    </GlassCard>
-                ))}
+                                    <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()} id={`history-actions-${item.id}`}>
+                                        {/* Item copy is already handled by card click, but keeping explicit icons if needed, or removing padding to avoid double click */}
+                                        <button onClick={() => toggleVisibility(item.id)} className="icon-btn" id={`history-visibility-btn-${item.id}`}>
+                                            {visiblePasswords.has(item.id) ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                        <button onClick={() => handleToggleFavorite(item.id)} className="icon-btn icon-btn-secondary" id={`history-fav-btn-${item.id}`}>
+                                            <Star size={18} className={item.favorite ? "fill-yellow-400 text-yellow-400" : ""} />
+                                        </button>
+                                        {/* Edit button moved to header */}
+                                        <button onClick={() => handleDelete(item.id)} className="icon-btn" style={{ color: 'rgba(239, 68, 68, 0.7)' }} id={`history-delete-btn-${item.id}`}><Trash2 size={18} /></button>
+                                    </div>
+                                </>
+                            )}
+                        </GlassCard>
+                    ))}
+                </div>
             </div>
 
             {/* Toast Notification */}
@@ -224,8 +228,8 @@ export function HistoryPanel({ history, onUpdateHistory }) {
                     <Check size={14} style={{ color: '#34D399' }} strokeWidth={3} />
                 </div>
                 <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Copied to clipboard</span>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
 
