@@ -115,9 +115,9 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
     if (tokens.includes('lowercase')) pool += CHAR_SETS.lowercase;
     if (tokens.includes('uppercase')) pool += CHAR_SETS.uppercase;
     if (tokens.includes('numbers')) pool += CHAR_SETS.numbers;
-    if (tokens.includes('basic_symbols')) pool += CHAR_SETS.symbols; // standard ascii symbols
+    if (tokens.includes('basic_symbols')) pool += CHAR_SETS.commonSymbols; // the most common ascii symbols
     if (tokens.includes('advanced_symbols')) {
-        const exclude = new Set(CHAR_SETS.lowercase + CHAR_SETS.uppercase + CHAR_SETS.numbers + CHAR_SETS.symbols);
+        const exclude = new Set(CHAR_SETS.lowercase + CHAR_SETS.uppercase + CHAR_SETS.numbers + CHAR_SETS.commonSymbols);
         const asciiRest = addSafeRange(0x0000, 0x007F);
         pool += Array.from(asciiRest).filter(c => !exclude.has(c)).join('');
     }
@@ -261,7 +261,11 @@ export function generatePassword({
             if (activeGroups.lower) constraints.push({ set: Array.from(CHAR_SETS.lowercase) });
             if (activeGroups.upper) constraints.push({ set: Array.from(CHAR_SETS.uppercase) });
             if (activeGroups.numbers) constraints.push({ set: Array.from(CHAR_SETS.numbers) });
-            if (activeGroups.symbols) constraints.push({ set: Array.from(CHAR_SETS.symbols) });
+            if (activeGroups.symbols) {
+                const useBasic = Array.isArray(activeGroups.symbols) ? activeGroups.symbols.includes('basic') : activeGroups.symbols;
+                const pool = useBasic ? CHAR_SETS.commonSymbols : CHAR_SETS.symbols;
+                constraints.push({ set: Array.from(pool) });
+            }
 
             constraints.forEach(c => requiredChars.push(c.set[getRandomInt(c.set.length)]));
         }
@@ -362,7 +366,11 @@ export function generatePassword({
         if (activeGroups.lower) constraints.push({ set: Array.from(CHAR_SETS.lowercase) });
         if (activeGroups.upper) constraints.push({ set: Array.from(CHAR_SETS.uppercase) });
         if (activeGroups.numbers) constraints.push({ set: Array.from(CHAR_SETS.numbers) });
-        if (activeGroups.symbols) constraints.push({ set: Array.from(CHAR_SETS.symbols) });
+        if (activeGroups.symbols) {
+            const useBasic = Array.isArray(activeGroups.symbols) ? activeGroups.symbols.includes('basic') : activeGroups.symbols;
+            const pool = useBasic ? CHAR_SETS.commonSymbols : CHAR_SETS.symbols;
+            constraints.push({ set: Array.from(pool) });
+        }
 
         constraints.forEach(constraint => {
             const charToInject = constraint.set[getRandomInt(constraint.set.length)];

@@ -441,7 +441,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                 lower: config.lower,
                 upper: config.upper,
                 numbers: config.numbers,
-                symbols: config.basic || config.advanced
+                symbols: config.basic ? ['basic'] : (config.advanced ? ['advanced'] : false)
             },
             randomizeLength: config.randomLength,
             lengthDeviation: config.lengthDeviation,
