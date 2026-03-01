@@ -36,8 +36,8 @@ import { generatePassword, PRESETS, buildCharset, getCharsetSizes } from '../../
 import { EntropyMeter } from './EntropyMeter';
 import { PasswordStats } from './PasswordStats';
 import { UnicodeChecker } from './UnicodeChecker';
-const CheckboxOption = ({ id, label, checked, onChange, disabled }) => (
-    <label htmlFor={id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary/10 hover:bg-primary/20' : 'bg-white/5 hover:bg-white/10'}`} style={{ border: '1px solid', borderColor: checked ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(255,255,255,0.1)', opacity: disabled ? 0.5 : 1, boxSizing: 'border-box' }}>
+const CheckboxOption = ({ id, label, checked, onChange, disabled, tooltip }) => (
+    <label htmlFor={id} title={tooltip} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary/10 hover:bg-primary/20' : 'bg-white/5 hover:bg-white/10'}`} style={{ border: '1px solid', borderColor: checked ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(255,255,255,0.1)', opacity: disabled ? 0.5 : 1, boxSizing: 'border-box' }}>
         <div style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0, border: checked ? '2px solid var(--primary)' : '2px solid rgba(255,255,255,0.2)', backgroundColor: checked ? 'var(--primary)' : 'rgba(0,0,0,0.2)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease', boxSizing: 'border-box' }}>
             {checked && <Check size={12} strokeWidth={3} style={{ color: 'white' }} />}
         </div>
@@ -1542,11 +1542,11 @@ export function GeneratorPanel({ onCopyPassword }) {
                     </div>
                     {/* Component-based Checkboxes */}
                     <div className="flex flex-wrap gap-2 mb-2 mt-2 justify-center">
-                        <CheckboxOption id="chk-lower" label="Minuscules (a-z)" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
-                        <CheckboxOption id="chk-upper" label="Majuscules (A-Z)" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
-                        <CheckboxOption id="chk-numbers" label="Chiffres (0-9)" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
-                        <CheckboxOption id="chk-basic" label="Symboles basiques" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
-                        <CheckboxOption id="chk-advanced" label="Symboles avancés" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
+                        <CheckboxOption id="chk-lower" label="Lowercase" tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
+                        <CheckboxOption id="chk-upper" label="Uppercase" tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
+                        <CheckboxOption id="chk-numbers" label="Numbers" tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
+                        <CheckboxOption id="chk-basic" label="Basic Symbols" tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
+                        <CheckboxOption id="chk-advanced" label="Advanced Symbols" tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="settings-grid">
                         {/* Left Column: Options */}
