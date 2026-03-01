@@ -778,6 +778,22 @@ export function GeneratorPanel({ onCopyPassword }) {
         if (clearConfirmLevel === 2) return "REALLY?";
         return "Clear";
     };
+    // Portal target for the config panel (mounted in the right aside)
+    const [portalTarget, setPortalTarget] = useState(null);
+    useEffect(() => {
+        // The #config-panel-portal div is created by App.jsx in the aside
+        const el = document.getElementById('config-panel-portal');
+        if (el) {
+            setPortalTarget(el);
+        } else {
+            // Retry after a tick if DOM is not ready yet
+            const t = setTimeout(() => {
+                setPortalTarget(document.getElementById('config-panel-portal'));
+            }, 50);
+            return () => clearTimeout(t);
+        }
+    }, []);
+
     return (
         <div className="flex flex-col gap-6" id="generator-panel">
             {/* Import Conflict Modal */}
@@ -1184,8 +1200,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                 enableEmojiStats={SETS_ORDER.indexOf(activeSet) >= SETS_ORDER.indexOf('emojis')}
                 isPostQuantum={config.isPostQuantum}
             />
-            {/* Unified Configuration & Presets Panel */}
-            {/* Presets and Default Configs Card */}
+            {/* Presets and Default Configs Card — stays in the left column */}
             <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="presets-glass-card">
                 {/* Section 2: Saved Configurations */}
                 <div
@@ -1534,401 +1549,304 @@ export function GeneratorPanel({ onCopyPassword }) {
                 )}
                 {/* Section 1: Configuration (The Workspace) */}
             </GlassCard>
-            <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="unified-config-card">
-                <div className="flex flex-col gap-6" id="config-section">
-                    {/* Configuration Title */}
-                    {/* Configuration Title & Reset */}
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-bold flex items-center gap-2">
-                            <Sliders size={18} className="text-primary" />
-                            Configuration
-                        </h3>
-                        <Button
-                            variant="ghost"
-                            onClick={handleResetConfig}
-                            className="px-2 py-1 text-xs h-7 text-muted hover:text-primary transition-colors"
-                            title="Reset to default configuration"
-                        >
-                            <RotateCcw size={13} className="mr-1.5" />
-                            Reset
-                        </Button>
-                    </div>
-                    {/* Component-based Checkboxes */}
-                    <div className="flex flex-wrap gap-2 mb-2 mt-2 justify-center">
-                        <CheckboxOption id="chk-lower" label="Lowercase" tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
-                        <CheckboxOption id="chk-upper" label="Uppercase" tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
-                        <CheckboxOption id="chk-numbers" label="Numbers" tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
-                        <CheckboxOption id="chk-basic" label="Basic Symbols" tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
-                        <CheckboxOption id="chk-advanced" label="Advanced Symbols" tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="settings-grid">
-                        {/* Left Column: Options */}
-                        <div className="flex flex-col gap-6" id="settings-col-1">
-                            {/* Cond 2: UTF-8 Compatibility Warning (MOVED HERE) */}
-                            {showUtf8Warning && config.standardCharsetDisabled !== true && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii_extended') && (
-                                <div
-                                    id="utf8-warning-alert"
-                                    className="rounded-lg overflow-hidden p-3 relative"
-                                    style={{
-                                        background: 'rgba(234, 179, 8, 0.05)',
-                                        border: '1px solid rgba(234, 179, 8, 0.15)',
-                                        animation: 'fadeIn 0.3s ease'
-                                    }}
-                                >
-                                    <div className="flex items-start gap-2">
-                                        <TriangleAlert size={14} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
-                                        <div className="flex flex-col gap-2 pr-4 flex-1">
-                                            <div>
-                                                <span style={{ fontSize: '0.8rem', color: '#FEF9C3', fontWeight: 600 }}>
-                                                    Compatibility Check
-                                                </span>
-                                                <p style={{ fontSize: '0.75rem', color: 'rgba(254, 249, 195, 0.8)', lineHeight: 1.5, margin: 0 }}>
-                                                    Not all backends fully support UTF-8. Legacy systems might replace complex symbols, reducing password strength.
-                                                    <br />
-                                                    Please follow the steps in the <b>Unicode Compatibility Check</b> card below.
-                                                </p>
-                                            </div>
-                                            <Button
-                                                onClick={() => {
-                                                    unicodeCheckerRef.current?.open();
-                                                    // Small timeout to allow expansion animation to start/layout to update
-                                                    setTimeout(() => {
-                                                        const el = document.getElementById('unicode-compatibility-section');
-                                                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                                    }, 100);
-                                                }}
-                                                size="sm"
-                                                variant="ghost"
-                                                className="self-start h-auto py-1 px-2 text-xs"
-                                                style={{
-                                                    background: 'rgba(254, 249, 195, 0.15)',
-                                                    color: '#FEF9C3',
-                                                    border: '1px solid rgba(254, 249, 195, 0.3)'
-                                                }}
-                                            >
-                                                Go to Compatibility Check
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            setShowUtf8Warning(false);
-                                            sessionStorage.setItem('hide_utf8_warning', 'true');
-                                        }}
-                                        className="absolute text-[#FEF9C3] hover:bg-[rgba(255,255,255,0.05)] transition-all rounded px-1.5 py-0.5"
+            <div id="unicode-compatibility-section">
+                <UnicodeChecker ref={unicodeCheckerRef} />
+            </div>
+            {/* Config portal: config content rendered into right aside */}
+            {portalTarget && createPortal(
+                <div id="config-portal-content" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflowY: 'auto', padding: '1.25rem' }}>
+                    <div className="flex flex-col gap-6" id="config-section">
+                        {/* Configuration Title */}
+                        {/* Configuration Title & Reset */}
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-lg font-bold flex items-center gap-2">
+                                <Sliders size={18} className="text-primary" />
+                                Configuration
+                            </h3>
+                            <Button
+                                variant="ghost"
+                                onClick={handleResetConfig}
+                                className="px-2 py-1 text-xs h-7 text-muted hover:text-primary transition-colors"
+                                title="Reset to default configuration"
+                            >
+                                <RotateCcw size={13} className="mr-1.5" />
+                                Reset
+                            </Button>
+                        </div>
+                        {/* Component-based Checkboxes */}
+                        <div className="flex flex-wrap gap-2 mb-2 mt-2 justify-center">
+                            <CheckboxOption id="chk-lower" label="Lowercase" tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
+                            <CheckboxOption id="chk-upper" label="Uppercase" tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
+                            <CheckboxOption id="chk-numbers" label="Numbers" tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
+                            <CheckboxOption id="chk-basic" label="Basic Symbols" tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
+                            <CheckboxOption id="chk-advanced" label="Advanced Symbols" tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="settings-grid">
+                            {/* Left Column: Options */}
+                            <div className="flex flex-col gap-6" id="settings-col-1">
+                                {/* Cond 2: UTF-8 Compatibility Warning (MOVED HERE) */}
+                                {showUtf8Warning && config.standardCharsetDisabled !== true && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii_extended') && (
+                                    <div
+                                        id="utf8-warning-alert"
+                                        className="rounded-lg overflow-hidden p-3 relative"
                                         style={{
-                                            top: '8px',
-                                            right: '8px',
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            fontSize: '0.65rem',
-                                            opacity: 0.5,
-                                            fontWeight: 500
+                                            background: 'rgba(234, 179, 8, 0.05)',
+                                            border: '1px solid rgba(234, 179, 8, 0.15)',
+                                            animation: 'fadeIn 0.3s ease'
                                         }}
-                                        title="Dismiss warning"
-                                        onMouseEnter={(e) => e.target.style.opacity = '1'}
-                                        onMouseLeave={(e) => e.target.style.opacity = '0.5'}
                                     >
-                                        Hide
-                                    </button>
-                                </div>
-                            )}
-                            <div className="flex flex-col gap-3" id="options-group">
-                                <h3
-                                    className="label-text mb-4"
-                                    id="options-title"
-                                    style={{
-                                        borderBottom: '1px solid rgba(255,255,255,0.1)',
-                                        paddingBottom: '0.5rem',
-                                        textTransform: 'uppercase',
-                                        fontSize: '0.85rem',
-                                        letterSpacing: '0.05em',
-                                        color: 'rgba(255,255,255,0.5)',
-                                        fontWeight: 600
-                                    }}
-                                >
-                                    Options
-                                </h3>
-                                <Toggle
-                                    id="opt-random-length"
-                                    checked={config.randomLength}
-                                    onChange={(v) => {
-                                        setConfig({ ...config, randomLength: v });
-                                    }}
-                                    label={
-                                        <span className="flex items-center gap-1">
-                                            Randomize Length (down to -
-                                            {isEditingPercent ? (
-                                                <input
-                                                    autoFocus
-                                                    className="ghost-size-input mx-1"
-                                                    style={{ width: '2rem', textAlign: 'center' }}
-                                                    defaultValue={config.lengthDeviation}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
+                                        <div className="flex items-start gap-2">
+                                            <TriangleAlert size={14} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
+                                            <div className="flex flex-col gap-2 pr-4 flex-1">
+                                                <div>
+                                                    <span style={{ fontSize: '0.8rem', color: '#FEF9C3', fontWeight: 600 }}>
+                                                        Compatibility Check
+                                                    </span>
+                                                    <p style={{ fontSize: '0.75rem', color: 'rgba(254, 249, 195, 0.8)', lineHeight: 1.5, margin: 0 }}>
+                                                        Not all backends fully support UTF-8. Legacy systems might replace complex symbols, reducing password strength.
+                                                        <br />
+                                                        Please follow the steps in the <b>Unicode Compatibility Check</b> card below.
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    onClick={() => {
+                                                        unicodeCheckerRef.current?.open();
+                                                        // Small timeout to allow expansion animation to start/layout to update
+                                                        setTimeout(() => {
+                                                            const el = document.getElementById('unicode-compatibility-section');
+                                                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                        }, 100);
+                                                    }}
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="self-start h-auto py-1 px-2 text-xs"
+                                                    style={{
+                                                        background: 'rgba(254, 249, 195, 0.15)',
+                                                        color: '#FEF9C3',
+                                                        border: '1px solid rgba(254, 249, 195, 0.3)'
+                                                    }}
+                                                >
+                                                    Go to Compatibility Check
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setShowUtf8Warning(false);
+                                                sessionStorage.setItem('hide_utf8_warning', 'true');
+                                            }}
+                                            className="absolute text-[#FEF9C3] hover:bg-[rgba(255,255,255,0.05)] transition-all rounded px-1.5 py-0.5"
+                                            style={{
+                                                top: '8px',
+                                                right: '8px',
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                fontSize: '0.65rem',
+                                                opacity: 0.5,
+                                                fontWeight: 500
+                                            }}
+                                            title="Dismiss warning"
+                                            onMouseEnter={(e) => e.target.style.opacity = '1'}
+                                            onMouseLeave={(e) => e.target.style.opacity = '0.5'}
+                                        >
+                                            Hide
+                                        </button>
+                                    </div>
+                                )}
+                                <div className="flex flex-col gap-3" id="options-group">
+                                    <h3
+                                        className="label-text mb-4"
+                                        id="options-title"
+                                        style={{
+                                            borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                            paddingBottom: '0.5rem',
+                                            textTransform: 'uppercase',
+                                            fontSize: '0.85rem',
+                                            letterSpacing: '0.05em',
+                                            color: 'rgba(255,255,255,0.5)',
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        Options
+                                    </h3>
+                                    <Toggle
+                                        id="opt-random-length"
+                                        checked={config.randomLength}
+                                        onChange={(v) => {
+                                            setConfig({ ...config, randomLength: v });
+                                        }}
+                                        label={
+                                            <span className="flex items-center gap-1">
+                                                Randomize Length (down to -
+                                                {isEditingPercent ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ghost-size-input mx-1"
+                                                        style={{ width: '2rem', textAlign: 'center' }}
+                                                        defaultValue={config.lengthDeviation}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                setIsEditingPercent(false);
+                                                                const val = parseInt(e.target.value, 10);
+                                                                if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, lengthDeviation: val });
+                                                            }
+                                                        }}
+                                                        onBlur={(e) => {
                                                             setIsEditingPercent(false);
                                                             const val = parseInt(e.target.value, 10);
                                                             if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, lengthDeviation: val });
-                                                        }
-                                                    }}
-                                                    onBlur={(e) => {
-                                                        setIsEditingPercent(false);
-                                                        const val = parseInt(e.target.value, 10);
-                                                        if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, lengthDeviation: val });
-                                                    }}
-                                                    onClick={(e) => e.stopPropagation()} // Prevent toggle click
-                                                    onFocus={(e) => e.target.select()}
-                                                />
-                                            ) : (
-                                                <span
-                                                    className="font-bold cursor-pointer hover:underline mx-1"
-                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingPercent(true); }}
-                                                    title="Click to change deviation %"
-                                                >
-                                                    {config.lengthDeviation}%
-                                                </span>
-                                            )}
-                                            )
-                                            <HelpPopover
-                                                title="Randomize Length"
-                                                content="Obfuscates usage patterns by slightly randomizing the password length. Useful against white-box attacks (where the attacker knows you use this tool) or to avoid predictable fixed-length patterns."
-                                            />
-                                        </span>
-                                    }
-                                />
-                                <div
-                                    id="compatibility-section"
-                                    className="p-3 rounded-lg flex flex-col gap-3 mt-4"
-                                    style={{
-                                        background: 'rgba(255, 255, 255, 0.03)',
-                                        border: '1px solid rgba(255, 255, 255, 0.08)'
-                                    }}
-                                >
-                                    <Toggle
-                                        id="compat-toggle"
-                                        label={
-                                            <div className="flex items-center">
-                                                Ensure Compatibility
+                                                        }}
+                                                        onClick={(e) => e.stopPropagation()} // Prevent toggle click
+                                                        onFocus={(e) => e.target.select()}
+                                                    />
+                                                ) : (
+                                                    <span
+                                                        className="font-bold cursor-pointer hover:underline mx-1"
+                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingPercent(true); }}
+                                                        title="Click to change deviation %"
+                                                    >
+                                                        {config.lengthDeviation}%
+                                                    </span>
+                                                )}
+                                                )
                                                 <HelpPopover
-                                                    title="Ensure Compatibility"
-                                                    content="Restricts the character set to ensure at least one character from each active character block (lowercase, uppercase, numbers, symbols) is present in the generated password."
+                                                    title="Randomize Length"
+                                                    content="Obfuscates usage patterns by slightly randomizing the password length. Useful against white-box attacks (where the attacker knows you use this tool) or to avoid predictable fixed-length patterns."
                                                 />
-                                            </div>
+                                            </span>
                                         }
-                                        checked={config.ensureCommon}
-                                        onChange={(v) => {
-                                            setConfig(prev => ({
-                                                ...prev,
-                                                ensureCommon: v,
-                                                length: (v && prev.length < 4) ? 4 : prev.length
-                                            }));
-                                        }}
-                                        className="w-full"
                                     />
-                                    <p className="text-xs text-muted leading-relaxed" id="compat-desc">
-                                        Guarantees at least one character from each active character set option.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        {/* Right Column: Advanced (Collapsible) */}
-                        <div className="flex flex-col gap-4" id="settings-col-2">
-                            <button
-                                onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-                                className="flex items-center justify-between w-full cursor-pointer mb-2"
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    borderBottom: '1px dashed rgba(255,255,255,0.1)',
-                                    padding: 0,
-                                    paddingBottom: '0.5rem'
-                                }}
-                            >
-                                <h3
-                                    className="label-text"
-                                    id="advanced-title"
-                                    style={{
-                                        textTransform: 'uppercase',
-                                        fontSize: '0.85rem',
-                                        letterSpacing: '0.05em',
-                                        color: 'rgba(255,255,255,0.5)',
-                                        fontWeight: 600
-                                    }}
-                                >
-                                    Advanced
-                                </h3>
-                                <ChevronDown
-                                    size={18}
-                                    className="text-muted"
-                                    style={{
-                                        transform: isAdvancedOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                        transition: 'transform 0.2s ease'
-                                    }}
-                                />
-                            </button>
-                            {isAdvancedOpen && (
-                                <div
-                                    className="flex flex-col gap-3"
-                                    style={{
-                                        animation: 'fadeIn 0.2s ease'
-                                    }}
-                                >
-                                    {/* Post-Quantum Toggle */}
                                     <div
-                                        className="p-3 rounded-lg flex flex-col gap-2 mb-2"
+                                        id="compatibility-section"
+                                        className="p-3 rounded-lg flex flex-col gap-3 mt-4"
                                         style={{
                                             background: 'rgba(255, 255, 255, 0.03)',
                                             border: '1px solid rgba(255, 255, 255, 0.08)'
                                         }}
                                     >
                                         <Toggle
-                                            id="opt-post-quantum"
-                                            checked={config.isPostQuantum}
-                                            onChange={(v) => setConfig({ ...config, isPostQuantum: v })}
+                                            id="compat-toggle"
                                             label={
                                                 <div className="flex items-center">
-                                                    Post-Quantum Strength
+                                                    Ensure Compatibility
                                                     <HelpPopover
-                                                        title="Post-Quantum Strength"
-                                                        content="Estimates security against future quantum attacks. Since Grover's algorithm effectively halves the bit strength (square root of the search space), we divide the entropy by 2 to measure post-quantum resilience."
+                                                        title="Ensure Compatibility"
+                                                        content="Restricts the character set to ensure at least one character from each active character block (lowercase, uppercase, numbers, symbols) is present in the generated password."
                                                     />
                                                 </div>
                                             }
+                                            checked={config.ensureCommon}
+                                            onChange={(v) => {
+                                                setConfig(prev => ({
+                                                    ...prev,
+                                                    ensureCommon: v,
+                                                    length: (v && prev.length < 4) ? 4 : prev.length
+                                                }));
+                                            }}
+                                            className="w-full"
                                         />
-                                        <p className="text-xs text-muted leading-relaxed ml-7 mt-1">
-                                            Simulates Grover's algorithm impact: effective entropy is halved (N/2).
+                                        <p className="text-xs text-muted leading-relaxed" id="compat-desc">
+                                            Guarantees at least one character from each active character set option.
                                         </p>
                                     </div>
-                                    {['emojis', 'all_unicode'].includes(activeSet) && (
-                                        <Toggle
-                                            id="opt-min-ascii"
-                                            checked={config.ensureMinAscii}
-                                            onChange={(v) => {
-                                                setConfig({ ...config, ensureMinAscii: v });
-                                            }}
-                                            label={
-                                                <span className="flex items-center gap-1">
-                                                    Guarantee ASCII ({'>='}
-                                                    {isEditingAsciiPercent ? (
-                                                        <input
-                                                            autoFocus
-                                                            className="ghost-size-input mx-1"
-                                                            style={{ width: '2rem', textAlign: 'center' }}
-                                                            defaultValue={config.minAsciiPercent}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') {
-                                                                    setIsEditingAsciiPercent(false);
-                                                                    const val = parseInt(e.target.value, 10);
-                                                                    if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
-                                                                }
-                                                            }}
-                                                            onBlur={(e) => {
-                                                                setIsEditingAsciiPercent(false);
-                                                                const val = parseInt(e.target.value, 10);
-                                                                if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
-                                                            }}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            onFocus={(e) => e.target.select()}
-                                                        />
-                                                    ) : (
-                                                        <span
-                                                            className="font-bold cursor-pointer hover:underline mx-1"
-                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingAsciiPercent(true); }}
-                                                            title="Click to change min ASCII %"
-                                                        >
-                                                            {config.minAsciiPercent}%
-                                                        </span>
-                                                    )}
-                                                    )
-                                                </span>
-                                            }
-                                        />
-                                    )}
-                                    <div className="mt-4 pt-0 mb-4">
-                                        <Input
-                                            id="custom-charset-input"
-                                            label={
-                                                <div className="flex items-center gap-1">
-                                                    {(!config.standardCharsetDisabled && config.customCharset) ? "Add characters to the charset" : "Custom Charset"}
-                                                    <HelpPopover
-                                                        title={(!config.standardCharsetDisabled && config.customCharset) ? "Add Characters" : "Custom Charset"}
-                                                        content={(!config.standardCharsetDisabled && config.customCharset)
-                                                            ? "Manually injects specific characters into the generation pool."
-                                                            : "Enables precise control over the allowed characters for specific requirements."}
-                                                    />
-                                                </div>
-                                            }
-                                            placeholder="Add characters (e.g. ñçµ...)"
-                                            value={config.customCharset}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (!val) {
-                                                    setConfig({
-                                                        ...config,
-                                                        customCharset: '',
-                                                        standardCharsetDisabled: false,
-                                                        customWeight: 0
-                                                    });
-                                                } else {
-                                                    setConfig({
-                                                        ...config,
-                                                        customCharset: val,
-                                                        standardCharsetDisabled: true
-                                                    });
-                                                }
-                                            }}
-                                            icon={<Keyboard size={14} />}
-                                            className="compact-input mb-3"
+                                </div>
+                            </div>
+                            {/* Right Column: Advanced (Collapsible) */}
+                            <div className="flex flex-col gap-4" id="settings-col-2">
+                                <button
+                                    onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+                                    className="flex items-center justify-between w-full cursor-pointer mb-2"
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        borderBottom: '1px dashed rgba(255,255,255,0.1)',
+                                        padding: 0,
+                                        paddingBottom: '0.5rem'
+                                    }}
+                                >
+                                    <h3
+                                        className="label-text"
+                                        id="advanced-title"
+                                        style={{
+                                            textTransform: 'uppercase',
+                                            fontSize: '0.85rem',
+                                            letterSpacing: '0.05em',
+                                            color: 'rgba(255,255,255,0.5)',
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        Advanced
+                                    </h3>
+                                    <ChevronDown
+                                        size={18}
+                                        className="text-muted"
+                                        style={{
+                                            transform: isAdvancedOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                            transition: 'transform 0.2s ease'
+                                        }}
+                                    />
+                                </button>
+                                {isAdvancedOpen && (
+                                    <div
+                                        className="flex flex-col gap-3"
+                                        style={{
+                                            animation: 'fadeIn 0.2s ease'
+                                        }}
+                                    >
+                                        {/* Post-Quantum Toggle */}
+                                        <div
+                                            className="p-3 rounded-lg flex flex-col gap-2 mb-2"
                                             style={{
-                                                padding: '0.6rem 1rem',
-                                                paddingLeft: '2.2rem',
-                                                fontSize: '0.875rem',
-                                                borderRadius: '10px',
                                                 background: 'rgba(255, 255, 255, 0.03)',
                                                 border: '1px solid rgba(255, 255, 255, 0.08)'
                                             }}
-                                        />
-                                        {config.customCharset && (
+                                        >
                                             <Toggle
-                                                id="opt-enable-std"
-                                                label="Enable Standard Charset"
-                                                checked={!config.standardCharsetDisabled}
-                                                onChange={(v) => {
-                                                    setConfig({ ...config, standardCharsetDisabled: !v });
-                                                    if (!v) setActiveSet(null);
-                                                }}
-                                                className="mb-2 mt-4"
+                                                id="opt-post-quantum"
+                                                checked={config.isPostQuantum}
+                                                onChange={(v) => setConfig({ ...config, isPostQuantum: v })}
+                                                label={
+                                                    <div className="flex items-center">
+                                                        Post-Quantum Strength
+                                                        <HelpPopover
+                                                            title="Post-Quantum Strength"
+                                                            content="Estimates security against future quantum attacks. Since Grover's algorithm effectively halves the bit strength (square root of the search space), we divide the entropy by 2 to measure post-quantum resilience."
+                                                        />
+                                                    </div>
+                                                }
                                             />
-                                        )}
-                                        {/* Weight Option (Option B) */}
-                                        {!config.standardCharsetDisabled && config.customCharset && (
+                                            <p className="text-xs text-muted leading-relaxed ml-7 mt-1">
+                                                Simulates Grover's algorithm impact: effective entropy is halved (N/2).
+                                            </p>
+                                        </div>
+                                        {['emojis', 'all_unicode'].includes(activeSet) && (
                                             <Toggle
-                                                id="opt-custom-weight"
+                                                id="opt-min-ascii"
+                                                checked={config.ensureMinAscii}
                                                 onChange={(v) => {
-                                                    setConfig({ ...config, customWeight: v ? 5 : 0 });
+                                                    setConfig({ ...config, ensureMinAscii: v });
                                                 }}
-                                                checked={config.customWeight > 0}
                                                 label={
                                                     <span className="flex items-center gap-1">
-                                                        Boost Custom Prob. (~
-                                                        {isEditingWeight ? (
+                                                        Guarantee ASCII ({'>='}
+                                                        {isEditingAsciiPercent ? (
                                                             <input
                                                                 autoFocus
                                                                 className="ghost-size-input mx-1"
                                                                 style={{ width: '2rem', textAlign: 'center' }}
-                                                                defaultValue={config.customWeight || 5}
+                                                                defaultValue={config.minAsciiPercent}
                                                                 onKeyDown={(e) => {
                                                                     if (e.key === 'Enter') {
-                                                                        setIsEditingWeight(false);
+                                                                        setIsEditingAsciiPercent(false);
                                                                         const val = parseInt(e.target.value, 10);
-                                                                        if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
+                                                                        if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
                                                                     }
                                                                 }}
                                                                 onBlur={(e) => {
-                                                                    setIsEditingWeight(false);
+                                                                    setIsEditingAsciiPercent(false);
                                                                     const val = parseInt(e.target.value, 10);
-                                                                    if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
+                                                                    if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, minAsciiPercent: val });
                                                                 }}
                                                                 onClick={(e) => e.stopPropagation()}
                                                                 onFocus={(e) => e.target.select()}
@@ -1936,256 +1854,355 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                         ) : (
                                                             <span
                                                                 className="font-bold cursor-pointer hover:underline mx-1"
-                                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingWeight(true); }}
-                                                                title="Click to change weight %"
+                                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingAsciiPercent(true); }}
+                                                                title="Click to change min ASCII %"
                                                             >
-                                                                {config.customWeight || 5}%
+                                                                {config.minAsciiPercent}%
                                                             </span>
                                                         )}
                                                         )
-                                                        <HelpPopover
-                                                            title="Boost Custom Probability"
-                                                            content="Significantly increases the probability of your custom characters appearing. Useful when the base pool is huge (e.g., Unicode), ensuring your additions aren't statistically drowned out."
-                                                        />
                                                     </span>
                                                 }
                                             />
                                         )}
-                                    </div>
-                                    <Input
-                                        id="must-include-input"
-                                        label={
-                                            <div className="flex items-center gap-1">
-                                                Must Include Characters
-                                                <HelpPopover
-                                                    title="Must Include Characters"
-                                                    content="Guarantees these specific characters appear in the final password. Can also be used as an 'Allowed List' by selecting Alphanumeric mode and pasting accepted symbols here."
-                                                />
-                                            </div>
-                                        }
-                                        placeholder="e.g. @ö5"
-                                        value={config.include}
-                                        onChange={(e) => setConfig({ ...config, include: e.target.value })}
-                                        icon={<Sparkles size={14} />}
-                                        rightElement={hasConflict && (
-                                            <button
-                                                onClick={() => {
-                                                    const excludeSet = new Set(config.exclude);
-                                                    const newInclude = config.include.split('').filter(c => !excludeSet.has(c)).join('');
-                                                    setConfig({ ...config, include: newInclude });
+                                        <div className="mt-4 pt-0 mb-4">
+                                            <Input
+                                                id="custom-charset-input"
+                                                label={
+                                                    <div className="flex items-center gap-1">
+                                                        {(!config.standardCharsetDisabled && config.customCharset) ? "Add characters to the charset" : "Custom Charset"}
+                                                        <HelpPopover
+                                                            title={(!config.standardCharsetDisabled && config.customCharset) ? "Add Characters" : "Custom Charset"}
+                                                            content={(!config.standardCharsetDisabled && config.customCharset)
+                                                                ? "Manually injects specific characters into the generation pool."
+                                                                : "Enables precise control over the allowed characters for specific requirements."}
+                                                        />
+                                                    </div>
+                                                }
+                                                placeholder="Add characters (e.g. ñçµ...)"
+                                                value={config.customCharset}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (!val) {
+                                                        setConfig({
+                                                            ...config,
+                                                            customCharset: '',
+                                                            standardCharsetDisabled: false,
+                                                            customWeight: 0
+                                                        });
+                                                    } else {
+                                                        setConfig({
+                                                            ...config,
+                                                            customCharset: val,
+                                                            standardCharsetDisabled: true
+                                                        });
+                                                    }
                                                 }}
+                                                icon={<Keyboard size={14} />}
+                                                className="compact-input mb-3"
                                                 style={{
-                                                    fontSize: '10px',
-                                                    background: 'rgba(239, 68, 68, 0.15)',
-                                                    color: 'rgba(252, 165, 165, 1)',
-                                                    padding: '4px 8px',
-                                                    borderRadius: '4px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px',
-                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s ease'
+                                                    padding: '0.6rem 1rem',
+                                                    paddingLeft: '2.2rem',
+                                                    fontSize: '0.875rem',
+                                                    borderRadius: '10px',
+                                                    background: 'rgba(255, 255, 255, 0.03)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.08)'
                                                 }}
-                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
-                                                title="Remove characters that are also in 'Forbidden'"
-                                            >
-                                                <Eraser size={10} />
-                                                Remove Duplicate
-                                            </button>
-                                        )}
-                                        className="compact-input"
-                                        style={{
-                                            padding: '0.6rem 1rem',
-                                            paddingLeft: '2.2rem',
-                                            paddingRight: hasConflict ? '8rem' : undefined, // Make space for the button
-                                            fontSize: '0.875rem',
-                                            borderRadius: '10px',
-                                            background: hasConflict ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-                                            border: hasConflict ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)'
-                                        }}
-                                    />
-                                    <Input
-                                        id="forbidden-input"
-                                        label={
-                                            <div className="flex items-center gap-1">
-                                                Forbidden Characters
-                                                <HelpPopover
-                                                    title="Forbidden Characters"
-                                                    content="Removes specific characters from the pool, preventing rejection by services with strict character constraints."
+                                            />
+                                            {config.customCharset && (
+                                                <Toggle
+                                                    id="opt-enable-std"
+                                                    label="Enable Standard Charset"
+                                                    checked={!config.standardCharsetDisabled}
+                                                    onChange={(v) => {
+                                                        setConfig({ ...config, standardCharsetDisabled: !v });
+                                                        if (!v) setActiveSet(null);
+                                                    }}
+                                                    className="mb-2 mt-4"
                                                 />
-                                            </div>
-                                        }
-                                        placeholder="e.g. I1l0O"
-                                        value={config.exclude}
-                                        onChange={(e) => setConfig({ ...config, exclude: e.target.value })}
-                                        icon={<ShieldAlert size={14} />}
-                                        rightElement={hasConflict && (
-                                            <button
-                                                onClick={() => {
-                                                    const includeSet = new Set(config.include);
-                                                    const newExclude = config.exclude.split('').filter(c => !includeSet.has(c)).join('');
-                                                    setConfig({ ...config, exclude: newExclude });
-                                                }}
-                                                style={{
-                                                    fontSize: '10px',
-                                                    background: 'rgba(239, 68, 68, 0.15)',
-                                                    color: 'rgba(252, 165, 165, 1)',
-                                                    padding: '4px 8px',
-                                                    borderRadius: '4px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px',
-                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s ease'
-                                                }}
-                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
-                                                title="Remove characters that are also in 'Must Include'"
-                                            >
-                                                <Eraser size={10} />
-                                                Remove Duplicate
-                                            </button>
-                                        )}
-                                        className="compact-input"
-                                        style={{
-                                            padding: '0.6rem 1rem',
-                                            paddingLeft: '2.2rem',
-                                            paddingRight: hasConflict ? '8rem' : undefined, // Make space for the button
-                                            fontSize: '0.875rem',
-                                            borderRadius: '10px',
-                                            background: hasConflict ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-                                            border: hasConflict ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)'
-                                        }}
-                                    />
-                                    {hasConflict && (
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'flex-start',
-                                                gap: '12px',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                marginTop: '4px',
-                                                background: 'rgba(234, 179, 8, 0.1)', // Yellow background
-                                                border: '1px solid rgba(234, 179, 8, 0.3)', // Yellow border
-                                                boxShadow: '0 0 10px rgba(234, 179, 8, 0.05)'
-                                            }}
-                                        >
-                                            <TriangleAlert size={18} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FEF9C3', margin: 0 }}>Conflict Detected</h4>
-                                                <p style={{ fontSize: '0.75rem', color: 'rgba(254, 240, 138, 0.8)', lineHeight: 1.625, margin: 0 }}>
-                                                    Some characters appear in both "Must Include" and "Forbidden" fields.
-                                                    This is impossible to satisfy (<b>{conflictChars.join(' ')}</b>).
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {/* Character Sets with inclusion highlighting */}
-                                    <div>
-                                        <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
-                                        <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
-                                            {(areCharsetsExpanded ? SETS_ORDER : SETS_ORDER.slice(0, SETS_ORDER.indexOf('ascii') + 1)).map(key => {
-                                                const highlightState = isSetHighlighted(key);
-                                                const isActive = highlightState === 'active';
-                                                const isIncluded = highlightState === 'included';
-                                                const isChild = highlightState === 'child';
-                                                const isHovered = hoveredSet === key;
-                                                return (
-                                                    <button
-                                                        id={`charset-btn-${key}`}
-                                                        key={key}
-                                                        onClick={() => handleSetChange(key)}
-                                                        onMouseEnter={() => setHoveredSet(key)}
-                                                        onMouseLeave={() => setHoveredSet(null)}
-                                                        className="charset-selector-btn rounded-full transition-all px-4 py-2 text-sm cursor-pointer"
-                                                        title={`${SETS[key].description}\n${charsetSizes[key]?.toLocaleString() || '?'} characters`}
-                                                        style={{
-                                                            background: isActive
-                                                                ? 'var(--primary)'
-                                                                : isHovered
-                                                                    ? 'rgba(var(--primary-rgb), 0.35)'
-                                                                    : isIncluded
-                                                                        ? 'rgba(var(--primary-rgb), 0.2)'
-                                                                        : isChild
-                                                                            ? 'rgba(var(--primary-rgb), 0.15)'
-                                                                            : 'rgba(0, 0, 0, 0.2)',
-                                                            color: isActive
-                                                                ? 'white'
-                                                                : isHovered
-                                                                    ? 'white'
-                                                                    : isIncluded
-                                                                        ? 'rgba(255, 255, 255, 0.9)'
-                                                                        : isChild
-                                                                            ? 'rgba(255, 255, 255, 0.8)'
-                                                                            : 'var(--text-muted)',
-                                                            border: isActive
-                                                                ? '1px solid var(--primary)'
-                                                                : isHovered
-                                                                    ? '1px solid rgba(var(--primary-rgb), 0.7)'
-                                                                    : isIncluded
-                                                                        ? '1px solid rgba(var(--primary-rgb), 0.4)'
-                                                                        : isChild
-                                                                            ? '1px solid rgba(var(--primary-rgb), 0.3)'
-                                                                            : '1px solid rgba(255, 255, 255, 0.1)',
-                                                            boxShadow: isActive
-                                                                ? '0 0 15px rgba(var(--primary-rgb), 0.4)'
-                                                                : isHovered
-                                                                    ? '0 0 12px rgba(var(--primary-rgb), 0.35)'
-                                                                    : isIncluded
-                                                                        ? '0 0 8px rgba(var(--primary-rgb), 0.25)'
-                                                                        : 'none',
-                                                            transform: isHovered
-                                                                ? 'scale(1.08)'
-                                                                : isIncluded
-                                                                    ? 'scale(1.02)'
-                                                                    : 'scale(1)',
-                                                            transition: 'all 0.2s ease'
-                                                        }}
-                                                    >
-                                                        {SETS[key].name}
-                                                    </button>
-                                                );
-                                            })}
-                                            {!areCharsetsExpanded && (
-                                                <button
-                                                    onClick={handleExpandCharsets}
-                                                    className="charset-selector-btn rounded-full transition-all px-3 py-2 text-sm cursor-pointer flex items-center justify-center"
-                                                    title="Show more character sets"
-                                                    style={{
-                                                        background: 'rgba(255, 255, 255, 0.05)',
-                                                        color: 'var(--text-muted)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                                            )}
+                                            {/* Weight Option (Option B) */}
+                                            {!config.standardCharsetDisabled && config.customCharset && (
+                                                <Toggle
+                                                    id="opt-custom-weight"
+                                                    onChange={(v) => {
+                                                        setConfig({ ...config, customWeight: v ? 5 : 0 });
                                                     }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                                                        e.currentTarget.style.color = 'var(--primary)';
-                                                        e.currentTarget.style.borderColor = 'rgba(var(--primary-rgb), 0.3)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                                                        e.currentTarget.style.color = 'var(--text-muted)';
-                                                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                                                    }}
-                                                >
-                                                    <Plus size={16} />
-                                                </button>
+                                                    checked={config.customWeight > 0}
+                                                    label={
+                                                        <span className="flex items-center gap-1">
+                                                            Boost Custom Prob. (~
+                                                            {isEditingWeight ? (
+                                                                <input
+                                                                    autoFocus
+                                                                    className="ghost-size-input mx-1"
+                                                                    style={{ width: '2rem', textAlign: 'center' }}
+                                                                    defaultValue={config.customWeight || 5}
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter') {
+                                                                            setIsEditingWeight(false);
+                                                                            const val = parseInt(e.target.value, 10);
+                                                                            if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
+                                                                        }
+                                                                    }}
+                                                                    onBlur={(e) => {
+                                                                        setIsEditingWeight(false);
+                                                                        const val = parseInt(e.target.value, 10);
+                                                                        if (!isNaN(val) && val >= 0 && val <= 100) setConfig({ ...config, customWeight: val });
+                                                                    }}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    onFocus={(e) => e.target.select()}
+                                                                />
+                                                            ) : (
+                                                                <span
+                                                                    className="font-bold cursor-pointer hover:underline mx-1"
+                                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingWeight(true); }}
+                                                                    title="Click to change weight %"
+                                                                >
+                                                                    {config.customWeight || 5}%
+                                                                </span>
+                                                            )}
+                                                            )
+                                                            <HelpPopover
+                                                                title="Boost Custom Probability"
+                                                                content="Significantly increases the probability of your custom characters appearing. Useful when the base pool is huge (e.g., Unicode), ensuring your additions aren't statistically drowned out."
+                                                            />
+                                                        </span>
+                                                    }
+                                                />
                                             )}
                                         </div>
+                                        <Input
+                                            id="must-include-input"
+                                            label={
+                                                <div className="flex items-center gap-1">
+                                                    Must Include Characters
+                                                    <HelpPopover
+                                                        title="Must Include Characters"
+                                                        content="Guarantees these specific characters appear in the final password. Can also be used as an 'Allowed List' by selecting Alphanumeric mode and pasting accepted symbols here."
+                                                    />
+                                                </div>
+                                            }
+                                            placeholder="e.g. @ö5"
+                                            value={config.include}
+                                            onChange={(e) => setConfig({ ...config, include: e.target.value })}
+                                            icon={<Sparkles size={14} />}
+                                            rightElement={hasConflict && (
+                                                <button
+                                                    onClick={() => {
+                                                        const excludeSet = new Set(config.exclude);
+                                                        const newInclude = config.include.split('').filter(c => !excludeSet.has(c)).join('');
+                                                        setConfig({ ...config, include: newInclude });
+                                                    }}
+                                                    style={{
+                                                        fontSize: '10px',
+                                                        background: 'rgba(239, 68, 68, 0.15)',
+                                                        color: 'rgba(252, 165, 165, 1)',
+                                                        padding: '4px 8px',
+                                                        borderRadius: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease'
+                                                    }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
+                                                    title="Remove characters that are also in 'Forbidden'"
+                                                >
+                                                    <Eraser size={10} />
+                                                    Remove Duplicate
+                                                </button>
+                                            )}
+                                            className="compact-input"
+                                            style={{
+                                                padding: '0.6rem 1rem',
+                                                paddingLeft: '2.2rem',
+                                                paddingRight: hasConflict ? '8rem' : undefined, // Make space for the button
+                                                fontSize: '0.875rem',
+                                                borderRadius: '10px',
+                                                background: hasConflict ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.03)',
+                                                border: hasConflict ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)'
+                                            }}
+                                        />
+                                        <Input
+                                            id="forbidden-input"
+                                            label={
+                                                <div className="flex items-center gap-1">
+                                                    Forbidden Characters
+                                                    <HelpPopover
+                                                        title="Forbidden Characters"
+                                                        content="Removes specific characters from the pool, preventing rejection by services with strict character constraints."
+                                                    />
+                                                </div>
+                                            }
+                                            placeholder="e.g. I1l0O"
+                                            value={config.exclude}
+                                            onChange={(e) => setConfig({ ...config, exclude: e.target.value })}
+                                            icon={<ShieldAlert size={14} />}
+                                            rightElement={hasConflict && (
+                                                <button
+                                                    onClick={() => {
+                                                        const includeSet = new Set(config.include);
+                                                        const newExclude = config.exclude.split('').filter(c => !includeSet.has(c)).join('');
+                                                        setConfig({ ...config, exclude: newExclude });
+                                                    }}
+                                                    style={{
+                                                        fontSize: '10px',
+                                                        background: 'rgba(239, 68, 68, 0.15)',
+                                                        color: 'rgba(252, 165, 165, 1)',
+                                                        padding: '4px 8px',
+                                                        borderRadius: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease'
+                                                    }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
+                                                    title="Remove characters that are also in 'Must Include'"
+                                                >
+                                                    <Eraser size={10} />
+                                                    Remove Duplicate
+                                                </button>
+                                            )}
+                                            className="compact-input"
+                                            style={{
+                                                padding: '0.6rem 1rem',
+                                                paddingLeft: '2.2rem',
+                                                paddingRight: hasConflict ? '8rem' : undefined, // Make space for the button
+                                                fontSize: '0.875rem',
+                                                borderRadius: '10px',
+                                                background: hasConflict ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.03)',
+                                                border: hasConflict ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)'
+                                            }}
+                                        />
+                                        {hasConflict && (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: '12px',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    marginTop: '4px',
+                                                    background: 'rgba(234, 179, 8, 0.1)', // Yellow background
+                                                    border: '1px solid rgba(234, 179, 8, 0.3)', // Yellow border
+                                                    boxShadow: '0 0 10px rgba(234, 179, 8, 0.05)'
+                                                }}
+                                            >
+                                                <TriangleAlert size={18} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FEF9C3', margin: 0 }}>Conflict Detected</h4>
+                                                    <p style={{ fontSize: '0.75rem', color: 'rgba(254, 240, 138, 0.8)', lineHeight: 1.625, margin: 0 }}>
+                                                        Some characters appear in both "Must Include" and "Forbidden" fields.
+                                                        This is impossible to satisfy (<b>{conflictChars.join(' ')}</b>).
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {/* Character Sets with inclusion highlighting */}
+                                        <div>
+                                            <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
+                                            <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
+                                                {(areCharsetsExpanded ? SETS_ORDER : SETS_ORDER.slice(0, SETS_ORDER.indexOf('ascii') + 1)).map(key => {
+                                                    const highlightState = isSetHighlighted(key);
+                                                    const isActive = highlightState === 'active';
+                                                    const isIncluded = highlightState === 'included';
+                                                    const isChild = highlightState === 'child';
+                                                    const isHovered = hoveredSet === key;
+                                                    return (
+                                                        <button
+                                                            id={`charset-btn-${key}`}
+                                                            key={key}
+                                                            onClick={() => handleSetChange(key)}
+                                                            onMouseEnter={() => setHoveredSet(key)}
+                                                            onMouseLeave={() => setHoveredSet(null)}
+                                                            className="charset-selector-btn rounded-full transition-all px-4 py-2 text-sm cursor-pointer"
+                                                            title={`${SETS[key].description}\n${charsetSizes[key]?.toLocaleString() || '?'} characters`}
+                                                            style={{
+                                                                background: isActive
+                                                                    ? 'var(--primary)'
+                                                                    : isHovered
+                                                                        ? 'rgba(var(--primary-rgb), 0.35)'
+                                                                        : isIncluded
+                                                                            ? 'rgba(var(--primary-rgb), 0.2)'
+                                                                            : isChild
+                                                                                ? 'rgba(var(--primary-rgb), 0.15)'
+                                                                                : 'rgba(0, 0, 0, 0.2)',
+                                                                color: isActive
+                                                                    ? 'white'
+                                                                    : isHovered
+                                                                        ? 'white'
+                                                                        : isIncluded
+                                                                            ? 'rgba(255, 255, 255, 0.9)'
+                                                                            : isChild
+                                                                                ? 'rgba(255, 255, 255, 0.8)'
+                                                                                : 'var(--text-muted)',
+                                                                border: isActive
+                                                                    ? '1px solid var(--primary)'
+                                                                    : isHovered
+                                                                        ? '1px solid rgba(var(--primary-rgb), 0.7)'
+                                                                        : isIncluded
+                                                                            ? '1px solid rgba(var(--primary-rgb), 0.4)'
+                                                                            : isChild
+                                                                                ? '1px solid rgba(var(--primary-rgb), 0.3)'
+                                                                                : '1px solid rgba(255, 255, 255, 0.1)',
+                                                                boxShadow: isActive
+                                                                    ? '0 0 15px rgba(var(--primary-rgb), 0.4)'
+                                                                    : isHovered
+                                                                        ? '0 0 12px rgba(var(--primary-rgb), 0.35)'
+                                                                        : isIncluded
+                                                                            ? '0 0 8px rgba(var(--primary-rgb), 0.25)'
+                                                                            : 'none',
+                                                                transform: isHovered
+                                                                    ? 'scale(1.08)'
+                                                                    : isIncluded
+                                                                        ? 'scale(1.02)'
+                                                                        : 'scale(1)',
+                                                                transition: 'all 0.2s ease'
+                                                            }}
+                                                        >
+                                                            {SETS[key].name}
+                                                        </button>
+                                                    );
+                                                })}
+                                                {!areCharsetsExpanded && (
+                                                    <button
+                                                        onClick={handleExpandCharsets}
+                                                        className="charset-selector-btn rounded-full transition-all px-3 py-2 text-sm cursor-pointer flex items-center justify-center"
+                                                        title="Show more character sets"
+                                                        style={{
+                                                            background: 'rgba(255, 255, 255, 0.05)',
+                                                            color: 'var(--text-muted)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                                            e.currentTarget.style.color = 'var(--primary)';
+                                                            e.currentTarget.style.borderColor = 'rgba(var(--primary-rgb), 0.3)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                                            e.currentTarget.style.color = 'var(--text-muted)';
+                                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                                        }}
+                                                    >
+                                                        <Plus size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* Character Inspector Button has been moved to main input */}
                                     </div>
-                                    {/* Character Inspector Button has been moved to main input */}
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </GlassCard>
-            <div id="unicode-compatibility-section">
-                <UnicodeChecker ref={unicodeCheckerRef} />
-            </div>
-        </div >
+                </div>, portalTarget)}
+        </div>
     );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Settings, History } from 'lucide-react';
 import './App.css';
 import { GeneratorPanel } from './components/generator/GeneratorPanel';
 import { HistoryPanel } from './components/history/HistoryPanel';
@@ -9,18 +9,15 @@ import { useSessionStorage } from './utils/storage';
 function App() {
   const [history, setHistory] = useSessionStorage('password_history', []);
   const [showcaseMode, setShowcaseMode] = React.useState(false);
-
-
+  const [activeTab, setActiveTab] = React.useState('config');
 
   const handleHistoryUpdate = (newHistory) => {
     setHistory(newHistory);
   };
 
   const handleGeneratedPasswordCopy = (result) => {
-    // If this password instance has already been copied, don't add duplicate to history
     if (result.alreadyCopied) return;
 
-    // result: { password, entropy, timestamp }
     const newItem = {
       id: Date.now().toString() + Math.random().toString().slice(2, 5),
       password: result.password,
@@ -30,7 +27,6 @@ function App() {
       name: ''
     };
 
-    // Add to history
     setHistory([...history, newItem]);
   };
 
@@ -39,7 +35,6 @@ function App() {
       const hasFavorites = history.some(item => item.favorite);
       if (hasFavorites) {
         e.preventDefault();
-        // Modern browsers require setting returnValue to show the dialog
         e.returnValue = '';
         return '';
       }
@@ -75,8 +70,47 @@ function App() {
           <GeneratorPanel onCopyPassword={handleGeneratedPasswordCopy} />
         </section>
 
-        <aside className="glass-card history-aside" id="history-aside">
-          <HistoryPanel history={history} onUpdateHistory={handleHistoryUpdate} />
+        <aside className="right-panel-aside" id="history-aside">
+          {/* Tab Switcher */}
+          <div className="right-panel-tabs" id="right-panel-tabs">
+            <button
+              id="tab-btn-config"
+              className={`right-panel-tab-btn${activeTab === 'config' ? ' active' : ''}`}
+              onClick={() => setActiveTab('config')}
+            >
+              <Settings size={14} />
+              Configuration
+            </button>
+            <button
+              id="tab-btn-history"
+              className={`right-panel-tab-btn${activeTab === 'history' ? ' active' : ''}`}
+              onClick={() => setActiveTab('history')}
+            >
+              <History size={14} />
+              Historique
+              {history.length > 0 && (
+                <span className="right-panel-tab-badge" id="history-tab-badge">
+                  {history.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="glass-card right-panel-card" id="right-panel-card">
+            {/* Config Tab: portal target rendered by GeneratorPanel */}
+            <div
+              id="config-panel-portal"
+              style={{ display: activeTab === 'config' ? 'flex' : 'none', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
+            />
+            {/* History Tab */}
+            <div
+              id="history-panel-wrapper"
+              style={{ display: activeTab === 'history' ? 'flex' : 'none', flexDirection: 'column', height: '100%', padding: '1.25rem', overflow: 'hidden' }}
+            >
+              <HistoryPanel history={history} onUpdateHistory={handleHistoryUpdate} />
+            </div>
+          </div>
         </aside>
       </main>
 
