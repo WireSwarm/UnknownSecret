@@ -219,7 +219,7 @@ function getCharByteSize(char) {
 /**
  * Main Generator Function
  */
-export function generatePassword({
+export async function generatePassword({
     length = 16,
     charset = [],
     mandatoryChars = '',
@@ -288,7 +288,9 @@ export function generatePassword({
         // OR we just use rejection sampling for speed if charset is large.
         // Given constraint "not perturb randomness", filtering the pool is cleaner than rejection.
 
+        let iterBytes = 0;
         while (currentBytes < targetByteSize) {
+            if (++iterBytes % 10000 === 0) await new Promise(r => setTimeout(r, 0));
             const remaining = targetByteSize - currentBytes;
 
             // Optimization: If remaining >= 4, ANY char fits. O(1).
@@ -312,8 +314,14 @@ export function generatePassword({
 
         const password = buffer.join('');
         // Calc entropy based on effective length (approx) or combinations
-        const combinations = BigInt(charset.length) ** BigInt(buffer.length);
-        const entropy = combinations.toString(2).length;
+        let combinations = 0n;
+        let entropy = 0;
+        if (buffer.length < 50000) {
+            combinations = BigInt(charset.length) ** BigInt(buffer.length);
+            entropy = combinations.toString(2).length;
+        } else {
+            entropy = Math.round(buffer.length * Math.log2(charset.length || 1));
+        }
 
         return { password, entropy, combinations };
     }
@@ -342,17 +350,12 @@ export function generatePassword({
     for (let i = 0; i < actualLength; i++) {
         // charset is an array of strings (chars), so [i] works correctly for emojis
         buffer[i] = charset[getRandomInt(charsetLen)];
+        if (i > 0 && i % 10000 === 0) {
+            await new Promise(r => setTimeout(r, 0)); // yield to UI
+        }
     }
 
     // 2. Handle Mandatory Constraints
-    // Collect positions to overwrite (randomly picked)
-    let positions = Array.from({ length: actualLength }, (_, i) => i);
-    // Shuffle positions to avoid bias (Fisher-Yates)
-    for (let i = positions.length - 1; i > 0; i--) {
-        const j = getRandomInt(i + 1);
-        [positions[i], positions[j]] = [positions[j], positions[i]];
-    }
-
     let requiredChars = [];
 
     if (mandatoryChars) {
@@ -401,16 +404,28 @@ export function generatePassword({
         requiredChars = requiredChars.slice(0, actualLength);
     }
 
+    // Pick unique random positions for the required chars
+    const positionsSet = new Set();
+    while (positionsSet.size < requiredChars.length) {
+        positionsSet.add(getRandomInt(actualLength));
+    }
+    const positions = Array.from(positionsSet);
+
     for (let i = 0; i < requiredChars.length; i++) {
         buffer[positions[i]] = requiredChars[i];
     }
 
     const password = buffer.join('');
 
-    const combinations = BigInt(charsetLen) ** BigInt(actualLength);
-    // Entropy: round(log2(N^L))
-    // We approximate log2 of a BigInt by taking the length of its binary string representation.
-    const entropy = combinations.toString(2).length;
+    let combinations = 0n;
+    let entropy = 0;
+
+    if (actualLength < 50000) {
+        combinations = BigInt(charsetLen) ** BigInt(actualLength);
+        entropy = combinations.toString(2).length;
+    } else {
+        entropy = Math.round(actualLength * Math.log2(charsetLen || 1));
+    }
 
     return { password, entropy, combinations };
 }

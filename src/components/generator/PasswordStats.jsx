@@ -1,12 +1,19 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Type, ArrowUpCircle, Hash, Smile, Zap, Check, Shield, Info, X, Activity, Clock, BookOpen } from 'lucide-react';
-import zxcvbn from 'zxcvbn';
 import { HelpPopover } from '../ui/HelpPopover';
 
 export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPostQuantum = false }) {
     const [showBcryptInfo, setShowBcryptInfo] = useState(false);
     const [debouncedResult, setDebouncedResult] = useState(null);
     const [isCalculating, setIsCalculating] = useState(false);
+    const workerRef = useRef(null);
+
+    useEffect(() => {
+        workerRef.current = new Worker(new URL('../../utils/zxcvbnWorker.js', import.meta.url), { type: 'module' });
+        return () => {
+            if (workerRef.current) workerRef.current.terminate();
+        };
+    }, []);
 
     // Debounce zxcvbn calculation with scramble effect & smart bypass
     useEffect(() => {
@@ -37,10 +44,16 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                             },
                             feedback: { warning: '', suggestions: [] }
                         });
+                        setIsCalculating(false);
+                    } else if (workerRef.current) {
+                        workerRef.current.onmessage = (e) => {
+                            setDebouncedResult(e.data);
+                            setIsCalculating(false);
+                        };
+                        workerRef.current.postMessage(password);
                     } else {
-                        setDebouncedResult(zxcvbn(password));
+                        setIsCalculating(false);
                     }
-                    setIsCalculating(false);
                 });
             });
         }, 600); // Réduit pour un esprit plus "snappy" tout en laissant le temps à l'animation

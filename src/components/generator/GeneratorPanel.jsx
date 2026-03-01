@@ -392,8 +392,14 @@ export function GeneratorPanel({ onCopyPassword }) {
         }
         return null;
     };
+    const generationIdRef = useRef(0);
+    const [isGenerating, setIsGenerating] = useState(false);
+
     // Generate function
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
+        const currentGenId = ++generationIdRef.current;
+        setIsGenerating(true);
+
         let finalCharset = [];
         // 1. Standard Pool
         if (!config.standardCharsetDisabled) {
@@ -432,7 +438,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                 }
             }
         }
-        const res = generatePassword({
+        const res = await generatePassword({
             length: config.length,
             charset: finalCharset,
             mandatoryChars: config.include,
@@ -449,6 +455,10 @@ export function GeneratorPanel({ onCopyPassword }) {
             minAsciiPercent: config.minAsciiPercent,
             targetByteSize: config.targetByteSize
         });
+
+        // Prevent race conditions 
+        if (currentGenId !== generationIdRef.current) return;
+
         setResult(res);
         // If in byte mode, sync slider to actual length
         if (config.targetByteSize && res.password) {
@@ -457,6 +467,9 @@ export function GeneratorPanel({ onCopyPassword }) {
         setCopied(false);
         setHasBeenCopied(false);
         if (isScrambling) setIsScrambling(false);
+        setIsGenerating(false);
+
+        console.log("Mot de passe généré :", res.password.length, "caractères");
     };
     // Calculate conflicts between Must Include and Forbidden
     const getConflictChars = () => {
