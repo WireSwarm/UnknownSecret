@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Type, ArrowUpCircle, Hash, Smile, Zap, Check, Shield, Info, X, Activity, Clock, BookOpen } from 'lucide-react';
 import zxcvbn from 'zxcvbn';
+import { HelpPopover } from '../ui/HelpPopover';
 
 export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPostQuantum = false }) {
     const [showBcryptInfo, setShowBcryptInfo] = useState(false);
@@ -322,24 +323,6 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                                     </div>
                                 )}
 
-                                {debouncedResult.feedback?.suggestions?.length > 0 && (
-                                    <div
-                                        id="zxcvbn-suggestions"
-                                        style={{
-                                            padding: '0.75rem',
-                                            background: 'rgba(255, 255, 255, 0.05)',
-                                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                                            borderRadius: '0.5rem'
-                                        }}
-                                    >
-                                        <strong id="zxcvbn-suggestions-title" style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Suggestions</strong>
-                                        <ul id="zxcvbn-suggestions-list" style={{ margin: 0, paddingLeft: '1.2rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
-                                            {debouncedResult.feedback.suggestions.map((suggestion, i) => (
-                                                <li key={i} id={`suggestion-${i}`}>{suggestion}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
                             </div>
                         )}
                     </div>
@@ -385,14 +368,18 @@ function CrackTimeDisplay({ times, isPostQuantum, isLoading }) {
         if (val < 86400) return `${Math.round(val / 3600)} hours`;
         if (val < 31536000) return `${Math.round(val / 86400)} days`;
         if (val < 31536000 * 100) return `${Math.round(val / 31536000)} years`;
-        return 'Centuries';
+        if (val < 31536000 * 1000) return 'Centuries';
+        if (val < 31536000 * 1e6) return 'Millennia';
+        if (val < 31536000 * 1e9) return 'Millions of years';
+        if (val < 31536000 * 14e9) return 'Billions of years';
+        return 'Age of the Universe';
     };
 
     const items = [
-        { label: 'Throttled Online', value: formatTime(times.online_throttling_100_per_hour), sub: '100/hour', id: 'crack-time-throttled' },
-        { label: 'Unthrottled Online', value: formatTime(times.online_no_throttling_10_per_second), sub: '10/second', id: 'crack-time-unthrottled' },
-        { label: 'Offline Fast', value: formatTime(times.offline_fast_hashing_1e10_per_second), sub: '10B/second', id: 'crack-time-offline-fast' },
-        { label: 'Offline Slow', value: formatTime(times.offline_slow_hashing_1e4_per_second), sub: '10k/second', id: 'crack-time-offline-slow' }
+        { label: 'Data Breach (Weak Security)', tooltip: 'The database leaked and the hashing algorithm (e.g., MD5) is very fast to compute. The attacker uses hardware to test 10 billion combinations per second.', value: formatTime(times.offline_fast_hashing_1e10_per_second), sub: '10B/sec', id: 'crack-time-offline-fast' },
+        { label: 'Data Breach (Strong Security)', tooltip: 'The database leaked, but the password is defended by a slow algorithm (e.g., Bcrypt, Argon2). The attacker is limited to about 10,000 tests per second.', value: formatTime(times.offline_slow_hashing_1e4_per_second), sub: '10k/sec', id: 'crack-time-offline-slow' },
+        { label: 'Login Attempts (Unlimited)', tooltip: 'Online attack: the login form has no protection against bots. The attacker tests passwords as fast as the network allows.', value: formatTime(times.online_no_throttling_10_per_second), sub: '10/sec', id: 'crack-time-unthrottled' },
+        { label: 'Login Attempts (With Max Attempts)', tooltip: 'Online attack: the login page has a security system that blocks or slows down the attacker after a few failed tries (rate limiting, max attempts).', value: formatTime(times.online_throttling_100_per_hour), sub: '100/hour', id: 'crack-time-throttled' }
     ];
 
     return (
@@ -405,8 +392,9 @@ function CrackTimeDisplay({ times, isPostQuantum, isLoading }) {
                     display: 'flex',
                     flexDirection: 'column'
                 }}>
-                    <span id={`${item.id}-label`} style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.2rem' }}>
-                        {item.label} <span style={{ opacity: 0.5 }}>({item.sub})</span>
+                    <span id={`${item.id}-label`} style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.2rem', display: 'flex', alignItems: 'center' }}>
+                        {item.label} <span style={{ opacity: 0.5, marginLeft: '0.2rem' }}>({item.sub})</span>
+                        <HelpPopover title={item.label} content={item.tooltip} />
                     </span>
                     <span id={`${item.id}-value`} style={{ fontSize: '0.85rem', fontWeight: 600, color: '#E5E7EB', minHeight: '1.2rem' }}>
                         {isLoading ? <ScrambleText length={10 + Math.floor(Math.random() * 5)} /> : item.value}
