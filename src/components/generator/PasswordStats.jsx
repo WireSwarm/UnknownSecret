@@ -8,7 +8,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
     const [debouncedResult, setDebouncedResult] = useState(null);
     const [isCalculating, setIsCalculating] = useState(false);
 
-    // Debounce zxcvbn calculation with scramble effect
+    // Debounce zxcvbn calculation with scramble effect & smart bypass
     useEffect(() => {
         if (!password) {
             setDebouncedResult(null);
@@ -18,9 +18,32 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
 
         setIsCalculating(true);
         const handler = setTimeout(() => {
-            setDebouncedResult(zxcvbn(password));
-            setIsCalculating(false);
-        }, 1000);
+            // Laisse le navigateur dessiner une dernière frame d'animation Scramble avant de faire du calcul lourd
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const uniqueChars = new Set(password).size;
+                    const estimatedEntropy = password.length * Math.log2(uniqueChars || 1);
+
+                    // Si l'entropie est mathématiquement colossale ou la chaîne très longue, 
+                    // le calcul prendra trop de temps (freeze) pour un résultat garanti "Age of the Universe".
+                    if (estimatedEntropy > 130 || password.length >= 40) {
+                        setDebouncedResult({
+                            score: 4,
+                            crack_times_seconds: {
+                                online_throttling_100_per_hour: 1e25,
+                                online_no_throttling_10_per_second: 1e25,
+                                offline_fast_hashing_1e10_per_second: 1e25,
+                                offline_slow_hashing_1e4_per_second: 1e25
+                            },
+                            feedback: { warning: '', suggestions: [] }
+                        });
+                    } else {
+                        setDebouncedResult(zxcvbn(password));
+                    }
+                    setIsCalculating(false);
+                });
+            });
+        }, 600); // Réduit pour un esprit plus "snappy" tout en laissant le temps à l'animation
 
         return () => clearTimeout(handler);
     }, [password]);
