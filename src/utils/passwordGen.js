@@ -228,7 +228,8 @@ export function generatePassword({
     lengthDeviation = 5,
     ensureMinAscii = false,
     minAsciiPercent = 5,
-    targetByteSize = null // Opt-in for byte-based generation
+    targetByteSize = null, // Opt-in for byte-based generation
+    activeGroups = { lower: true, upper: true, numbers: true, symbols: true } // Selected checkbox states
 }) {
     // Safety check if charset is passed as string by legacy code, convert to array
     if (typeof charset === 'string') {
@@ -256,12 +257,12 @@ export function generatePassword({
         }
 
         if (ensureRobustness) {
-            const constraints = [
-                { set: Array.from(CHAR_SETS.lowercase) },
-                { set: Array.from(CHAR_SETS.uppercase) },
-                { set: Array.from(CHAR_SETS.numbers) },
-                { set: Array.from(CHAR_SETS.symbols) }
-            ];
+            const constraints = [];
+            if (activeGroups.lower) constraints.push({ set: Array.from(CHAR_SETS.lowercase) });
+            if (activeGroups.upper) constraints.push({ set: Array.from(CHAR_SETS.uppercase) });
+            if (activeGroups.numbers) constraints.push({ set: Array.from(CHAR_SETS.numbers) });
+            if (activeGroups.symbols) constraints.push({ set: Array.from(CHAR_SETS.symbols) });
+
             constraints.forEach(c => requiredChars.push(c.set[getRandomInt(c.set.length)]));
         }
 
@@ -356,14 +357,12 @@ export function generatePassword({
     }
 
     if (ensureRobustness) {
-        // Enforce: Lowercase, Uppercase, Number, Symbol
-        // We still use strings for raw sets definitions, so we must array-ify them to pick from them
-        const constraints = [
-            { set: Array.from(CHAR_SETS.lowercase), name: 'lower' },
-            { set: Array.from(CHAR_SETS.uppercase), name: 'upper' },
-            { set: Array.from(CHAR_SETS.numbers), name: 'digit' },
-            { set: Array.from(CHAR_SETS.symbols), name: 'symbol' }
-        ];
+        // Enforce: Lowercase, Uppercase, Number, Symbol (only if selected)
+        const constraints = [];
+        if (activeGroups.lower) constraints.push({ set: Array.from(CHAR_SETS.lowercase) });
+        if (activeGroups.upper) constraints.push({ set: Array.from(CHAR_SETS.uppercase) });
+        if (activeGroups.numbers) constraints.push({ set: Array.from(CHAR_SETS.numbers) });
+        if (activeGroups.symbols) constraints.push({ set: Array.from(CHAR_SETS.symbols) });
 
         constraints.forEach(constraint => {
             const charToInject = constraint.set[getRandomInt(constraint.set.length)];

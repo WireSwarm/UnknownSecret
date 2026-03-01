@@ -437,6 +437,12 @@ export function GeneratorPanel({ onCopyPassword }) {
             charset: finalCharset,
             mandatoryChars: config.include,
             ensureRobustness: config.ensureCommon, // Mapped to the new logic
+            activeGroups: {
+                lower: config.lower,
+                upper: config.upper,
+                numbers: config.numbers,
+                symbols: config.basic || config.advanced
+            },
             randomizeLength: config.randomLength,
             lengthDeviation: config.lengthDeviation,
             ensureMinAscii: config.ensureMinAscii,
@@ -1690,10 +1696,10 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         id="compat-toggle"
                                         label={
                                             <div className="flex items-center">
-                                                Enhance Compatibility
+                                                Ensure Compatibility
                                                 <HelpPopover
-                                                    title="Enhance Compatibility"
-                                                    content="Restricts the character set to standard symbols to ensure acceptance across most services, even legacy ones that might reject complex Unicode characters."
+                                                    title="Ensure Compatibility"
+                                                    content="Restricts the character set to ensure at least one character from each active character block (lowercase, uppercase, numbers, symbols) is present in the generated password."
                                                 />
                                             </div>
                                         }
@@ -1708,7 +1714,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         className="w-full"
                                     />
                                     <p className="text-xs text-muted leading-relaxed" id="compat-desc">
-                                        Guarantees at least one lowercase, uppercase, number, and symbol.
+                                        Guarantees at least one character from each active character set option.
                                     </p>
                                 </div>
                             </div>
