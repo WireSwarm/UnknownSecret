@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Basic",
+    "activeSet": null,
+    "configDiff": {
+      "length": 32,
+      "tokens": [
+        "lowercase",
+        "uppercase",
+        "numbers",
+        "basic_symbols"
+      ],
+      "maxPossible": 72,
+      "targetByteSize": null,
+      "advanced": false
+    }
+  },
+  {
+    "name": "Extended",
+    "activeSet": "ascii",
+    "configDiff": {}
+  },
+  {
+    "name": "Full",
+    "activeSet": "all_unicode",
+    "configDiff": {
+      "length": 256,
+      "tokens": [
+        "all_unicode"
+      ],
+      "exclude": "\\<>",
+      "maxPossible": 1000,
+      "randomLength": true,
+      "targetByteSize": null
+    }
+  }
+]
