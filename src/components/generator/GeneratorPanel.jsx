@@ -1160,6 +1160,77 @@ export function GeneratorPanel({ onCopyPassword }) {
                         </div>
                     </div>
                 )}
+
+                {/* Cond 2: UTF-8 Compatibility Warning */}
+                {showUtf8Warning && config.standardCharsetDisabled !== true && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii_extended') && (
+                    <div
+                        id="utf8-warning-alert"
+                        className="w-full max-w-2xl mt-4 rounded-lg overflow-hidden p-3 relative"
+                        style={{
+                            background: 'rgba(234, 179, 8, 0.05)',
+                            border: '1px solid rgba(234, 179, 8, 0.15)',
+                            animation: 'fadeIn 0.3s ease'
+                        }}
+                    >
+                        <div className="flex items-start gap-2">
+                            <TriangleAlert size={14} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
+                            <div className="flex flex-col gap-2 pr-4 flex-1">
+                                <div>
+                                    <span style={{ fontSize: '0.8rem', color: '#FEF9C3', fontWeight: 600 }}>
+                                        Compatibility Check
+                                    </span>
+                                    <p style={{ fontSize: '0.75rem', color: 'rgba(254, 249, 195, 0.8)', lineHeight: 1.5, margin: 0 }}>
+                                        Not all backends fully support UTF-8. Legacy systems might replace complex symbols, reducing password strength.
+                                        <br />
+                                        Please follow the steps in the <b>Unicode Compatibility Check</b> card below.
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={() => {
+                                        unicodeCheckerRef.current?.open();
+                                        // Small timeout to allow expansion animation to start/layout to update
+                                        setTimeout(() => {
+                                            const el = document.getElementById('unicode-compatibility-section');
+                                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }, 100);
+                                    }}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="self-start h-auto py-1 px-2 text-xs"
+                                    style={{
+                                        background: 'rgba(254, 249, 195, 0.15)',
+                                        color: '#FEF9C3',
+                                        border: '1px solid rgba(254, 249, 195, 0.3)'
+                                    }}
+                                >
+                                    Go to Compatibility Check
+                                </Button>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => {
+                                setShowUtf8Warning(false);
+                                sessionStorage.setItem('hide_utf8_warning', 'true');
+                            }}
+                            className="absolute text-[#FEF9C3] hover:bg-[rgba(255,255,255,0.05)] transition-all rounded px-1.5 py-0.5"
+                            style={{
+                                top: '8px',
+                                right: '8px',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '0.65rem',
+                                opacity: 0.5,
+                                fontWeight: 500
+                            }}
+                            title="Dismiss warning"
+                            onMouseEnter={(e) => e.target.style.opacity = '1'}
+                            onMouseLeave={(e) => e.target.style.opacity = '0.5'}
+                        >
+                            Hide
+                        </button>
+                    </div>
+                )}
             </div>
             {/* Copy Button & Meter & Stats Toggle */}
             <div className="flex flex-col gap-4" id="meter-action-row">
@@ -1587,76 +1658,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="settings-grid">
                             {/* Left Column: Options */}
                             <div className="flex flex-col gap-6" id="settings-col-1">
-                                {/* Cond 2: UTF-8 Compatibility Warning (MOVED HERE) */}
-                                {showUtf8Warning && config.standardCharsetDisabled !== true && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii_extended') && (
-                                    <div
-                                        id="utf8-warning-alert"
-                                        className="rounded-lg overflow-hidden p-3 relative"
-                                        style={{
-                                            background: 'rgba(234, 179, 8, 0.05)',
-                                            border: '1px solid rgba(234, 179, 8, 0.15)',
-                                            animation: 'fadeIn 0.3s ease'
-                                        }}
-                                    >
-                                        <div className="flex items-start gap-2">
-                                            <TriangleAlert size={14} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
-                                            <div className="flex flex-col gap-2 pr-4 flex-1">
-                                                <div>
-                                                    <span style={{ fontSize: '0.8rem', color: '#FEF9C3', fontWeight: 600 }}>
-                                                        Compatibility Check
-                                                    </span>
-                                                    <p style={{ fontSize: '0.75rem', color: 'rgba(254, 249, 195, 0.8)', lineHeight: 1.5, margin: 0 }}>
-                                                        Not all backends fully support UTF-8. Legacy systems might replace complex symbols, reducing password strength.
-                                                        <br />
-                                                        Please follow the steps in the <b>Unicode Compatibility Check</b> card below.
-                                                    </p>
-                                                </div>
-                                                <Button
-                                                    onClick={() => {
-                                                        unicodeCheckerRef.current?.open();
-                                                        // Small timeout to allow expansion animation to start/layout to update
-                                                        setTimeout(() => {
-                                                            const el = document.getElementById('unicode-compatibility-section');
-                                                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                                        }, 100);
-                                                    }}
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="self-start h-auto py-1 px-2 text-xs"
-                                                    style={{
-                                                        background: 'rgba(254, 249, 195, 0.15)',
-                                                        color: '#FEF9C3',
-                                                        border: '1px solid rgba(254, 249, 195, 0.3)'
-                                                    }}
-                                                >
-                                                    Go to Compatibility Check
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                setShowUtf8Warning(false);
-                                                sessionStorage.setItem('hide_utf8_warning', 'true');
-                                            }}
-                                            className="absolute text-[#FEF9C3] hover:bg-[rgba(255,255,255,0.05)] transition-all rounded px-1.5 py-0.5"
-                                            style={{
-                                                top: '8px',
-                                                right: '8px',
-                                                background: 'none',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                fontSize: '0.65rem',
-                                                opacity: 0.5,
-                                                fontWeight: 500
-                                            }}
-                                            title="Dismiss warning"
-                                            onMouseEnter={(e) => e.target.style.opacity = '1'}
-                                            onMouseLeave={(e) => e.target.style.opacity = '0.5'}
-                                        >
-                                            Hide
-                                        </button>
-                                    </div>
-                                )}
+
                                 <div className="flex flex-col gap-3" id="options-group">
                                     <h3
                                         className="label-text mb-4"
