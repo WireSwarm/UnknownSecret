@@ -1,5 +1,6 @@
 artifact/
 history/
+.wrangler/
 # Logs
 logs
 *.log
