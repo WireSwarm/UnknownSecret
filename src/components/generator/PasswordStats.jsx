@@ -25,14 +25,14 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
 
         setIsCalculating(true);
         const handler = setTimeout(() => {
-            // Laisse le navigateur dessiner une dernière frame d'animation Scramble avant de faire du calcul lourd
+            // Let the browser draw a final Scramble animation frame before doing heavy math
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     const uniqueChars = new Set(password).size;
                     const estimatedEntropy = password.length * Math.log2(uniqueChars || 1);
 
-                    // Si l'entropie est mathématiquement colossale ou la chaîne très longue, 
-                    // le calcul prendra trop de temps (freeze) pour un résultat garanti "Age of the Universe".
+                    // If entropy is mathematically colossal or string very long, 
+                    // the computation will take too long (freeze) for a guaranteed "Age of the Universe" result.
                     if (estimatedEntropy > 130 || password.length >= 40) {
                         setDebouncedResult({
                             score: 4,
@@ -56,7 +56,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                     }
                 });
             });
-        }, 600); // Réduit pour un esprit plus "snappy" tout en laissant le temps à l'animation
+        }, 600); // Reduced for a "snappy" feel while leaving time for the animation
 
         return () => clearTimeout(handler);
     }, [password]);

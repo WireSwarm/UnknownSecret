@@ -81,7 +81,7 @@ export const HelpPopover = ({ title, content, children, isImportant }) => {
     // Instead of complex logic, let's keep it simple: if mouse leaves trigger, we start a timer.
     // If mouse enters popover, we clear timer. If mouse leaves popover, we start timer.
 
-    // Actually, user said: "Click outside to close... oui et même si la souris se déplace"
+    // Actually, user said: "Click outside to close... yes and even if the mouse moves"
     // To make it robust:
     // 1. Click Toggle.
     // 2. MouseLeave (Trigger OR Popover) -> Close after delay.

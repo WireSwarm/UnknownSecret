@@ -469,7 +469,7 @@ export function GeneratorPanel({ onCopyPassword }) {
         if (isScrambling) setIsScrambling(false);
         setIsGenerating(false);
 
-        //console.log("Mot de passe généré :", res.password.length, "caractères");
+        //console.log("Password generated:", res.password.length, "characters");
     };
     // Calculate conflicts between Must Include and Forbidden
     const getConflictChars = () => {

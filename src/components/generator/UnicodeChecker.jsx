@@ -177,8 +177,8 @@ export const UnicodeChecker = React.forwardRef((props, ref) => {
                                     Warning: Risk of Account Lockout
                                 </h4>
                                 <p className="text-xs leading-relaxed" style={{ color: 'rgba(254, 240, 138, 0.9)' }}>
-                                    Attention à toujours avoir accès à son compte (numéro de téléphone, informations supplémentaires, e-mail de secours) car si le mot de passe unicode n'est pas pris en charge,
-                                    on peut considérer le mot de passe comme perdu et il devient impossible de rentrer à nouveau sur le compte.
+                                    Make sure you always have account recovery options (phone number, extra info, backup email). If the Unicode password is not supported during login,
+                                    you can consider the password lost and it becomes impossible to log back into the account.
                                 </p>
                             </div>
                         </div>
