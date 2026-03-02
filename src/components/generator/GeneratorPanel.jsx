@@ -469,7 +469,7 @@ export function GeneratorPanel({ onCopyPassword }) {
         if (isScrambling) setIsScrambling(false);
         setIsGenerating(false);
 
-        console.log("Mot de passe généré :", res.password.length, "caractères");
+        //console.log("Mot de passe généré :", res.password.length, "caractères");
     };
     // Calculate conflicts between Must Include and Forbidden
     const getConflictChars = () => {
@@ -607,11 +607,14 @@ export function GeneratorPanel({ onCopyPassword }) {
         const newConfig = { ...preset.config };
         // Sync checkboxes if tokens exist
         if (newConfig.tokens) {
-            newConfig.lower = newConfig.tokens.includes('alphanums') || newConfig.tokens.includes('ascii') || newConfig.tokens.includes('lowercase');
-            newConfig.upper = newConfig.tokens.includes('alphanums') || newConfig.tokens.includes('ascii') || newConfig.tokens.includes('uppercase');
-            newConfig.numbers = newConfig.tokens.includes('alphanums') || newConfig.tokens.includes('ascii') || newConfig.tokens.includes('numbers');
-            newConfig.basic = newConfig.tokens.includes('ascii') || newConfig.tokens.includes('basic_symbols');
-            newConfig.advanced = newConfig.tokens.includes('ascii') || newConfig.tokens.includes('advanced_symbols');
+            const hasHighSet = newConfig.tokens.some(t => ['ascii', 'ascii_extended', 'symbols_set', 'active_languages', 'emojis', 'all_unicode'].includes(t));
+            const hasAlphanum = newConfig.tokens.includes('alphanums');
+
+            newConfig.lower = hasHighSet || hasAlphanum || newConfig.tokens.includes('lowercase');
+            newConfig.upper = hasHighSet || hasAlphanum || newConfig.tokens.includes('uppercase');
+            newConfig.numbers = hasHighSet || hasAlphanum || newConfig.tokens.includes('numbers');
+            newConfig.basic = hasHighSet || newConfig.tokens.includes('basic_symbols');
+            newConfig.advanced = hasHighSet || newConfig.tokens.includes('advanced_symbols');
         }
 
         setConfig(newConfig);
