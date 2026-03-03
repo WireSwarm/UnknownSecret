@@ -1048,80 +1048,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         />
                     )}
                 </div>
-                {/* Password Length Slider: directly below the input */}
-                <div className="w-full max-w-2xl mt-4" id="length-slider-area">
-                    <div className="flex justify-between items-center mb-1" id="length-label-row">
-                        <label className="label-text" id="length-label">Password Length</label>
-                        <div className="flex items-center gap-2" id="length-value-container">
-                            {isEditingLength ? (
-                                <input
-                                    id="length-editor"
-                                    autoFocus
-                                    defaultValue={config.length}
-                                    onKeyDown={handleLengthChange}
-                                    onBlur={handleLengthChange}
-                                    onFocus={(e) => e.target.select()}
-                                    className="ghost-size-input text-primary font-bold"
-                                />
-                            ) : (
-                                <div
-                                    className="font-mono font-bold text-primary cursor-pointer hover:underline flex items-center gap-1"
-                                    id="current-length-val"
-                                    onClick={() => setIsEditingLength(true)}
-                                    title="Click to edit length"
-                                >
-                                    {config.randomLength ? (
-                                        <>
-                                            ~{sliderLength} <span className="text-[0.8em] font-normal">({result?.password ? [...result.password].length : 0})</span>
-                                        </>
-                                    ) : (
-                                        sliderLength
-                                    )}
-                                    <Edit2 size={10} className="opacity-50" />
-                                </div>
-                            )}
-                            <span className="text-muted" id="length-sep">/</span>
-                            {isEditingMax ? (
-                                <input
-                                    id="max-length-editor"
-                                    autoFocus
-                                    defaultValue={config.maxPossible}
-                                    onKeyDown={handleMaxChange}
-                                    onBlur={handleMaxChange}
-                                    onFocus={(e) => e.target.select()}
-                                    className="ghost-size-input"
-                                />
-                            ) : (
-                                <div
-                                    id="max-length-display"
-                                    className="font-mono text-muted cursor-pointer hover:text-primary transition-colors flex items-center gap-1"
-                                    onClick={() => setIsEditingMax(true)}
-                                    title="Click to edit max limit"
-                                >
-                                    {config.maxPossible}
-                                    <Edit2 size={10} className="opacity-50" />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    <Slider
-                        id="length-slider"
-                        value={sliderLength}
-                        min={config.ensureCommon ? 4 : 1}
-                        max={config.maxPossible}
-                        onChange={(val) => {
-                            setSliderLength(val);
-                            // If dragging slider, switch back to Length Mode
-                            if (config.targetByteSize !== null) {
-                                setConfig(prev => ({ ...prev, length: val, targetByteSize: null }));
-                            }
-                            if (!isScrambling) setIsScrambling(true);
-                        }}
-                        onAfterChange={(val) => {
-                            setConfig({ ...config, length: val, targetByteSize: null });
-                        }}
-                    />
-                </div>
+
                 {/* Cond 1: Bcrypt Warning */}
                 {/* Only check length match if NOT in byte mode already */}
                 {!config.targetByteSize && config.length === 72 && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii') && (
@@ -1634,7 +1561,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         {/* Configuration Title & Reset */}
                         <div className="flex justify-between items-center">
                             <h3 className="text-lg font-bold flex items-center gap-2">
-                                <Sliders size={18} className="text-primary" />
+                                <Settings size={18} className="text-primary" />
                                 Configuration
                             </h3>
                             <Button
@@ -1646,6 +1573,80 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 <RotateCcw size={13} className="mr-1.5" />
                                 Reset
                             </Button>
+                        </div>
+                        {/* Password Length Slider: moved here */}
+                        <div className="w-full max-w-2xl mt-4" id="length-slider-area">
+                            <div className="flex justify-between items-center mb-1" id="length-label-row">
+                                <label className="label-text" id="length-label">Password Length</label>
+                                <div className="flex items-center gap-2" id="length-value-container">
+                                    {isEditingLength ? (
+                                        <input
+                                            id="length-editor"
+                                            autoFocus
+                                            defaultValue={config.length}
+                                            onKeyDown={handleLengthChange}
+                                            onBlur={handleLengthChange}
+                                            onFocus={(e) => e.target.select()}
+                                            className="ghost-size-input text-primary font-bold"
+                                        />
+                                    ) : (
+                                        <div
+                                            className="font-mono font-bold text-primary cursor-pointer hover:underline flex items-center gap-1"
+                                            id="current-length-val"
+                                            onClick={() => setIsEditingLength(true)}
+                                            title="Click to edit length"
+                                        >
+                                            {config.randomLength ? (
+                                                <>
+                                                    ~{sliderLength} <span className="text-[0.8em] font-normal">({result?.password ? [...result.password].length : 0})</span>
+                                                </>
+                                            ) : (
+                                                sliderLength
+                                            )}
+                                            <Edit2 size={10} className="opacity-50" />
+                                        </div>
+                                    )}
+                                    <span className="text-muted" id="length-sep">/</span>
+                                    {isEditingMax ? (
+                                        <input
+                                            id="max-length-editor"
+                                            autoFocus
+                                            defaultValue={config.maxPossible}
+                                            onKeyDown={handleMaxChange}
+                                            onBlur={handleMaxChange}
+                                            onFocus={(e) => e.target.select()}
+                                            className="ghost-size-input"
+                                        />
+                                    ) : (
+                                        <div
+                                            id="max-length-display"
+                                            className="font-mono text-muted cursor-pointer hover:text-primary transition-colors flex items-center gap-1"
+                                            onClick={() => setIsEditingMax(true)}
+                                            title="Click to edit max limit"
+                                        >
+                                            {config.maxPossible}
+                                            <Edit2 size={10} className="opacity-50" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <Slider
+                                id="length-slider"
+                                value={sliderLength}
+                                min={config.ensureCommon ? 4 : 1}
+                                max={config.maxPossible}
+                                onChange={(val) => {
+                                    setSliderLength(val);
+                                    // If dragging slider, switch back to Length Mode
+                                    if (config.targetByteSize !== null) {
+                                        setConfig(prev => ({ ...prev, length: val, targetByteSize: null }));
+                                    }
+                                    if (!isScrambling) setIsScrambling(true);
+                                }}
+                                onAfterChange={(val) => {
+                                    setConfig({ ...config, length: val, targetByteSize: null });
+                                }}
+                            />
                         </div>
                         {/* Component-based Checkboxes */}
                         <div className="flex flex-wrap gap-2 mb-2 mt-2 justify-center">
