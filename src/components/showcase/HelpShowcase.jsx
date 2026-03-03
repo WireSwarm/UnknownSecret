@@ -1,3 +1,5 @@
+// DO NOT DELETE THIS PAGE.
+// This page is a showcase for UI components. It should be kept for reference.
 import React, { useState } from 'react';
 import { HelpCircle, Info, X, ChevronDown, ChevronUp } from 'lucide-react';
 import './Showcase.css';

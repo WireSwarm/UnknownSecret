@@ -3,12 +3,13 @@ import { ShieldCheck, Settings, History } from 'lucide-react';
 import './App.css';
 import { GeneratorPanel } from './components/generator/GeneratorPanel';
 import { HistoryPanel } from './components/history/HistoryPanel';
-import { HelpShowcase } from './components/showcase/HelpShowcase';
+// To re-enable the UI showcase, uncomment the line below.
+// import { HelpShowcase } from './components/showcase/HelpShowcase';
 import { useSessionStorage } from './utils/storage';
 
 function App() {
   const [history, setHistory] = useSessionStorage('password_history', []);
-  const [showcaseMode, setShowcaseMode] = React.useState(false);
+  // const [showcaseMode, setShowcaseMode] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('config');
 
   const handleHistoryUpdate = (newHistory) => {
@@ -47,9 +48,9 @@ function App() {
     };
   }, [history]);
 
-  if (showcaseMode) {
-    return <HelpShowcase onExit={() => setShowcaseMode(false)} />;
-  }
+  // if (showcaseMode) {
+  //   return <HelpShowcase onExit={() => setShowcaseMode(false)} />;
+  // }
 
   return (
     <div className="app-container" id="app-root">
@@ -114,7 +115,8 @@ function App() {
         </aside>
       </main>
 
-      <button
+      {/* To re-enable the UI showcase, uncomment this button */}
+      {/* <button
         onClick={() => setShowcaseMode(true)}
         style={{
           position: 'fixed',
@@ -133,7 +135,7 @@ function App() {
         id="showcase-toggle"
       >
         UI Showcase
-      </button>
+      </button> */}
     </div>
   );
 }
