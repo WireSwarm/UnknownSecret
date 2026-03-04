@@ -4,6 +4,9 @@ import { viteSingleFile } from "vite-plugin-singlefile"
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), viteSingleFile()],
+  plugins: [
+    react(),
+    process.env.VITE_SINGLE_FILE === 'true' ? viteSingleFile() : null
+  ],
   base: './', // Use relative paths for assets
 })
