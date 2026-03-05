@@ -103,7 +103,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                 const parsed = JSON.parse(saved);
                 return parsed.activeSet || 'alphanums';
             }
-        } catch (e) { }
+        } catch { /* ignore: localStorage may not be available */ }
         return 'ascii';
     });
     // Presets State
@@ -111,7 +111,7 @@ export function GeneratorPanel({ onCopyPassword }) {
         try {
             const saved = localStorage.getItem(STORAGE_KEY_PRESETS);
             return saved ? JSON.parse(saved) : [];
-        } catch (e) {
+        } catch {
             return [];
         }
     });
@@ -139,7 +139,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [showUtf8Warning, setShowUtf8Warning] = useState(() => {
         try {
             return sessionStorage.getItem('hide_utf8_warning') !== 'true';
-        } catch (e) {
+        } catch {
             return true;
         }
     });
@@ -255,7 +255,7 @@ export function GeneratorPanel({ onCopyPassword }) {
             }
         });
         setDefaultPresets(allPresets);
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
     // --- SCRAMBLE EFFECT LOOP ---
     useEffect(() => {
         let animationFrameId;
@@ -358,7 +358,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [areCharsetsExpanded, setAreCharsetsExpanded] = useState(() => {
         try {
             return sessionStorage.getItem('usr_charsets_expanded') === 'true';
-        } catch (e) {
+        } catch {
             return false;
         }
     });
@@ -374,7 +374,7 @@ export function GeneratorPanel({ onCopyPassword }) {
             setAreCharsetsExpanded(true);
             sessionStorage.setItem('usr_charsets_expanded', 'true');
         }
-    }, [activeSet, areCharsetsExpanded]);
+    }, [activeSet, areCharsetsExpanded]); // eslint-disable-line react-hooks/exhaustive-deps
     // Helper: Check if a set is included in another based on position (left = included in right)
     const isSetHighlighted = (setKey) => {
         const setIndex = SETS_ORDER.indexOf(setKey);
@@ -393,12 +393,10 @@ export function GeneratorPanel({ onCopyPassword }) {
         return null;
     };
     const generationIdRef = useRef(0);
-    const [isGenerating, setIsGenerating] = useState(false);
 
     // Generate function
     const handleGenerate = async () => {
         const currentGenId = ++generationIdRef.current;
-        setIsGenerating(true);
 
         let finalCharset = [];
         // 1. Standard Pool
@@ -467,7 +465,6 @@ export function GeneratorPanel({ onCopyPassword }) {
         setCopied(false);
         setHasBeenCopied(false);
         if (isScrambling) setIsScrambling(false);
-        setIsGenerating(false);
 
         //console.log("Password generated:", res.password.length, "characters");
     };
@@ -483,7 +480,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     // Initial & Watch trigger
     useEffect(() => {
         handleGenerate();
-    }, [config]);
+    }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
     const copyToClipboard = () => {
         if (!result.password) return;
         navigator.clipboard.writeText(result.password);
@@ -775,7 +772,7 @@ export function GeneratorPanel({ onCopyPassword }) {
             document.removeEventListener('dragleave', handleDragLeave);
             document.removeEventListener('drop', handleDrop);
         };
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
     const getClearButtonText = () => {
         if (clearConfirmLevel === 1) return "Sure?";
         if (clearConfirmLevel === 2) return "REALLY?";

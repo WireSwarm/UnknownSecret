@@ -4,12 +4,12 @@ export const CHAR_SETS = {
     uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     lowercase: 'abcdefghijklmnopqrstuvwxyz',
     numbers: '0123456789',
-    symbols: '!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~', // Standard ASCII symbols
+    symbols: '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~', // Standard ASCII symbols
     commonSymbols: '!@#$%^&*?',
 };
 
-// Helper: Generate char codes from range
-const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => String.fromCharCode(start + i));
+// Helper: Generate char codes from range (reserved for future use)
+const _range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => String.fromCharCode(start + i));
 
 const DENYLIST_RANGES = unicodeDenylistData.denylist;
 
@@ -86,7 +86,7 @@ export function buildCharset({ tokens = [], excludeChars = '', includeChars = ''
             if (!isInDenyList(i)) {
                 try {
                     localPool += String.fromCodePoint(i);
-                } catch (e) {
+                } catch {
                     // Ignore invalid code points
                 }
             }
@@ -314,8 +314,8 @@ export async function generatePassword({
 
         const password = buffer.join('');
         // Calc entropy based on effective length (approx) or combinations
-        let combinations = 0n;
-        let entropy = 0;
+        let combinations;
+        let entropy;
         if (buffer.length < 50000) {
             combinations = BigInt(charset.length) ** BigInt(buffer.length);
             entropy = combinations.toString(2).length;
@@ -417,8 +417,8 @@ export async function generatePassword({
 
     const password = buffer.join('');
 
-    let combinations = 0n;
-    let entropy = 0;
+    let combinations;
+    let entropy;
 
     if (actualLength < 50000) {
         combinations = BigInt(charsetLen) ** BigInt(actualLength);

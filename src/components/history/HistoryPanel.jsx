@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Copy, Trash2, Edit2, Star, Eye, EyeOff, Check } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
@@ -81,12 +81,6 @@ export function HistoryPanel({ history, onUpdateHistory }) {
         // then by timestamp
         return b.timestamp - a.timestamp;
     });
-
-    // Truncation logic: start [...] end
-    const formatPassword = (p) => {
-        if (p.length <= 16) return p;
-        return `${p.slice(0, 8)} [...] ${p.slice(-8)}`;
-    };
 
     const areAllVisible = history.length > 0 && visiblePasswords.size === history.length;
 

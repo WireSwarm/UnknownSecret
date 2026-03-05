@@ -36,7 +36,7 @@ function isProblematic(codePoint) {
     try {
         const char = String.fromCodePoint(codePoint);
         if (/\p{Cn}/u.test(char)) return true;
-    } catch (e) {
+    } catch {
         return true;
     }
 
@@ -64,6 +64,7 @@ for (let i = 0; i <= 0x10FFFF; i++) {
         }
     }
     // Progress log every 10%
+    // eslint-disable-next-line no-undef
     if (i % 0x10000 === 0) process.stdout.write('.');
 }
 // Close pending range

@@ -4,12 +4,12 @@ import { Edit2 } from 'lucide-react';
 export function EntropyMeter({ entropy, combinations, password, id, isPostQuantum, onByteChange }) {
     const [isEditingBytes, setIsEditingBytes] = useState(false);
 
-    // Analyze strength variables
-    let strength = 'Very Weak';
-    let color = '#EF4444'; // Red
-    let widthStr = '5%';
+    // Analyze strength variables — declared without initial value to avoid useless assignments
+    let strength;
+    let color;
+    let widthStr;
     let isDemon = false;
-    let barColor = color;
+    let barColor;
     let textGlow = 'none';
 
     const rawEntropy = entropy || 0;
@@ -49,7 +49,7 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
     } else {
         // Standard levels (< 100 bits) - map to 0-80% of track
         // Very Weak: 0-20%, Weak: 20-40%, Medium: 40-60%, Strong: 60-80%
-        let fraction = 0;
+        let fraction;
 
         if (safeEntropy >= 60) {
             // Strong: 60-100 bits -> 60-80% of track
@@ -74,6 +74,9 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
             fraction = 0.2 + tierProgress * 0.2;
         } else {
             // Very Weak: 0-20 bits -> 5-20% of track (minimum 5% to be visible)
+            strength = 'Very Weak';
+            color = '#EF4444'; // Red
+            barColor = '#EF4444';
             const tierProgress = safeEntropy / 20;
             fraction = 0.05 + tierProgress * 0.15;
         }

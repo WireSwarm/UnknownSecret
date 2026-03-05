@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ClipboardCheck, ChevronDown, RefreshCw, Copy, Check, TriangleAlert } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Input } from '../ui/Input';
@@ -100,19 +100,14 @@ const CheckerField = ({ label, value, index, status, description, isControl, onR
 
 export const UnicodeChecker = React.forwardRef((props, ref) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [basePassword, setBasePassword] = useState('');
-    const [suffix, setSuffix] = useState('');
+    const [basePassword, setBasePassword] = useState(() => generateBase());
+    const [suffix, setSuffix] = useState(() => SPECIAL_SUFFIXES[Math.floor(Math.random() * SPECIAL_SUFFIXES.length)]);
     const [copiedIndex, setCopiedIndex] = useState(null);
 
     // Expose open method to parent
     React.useImperativeHandle(ref, () => ({
         open: () => setIsOpen(true)
     }));
-
-    // Initial generation
-    useEffect(() => {
-        handleRegenerate();
-    }, []);
 
     const handleRegenerate = (e) => {
         if (e) e.stopPropagation();

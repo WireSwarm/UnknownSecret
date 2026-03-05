@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Info, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
-export const HelpPopover = ({ title, content, children, isImportant }) => {
+export const HelpPopover = ({ title, content }) => {
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef(null);
     const popoverRef = useRef(null);
@@ -52,25 +52,13 @@ export const HelpPopover = ({ title, content, children, isImportant }) => {
         e.stopPropagation();
 
         if (!isOpen) {
-            // Calculate position
+            // Calculate position directly
             const rect = triggerRef.current.getBoundingClientRect();
-            // Position: Top-Right of the trigger, but need to account for scroll
             const scrollX = window.scrollX;
-            const scrollY = window.scrollY;
-
-            // Default alignment: to the right and slightly down
-            let top = rect.bottom + scrollY + 10;
-            let left = rect.left + scrollX - 250; // Align right side roughly
-
-            // Adjust if off screen
-            if (left < 10) left = 10;
-
-            // Actually, let's just center it relative to trigger horizontally if max-width permits
-            // Or use fixed position and portal? Portal is safer for z-index.
 
             setPosition({
                 top: rect.bottom + 5,
-                left: Math.max(10, rect.left - 240) // heuristic 
+                left: Math.max(10, rect.left + scrollX - 240) // heuristic
             });
         }
         setIsOpen(!isOpen);

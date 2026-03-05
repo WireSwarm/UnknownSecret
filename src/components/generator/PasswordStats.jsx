@@ -85,7 +85,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
         const symbol = total - (lower + upper + number + emoji);
         const bytes = new TextEncoder().encode(password).length;
         return { lower, upper, number, emoji, symbol, bytes };
-    }, [password]);
+    }, [password, enableEmojiStats]);
 
     const statItems = [
         { label: 'Lowercase', count: stats.lower, icon: Type },
@@ -390,6 +390,7 @@ function ScrambleText({ length = 8 }) {
 }
 
 function CrackTimeDisplay({ times, isPostQuantum, isLoading }) {
+    const [scrambleLength] = React.useState(() => 10 + Math.floor(Math.random() * 5));
     if (!times) return null;
 
     const formatTime = (seconds) => {
@@ -433,7 +434,7 @@ function CrackTimeDisplay({ times, isPostQuantum, isLoading }) {
                         <HelpPopover title={item.label} content={item.tooltip} />
                     </span>
                     <span id={`${item.id}-value`} style={{ fontSize: '0.85rem', fontWeight: 600, color: '#E5E7EB', minHeight: '1.2rem' }}>
-                        {isLoading ? <ScrambleText length={10 + Math.floor(Math.random() * 5)} /> : item.value}
+                        {isLoading ? <ScrambleText length={scrambleLength} /> : item.value}
                     </span>
                     {isPostQuantum && (
                         <span style={{ fontSize: '0.6rem', color: '#60A5FA', marginTop: '2px' }}>
