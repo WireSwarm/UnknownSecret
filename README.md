@@ -44,6 +44,6 @@ bun run dev
 
 The `dist/` folder is ready for edge deployment. The live instance runs on [Cloudflare Pages](https://pages.cloudflare.com/).
 
-## License
+<!-- ## License
 
-This project is open source. See [LICENSE](LICENSE) for details.
+This project is open source. See [LICENSE](LICENSE) for details. -->
