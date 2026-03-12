@@ -1029,45 +1029,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                     )}
                 </div>
 
-                {/* Cond 1: Bcrypt Warning */}
-                {/* Only check length match if NOT in byte mode already */}
-                {!config.targetByteSize && config.length === 72 && SETS_ORDER.includes(activeSet) && (
-                    <div
-                        id="bcrypt-warning-container"
-                        className="w-full max-w-2xl mt-4 p-3 rounded-lg flex items-start gap-3"
-                        style={{
-                            background: 'rgba(234, 179, 8, 0.1)',
-                            border: '1px solid rgba(234, 179, 8, 0.25)',
-                            animation: 'fadeIn 0.3s ease'
-                        }}
-                    >
-                        <TriangleAlert id="bcrypt-warning-icon" size={18} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
-                        <div id="bcrypt-warning-text-content" className="flex flex-col gap-2 flex-1">
-                            <div>
-                                <h4 id="bcrypt-warning-title" className="text-sm font-bold m-0" style={{ color: '#FEF9C3' }}>Possible Bcrypt Truncation</h4>
-                                <p id="bcrypt-warning-desc" className="text-xs leading-relaxed m-0" style={{ color: 'rgba(254, 249, 195, 0.8)' }}>
-                                    If the site enforces a 72-character limit, it likely uses Bcrypt (72-byte limit).
-                                    Since you are using non-ASCII characters (multibyte), a 72-character password will exceed 72 bytes and be truncated.
-                                </p>
-                            </div>
-                            <Button
-                                id="bcrypt-fix-btn"
-                                onClick={() => handleByteChange(72)}
-                                size="sm"
-                                variant="ghost"
-                                className="self-start h-auto py-1 px-2 text-xs"
-                                style={{
-                                    background: 'rgba(254, 249, 195, 0.15)',
-                                    color: '#FEF9C3',
-                                    border: '1px solid rgba(254, 249, 195, 0.3)'
-                                }}
-                            >
-                                Set to 72 Bytes
-                            </Button>
-                        </div>
-                    </div>
-                )}
-
                 {/* Cond 2: UTF-8 Compatibility Warning */}
                 {showUtf8Warning && config.standardCharsetDisabled !== true && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii_extended') && (
                     <div
@@ -1181,6 +1142,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                 isOpen={showStats}
                 enableEmojiStats={SETS_ORDER.indexOf(activeSet) >= SETS_ORDER.indexOf('emojis')}
                 isPostQuantum={config.isPostQuantum}
+                onFixBcrypt={() => handleByteChange(72)}
             />
             {/* Presets and Default Configs Card — stays in the left column */}
             <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="presets-glass-card">

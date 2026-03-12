@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Type, ArrowUpCircle, Hash, Smile, Zap, Check, Shield, Info, X, Activity, Clock, BookOpen } from 'lucide-react';
+import { Type, ArrowUpCircle, Hash, Smile, Zap, Check, Shield, Info, X, Activity, Clock, BookOpen, TriangleAlert } from 'lucide-react';
 import { HelpPopover } from '../ui/HelpPopover';
 
-export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPostQuantum = false }) {
+export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPostQuantum = false, onFixBcrypt }) {
     const [showBcryptInfo, setShowBcryptInfo] = useState(false);
     const [debouncedResult, setDebouncedResult] = useState(null);
     const [isCalculating, setIsCalculating] = useState(false);
@@ -98,6 +98,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
             count: (password && stats.bytes <= 72) ? 1 : 0,
             icon: Shield,
             hideCount: true,
+            isCaution: (password && stats.bytes > 72),
             onClick: () => setShowBcryptInfo(prev => !prev),
             isInteractive: true
         }
@@ -171,11 +172,11 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                             justifyContent: 'space-between',
                             padding: '0.5rem 0.6rem',
                             borderRadius: '0.6rem',
-                            border: isActive ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)',
-                            background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                            border: isActive ? '1px solid rgba(16, 185, 129, 0.3)' : (item.isCaution ? '1px solid rgba(234, 179, 8, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)'),
+                            background: isActive ? 'rgba(16, 185, 129, 0.1)' : (item.isCaution ? 'rgba(234, 179, 8, 0.1)' : 'rgba(255, 255, 255, 0.05)'),
                             backdropFilter: 'blur(12px)',
-                            color: isActive ? '#34D399' : 'rgba(255, 255, 255, 0.5)',
-                            boxShadow: isActive ? '0 0 12px rgba(16, 185, 129, 0.15)' : 'none',
+                            color: isActive ? '#34D399' : (item.isCaution ? '#FACC15' : 'rgba(255, 255, 255, 0.5)'),
+                            boxShadow: isActive ? '0 0 12px rgba(16, 185, 129, 0.15)' : (item.isCaution ? '0 0 12px rgba(234, 179, 8, 0.15)' : 'none'),
                             opacity: isOpen ? 1 : 0,
                             transform: isOpen ? 'translateY(0)' : 'translateY(1rem)',
                             transition: `all 0.5s ease ${index * 50}ms`,
@@ -198,9 +199,9 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            border: isActive ? '1px solid #34D399' : '1px solid rgba(255, 255, 255, 0.1)',
-                            background: isActive ? '#10B981' : 'transparent',
-                            color: isActive ? 'white' : 'rgba(255, 255, 255, 0.1)',
+                            border: isActive ? '1px solid #34D399' : (item.isCaution ? '1px solid #FACC15' : '1px solid rgba(255, 255, 255, 0.1)'),
+                            background: isActive ? '#10B981' : (item.isCaution ? '#EAB308' : 'transparent'),
+                            color: isActive || item.isCaution ? 'white' : 'rgba(255, 255, 255, 0.1)',
                             flexShrink: 0
                         };
 
@@ -242,7 +243,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                                 </div>
 
                                 <div style={checkCircleStyle}>
-                                    {isActive ? <Check size={10} strokeWidth={3} /> : null}
+                                    {isActive ? <Check size={10} strokeWidth={3} /> : (item.isCaution ? <TriangleAlert size={10} strokeWidth={3} /> : null)}
                                 </div>
                             </div>
                         );
@@ -270,9 +271,10 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                                 Bcrypt Compatibility
                             </h4>
                             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', lineHeight: 1.5, color: '#BFDBFE' }}>
-                                Ensures your password is not truncated by systems using Bcrypt.
-                                The checked status means your password size is <b>≤ 72 bytes</b>.
+                                Bcrypt is a common password hashing algorithm with a strict technical limit: it ignores any input beyond 72 bytes.
                             </p>
+                            
+
                         </div>
                         <button
                             onClick={() => setShowBcryptInfo(false)}
@@ -286,6 +288,56 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                             className="hover:text-white transition-colors"
                         >
                             <X size={14} />
+                        </button>
+                    </div>
+                )}
+
+                {showBcryptInfo && stats.bytes > 72 && (
+                    <div
+                        id="bcrypt-warning-container"
+                        style={{
+                            marginTop: '0.5rem',
+                            padding: '0.65rem 0.75rem',
+                            background: 'rgba(234, 179, 8, 0.1)',
+                            border: '1px solid rgba(234, 179, 8, 0.25)',
+                            borderRadius: '0.4rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.4rem',
+                            animation: 'fadeIn 0.3s ease'
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <TriangleAlert id="bcrypt-warning-icon" size={14} color="#FACC15" />
+                            <h5 id="bcrypt-warning-title" style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: '#FEF9C3' }}>
+                                Byte-Size Exceeded
+                            </h5>
+                        </div>
+                        <p id="bcrypt-warning-desc" style={{ margin: 0, fontSize: '0.7rem', lineHeight: 1.4, color: 'rgba(254, 249, 195, 0.8)' }}>
+                            Because you are using complex multi-byte characters (like emojis or symbols), your generated password has exceeded this 72-byte limit. It may be silently truncated by the target website.
+                        </p>
+                        <button
+                            id="bcrypt-fix-btn"
+                            onClick={() => {
+                                if (onFixBcrypt) onFixBcrypt();
+                                setShowBcryptInfo(false);
+                            }}
+                            style={{
+                                alignSelf: 'flex-start',
+                                marginTop: '0.25rem',
+                                background: 'rgba(254, 249, 195, 0.15)',
+                                color: '#FEF9C3',
+                                border: '1px solid rgba(254, 249, 195, 0.3)',
+                                padding: '0.25rem 0.6rem',
+                                borderRadius: '0.25rem',
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
+                            className="hover:bg-yellow-500/20"
+                        >
+                            Set to 72 Bytes
                         </button>
                     </div>
                 )}
