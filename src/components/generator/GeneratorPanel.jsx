@@ -26,6 +26,29 @@ const DiceIcon = ({ size = 22, className = "" }) => (
         <path d="M361.948,295.028c-11.158,6.076-20.207,20.053-20.207,31.204c0,11.158,9.05,15.273,20.207,9.191 c11.158-6.083,20.194-20.053,20.194-31.21C382.142,293.062,373.106,288.947,361.948,295.028z" />
     </svg>
 );
+
+const AppleIcon = ({ stage = 4, size = 16, className = "", color }) => {
+    let appPath = "";
+    if (stage === 0) { // Tronçon
+        appPath = "M 12,8 C 10,6 8,7 8,8 C 11,10 11,16 8,18 C 8,19 10,22 12,21 C 14,22 16,19 16,18 C 13,16 13,10 16,8 C 16,7 14,6 12,8 Z";
+    } else if (stage === 1) { // 80% mangé
+        appPath = "M 12,8 C 10,6 8,7 8,8 A 3,4 0 0,1 8,18 C 8,19 10,22 12,21 C 14,22 16,19 16,18 A 3,4 0 0,1 16,8 C 16,7 14,6 12,8 Z";
+    } else if (stage === 2) { // 30% mangé
+        appPath = "M 12,8 C 10,6 6,6 5,11 C 4,16 8,22 12,21 C 15,22 17,20 18,17 A 4,4 0 0,1 18,9 C 16,7 14,6 12,8 Z";
+    } else { // 3 ou 4: Complète
+        appPath = "M 12,8 C 10,6 6,6 5,11 C 4,16 8,22 12,21 C 16,22 20,16 19,11 C 18,6 14,6 12,8 Z";
+    }
+
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill={color || "currentColor"} className={className} style={stage === 4 ? { filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.5))' } : {}}>
+            <path d={appPath} />
+            <path d="M 12,7 C 12,3 16,2 16,2 C 16,6 13,8 12,7 Z" />
+            {stage === 4 && (
+                <path d="M 7.5,12 C 7,9 9,7 12,8.5 C 9.5,8.8 8.5,10 8.5,13 C 8.5,12 7.5,12 7.5,12 Z" fill="rgba(255,255,255,0.7)" />
+            )}
+        </svg>
+    );
+};
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -53,7 +76,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     // A Global Option is an option available for all charsets.
     const DEFAULT_CONFIG = {
         length: 50,
-        tokens: ['ascii'],
+        tokens: ['lowercase', 'uppercase', 'numbers', 'basic_symbols', 'advanced_symbols'],
         exclude: '',
         include: '',
         ensureCommon: true,
@@ -101,10 +124,10 @@ export function GeneratorPanel({ onCopyPassword }) {
             const saved = localStorage.getItem(STORAGE_KEY_PARAMS);
             if (saved) {
                 const parsed = JSON.parse(saved);
-                return parsed.activeSet || 'alphanums';
+                return parsed.activeSet || null;
             }
         } catch { /* ignore: localStorage may not be available */ }
-        return 'ascii';
+        return null;
     });
     // Presets State
     const [presets, setPresets] = useState(() => {
@@ -305,22 +328,10 @@ export function GeneratorPanel({ onCopyPassword }) {
     }, [presets]);
     // Predefined Sets with linear inclusion hierarchy (left to right = small to large)
     // Each set includes all sets to its LEFT (like ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ)
-    const SETS_ORDER = ['alphanums', 'ascii', 'ascii_extended', 'symbols_set', 'active_languages', 'emojis', 'all_unicode'];
+    const SETS_ORDER = ['ascii_extended', 'symbols_set', 'active_languages', 'emojis', 'all_unicode'];
     // Get exact charset sizes (computed once and cached)
     const charsetSizes = useMemo(() => getCharsetSizes(), []);
     const SETS = {
-        alphanums: {
-            id: 'alphanums',
-            name: 'Alphanums',
-            tokens: ['alphanums'],
-            description: 'a-z, A-Z, 0-9'
-        },
-        ascii: {
-            id: 'ascii',
-            name: 'Ascii',
-            tokens: ['ascii'],
-            description: '+ All the basic symbols (U+0000-00FF)'
-        },
         ascii_extended: {
             id: 'ascii_extended',
             name: 'Ascii Extended',
@@ -354,27 +365,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     };
     // State for tracking hovered set (for inclusion highlighting)
     const [hoveredSet, setHoveredSet] = useState(null);
-    // --- EXPANDABLE CHARSETS LOGIC ---
-    const [areCharsetsExpanded, setAreCharsetsExpanded] = useState(() => {
-        try {
-            return sessionStorage.getItem('usr_charsets_expanded') === 'true';
-        } catch {
-            return false;
-        }
-    });
-    const handleExpandCharsets = () => {
-        setAreCharsetsExpanded(true);
-        sessionStorage.setItem('usr_charsets_expanded', 'true');
-    };
-    // Auto-expand if active set is beyond the visible threshold (ascii)
-    useEffect(() => {
-        const asciiIndex = SETS_ORDER.indexOf('ascii');
-        const activeIndex = SETS_ORDER.indexOf(activeSet);
-        if (activeIndex > asciiIndex && !areCharsetsExpanded) {
-            setAreCharsetsExpanded(true);
-            sessionStorage.setItem('usr_charsets_expanded', 'true');
-        }
-    }, [activeSet, areCharsetsExpanded]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // Helper: Check if a set is included in another based on position (left = included in right)
     const isSetHighlighted = (setKey) => {
         const setIndex = SETS_ORDER.indexOf(setKey);
@@ -509,18 +500,12 @@ export function GeneratorPanel({ onCopyPassword }) {
         if (!['emojis', 'all_unicode'].includes(setId)) {
             newConfig.ensureMinAscii = false;
         }
-        if (setId && SETS_ORDER.indexOf(setId) >= SETS_ORDER.indexOf('ascii')) {
+        if (setId && SETS_ORDER.includes(setId)) {
             newConfig.lower = true;
             newConfig.upper = true;
             newConfig.numbers = true;
             newConfig.basic = true;
             newConfig.advanced = true;
-        } else if (setId === 'alphanums') {
-            newConfig.lower = true;
-            newConfig.upper = true;
-            newConfig.numbers = true;
-            newConfig.basic = false;
-            newConfig.advanced = false;
         }
         setConfig(newConfig);
     };
@@ -528,25 +513,22 @@ export function GeneratorPanel({ onCopyPassword }) {
         let newActiveSet = null;
         setConfig(prev => {
             const next = { ...prev, [field]: !prev[field] };
-            // Auto-select `activeSet` for the UI
-            const isAlphanum = next.lower && next.upper && next.numbers && !next.basic && !next.advanced;
-            const isAscii = next.lower && next.upper && next.numbers && next.basic && next.advanced;
-            if (isAlphanum) {
-                newActiveSet = 'alphanums';
-                next.tokens = ['alphanums'];
-            } else if (isAscii) {
+            // Auto-detect `activeSet` based on checkbox combination so preset highlight is bidirectional.
+            // "Extended" preset has activeSet:"ascii" and all 5 individual tokens selected.
+            const isAsciiConfig = next.lower && next.upper && next.numbers && next.basic && next.advanced;
+            if (isAsciiConfig) {
                 newActiveSet = 'ascii';
-                next.tokens = ['ascii'];
             } else {
                 newActiveSet = null;
-                let customTokens = [];
-                if (next.lower) customTokens.push('lowercase');
-                if (next.upper) customTokens.push('uppercase');
-                if (next.numbers) customTokens.push('numbers');
-                if (next.basic) customTokens.push('basic_symbols');
-                if (next.advanced) customTokens.push('advanced_symbols');
-                next.tokens = customTokens;
             }
+            // Always build individual tokens from checkbox state
+            const customTokens = [];
+            if (next.lower) customTokens.push('lowercase');
+            if (next.upper) customTokens.push('uppercase');
+            if (next.numbers) customTokens.push('numbers');
+            if (next.basic) customTokens.push('basic_symbols');
+            if (next.advanced) customTokens.push('advanced_symbols');
+            next.tokens = customTokens;
             return next;
         });
         // Timeout to update active set without breaking setConfig queue
@@ -639,8 +621,9 @@ export function GeneratorPanel({ onCopyPassword }) {
     };
     const handleResetConfig = () => {
         setConfig(DEFAULT_CONFIG);
+        // 'ascii' matches the 'Extended' default preset (activeSet: 'ascii', configDiff: {})
+        // The useEffect will auto-detect the matching preset and set activePresetId
         setActiveSet('ascii');
-        setActivePresetId(null);
     };
     const fileInputRef = useRef(null);
     const dragCounterRef = useRef(0);
@@ -1048,7 +1031,7 @@ export function GeneratorPanel({ onCopyPassword }) {
 
                 {/* Cond 1: Bcrypt Warning */}
                 {/* Only check length match if NOT in byte mode already */}
-                {!config.targetByteSize && config.length === 72 && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii') && (
+                {!config.targetByteSize && config.length === 72 && SETS_ORDER.includes(activeSet) && (
                     <div
                         id="bcrypt-warning-container"
                         className="w-full max-w-2xl mt-4 p-3 rounded-lg flex items-start gap-3"
@@ -1158,6 +1141,28 @@ export function GeneratorPanel({ onCopyPassword }) {
             </div>
             {/* Copy Button & Meter & Stats Toggle */}
             <div className="flex flex-col gap-4" id="meter-action-row">
+                <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
+                    {/* Stats Toggle Button */}
+                    <Button
+                        onClick={() => setShowStats(!showStats)}
+                        variant="ghost"
+                        className={`px-3 transition-all duration-300 ${showStats ? 'bg-white/10 text-primary border-primary/30' : 'bg-white/5 border-white/5 text-muted'}`}
+                        title="Toggle Statistics"
+                        style={showStats ? { boxShadow: '0 0 15px rgba(var(--primary-rgb), 0.15)' } : {}}
+                    >
+                        <BarChart2 size={20} className={showStats ? 'text-primary' : ''} />
+                    </Button>
+                    <Button
+                        id="main-copy-btn"
+                        onClick={copyToClipboard}
+                        className={`flex-1 md:flex-none ${copied ? 'bg-green-500' : ''}`}
+                        variant={copied ? 'ghost' : 'primary'}
+                        style={copied ? { borderColor: '#10B981', color: '#10B981' } : {}}
+                    >
+                        {copied ? <Check size={20} id="copied-icon" /> : <Copy size={20} id="copy-icon" />}
+                        {copied ? 'Copied!' : 'Copy Password'}
+                    </Button>
+                </div>
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                     <EntropyMeter
                         entropy={result.entropy}
@@ -1167,28 +1172,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         isPostQuantum={config.isPostQuantum}
                         onByteChange={handleByteChange}
                     />
-                    <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
-                        {/* Stats Toggle Button */}
-                        <Button
-                            onClick={() => setShowStats(!showStats)}
-                            variant="ghost"
-                            className={`px-3 transition-all duration-300 ${showStats ? 'bg-white/10 text-primary border-primary/30' : 'bg-white/5 border-white/5 text-muted'}`}
-                            title="Toggle Statistics"
-                            style={showStats ? { boxShadow: '0 0 15px rgba(var(--primary-rgb), 0.15)' } : {}}
-                        >
-                            <BarChart2 size={20} className={showStats ? 'text-primary' : ''} />
-                        </Button>
-                        <Button
-                            id="main-copy-btn"
-                            onClick={copyToClipboard}
-                            className={`flex-1 md:flex-none ${copied ? 'bg-green-500' : ''}`}
-                            variant={copied ? 'ghost' : 'primary'}
-                            style={copied ? { borderColor: '#10B981', color: '#10B981' } : {}}
-                        >
-                            {copied ? <Check size={20} id="copied-icon" /> : <Copy size={20} id="copy-icon" />}
-                            {copied ? 'Copied!' : 'Copy Password'}
-                        </Button>
-                    </div>
+
                 </div>
             </div>
             {/* Collapsible Stats Panel - Outside to handle its own spacing animation */}
@@ -1489,10 +1473,10 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         key={preset.id}
                                         id={`default-preset-${preset.id}`}
                                         onClick={() => loadPreset(preset)}
-                                        className="group relative flex items-center gap-4 rounded-lg cursor-pointer select-none overflow-hidden preset-item"
+                                        className="group relative flex items-center justify-center gap-4 rounded-lg cursor-pointer select-none overflow-hidden preset-item"
                                         style={{
                                             paddingLeft: '1rem',
-                                            paddingRight: '0.5rem',
+                                            paddingRight: '1rem',
                                             height: '2.5rem',
                                             background: isActive
                                                 ? 'linear-gradient(90deg, rgba(var(--primary-rgb), 0.15), rgba(var(--secondary-rgb), 0.05))'
@@ -1646,12 +1630,119 @@ export function GeneratorPanel({ onCopyPassword }) {
                             />
                         </div>
                         {/* Component-based Checkboxes */}
-                        <div className="flex flex-wrap gap-2 mb-2 mt-2 justify-center">
-                            <CheckboxOption id="chk-lower" label="Lowercase" tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
-                            <CheckboxOption id="chk-upper" label="Uppercase" tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
-                            <CheckboxOption id="chk-numbers" label="Numbers" tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
-                            <CheckboxOption id="chk-basic" label="Basic Symbols" tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
-                            <CheckboxOption id="chk-advanced" label="Advanced Symbols" tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
+                        <div
+                            id="ascii-checkbox-group-wrapper"
+                            className="flex flex-col items-center gap-2 mb-2 mt-2 relative w-full"
+                            style={{
+                                background: 'rgba(var(--primary-rgb), 0.03)',
+                                border: '1px dashed rgba(var(--primary-rgb), 0.25)',
+                                borderRadius: '8px',
+                                padding: '1.25rem 0.5rem 1rem 0.5rem'
+                            }}
+                        >
+                            <span
+                                id="ascii-group-label"
+                                className="font-bold uppercase tracking-widest absolute select-none cursor-help flex items-center gap-1.5"
+                                title={`All the basic symbols (U+0000-00FF)\n${charsetSizes['ascii']?.toLocaleString() || '?'} characters`}
+                                style={{
+                                    top: '4px',
+                                    right: '8px',
+                                    fontSize: '0.65rem',
+                                    color: '#10B981',
+                                    textShadow: '0 0 8px rgba(16, 185, 129, 0.4)'
+                                }}
+                            >
+                                ASCII
+                                <AppleIcon stage={1} size={14} />
+                            </span>
+                            <div className="flex flex-wrap gap-2 justify-center" id="ascii-checkboxes-container">
+                                <CheckboxOption id="chk-lower" label="Lowercase" tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
+                                <CheckboxOption id="chk-upper" label="Uppercase" tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
+                                <CheckboxOption id="chk-numbers" label="Numbers" tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
+                                <CheckboxOption id="chk-basic" label="Basic Symbols" tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
+                                <CheckboxOption id="chk-advanced" label="Advanced Symbols" tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
+                            </div>
+                        </div>
+                        {/* Character Sets with inclusion highlighting */}
+                        <div>
+                            <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
+                            <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
+                                {SETS_ORDER.map(key => {
+                                    const highlightState = isSetHighlighted(key);
+                                    const isActive = highlightState === 'active';
+                                    const isIncluded = highlightState === 'included';
+                                    const isChild = highlightState === 'child';
+                                    const isHovered = hoveredSet === key;
+                                    return (
+                                        <button
+                                            id={`charset-btn-${key}`}
+                                            key={key}
+                                            onClick={() => handleSetChange(key)}
+                                            onMouseEnter={() => setHoveredSet(key)}
+                                            onMouseLeave={() => setHoveredSet(null)}
+                                            className="charset-selector-btn rounded-full transition-all px-4 py-2 text-sm cursor-pointer"
+                                            title={`${SETS[key].description}\n${charsetSizes[key]?.toLocaleString() || '?'} characters`}
+                                            style={{
+                                                background: isActive
+                                                    ? 'var(--primary)'
+                                                    : isHovered
+                                                        ? 'rgba(var(--primary-rgb), 0.35)'
+                                                        : isIncluded
+                                                            ? 'rgba(var(--primary-rgb), 0.2)'
+                                                            : isChild
+                                                                ? 'rgba(var(--primary-rgb), 0.15)'
+                                                                : 'rgba(0, 0, 0, 0.2)',
+                                                color: isActive
+                                                    ? 'white'
+                                                    : isHovered
+                                                        ? 'white'
+                                                        : isIncluded
+                                                            ? 'rgba(255, 255, 255, 0.9)'
+                                                            : isChild
+                                                                ? 'rgba(255, 255, 255, 0.8)'
+                                                                : 'var(--text-muted)',
+                                                border: isActive
+                                                    ? '1px solid var(--primary)'
+                                                    : isHovered
+                                                        ? '1px solid rgba(var(--primary-rgb), 0.7)'
+                                                        : isIncluded
+                                                            ? '1px solid rgba(var(--primary-rgb), 0.4)'
+                                                            : isChild
+                                                                ? '1px solid rgba(var(--primary-rgb), 0.3)'
+                                                                : '1px solid rgba(255, 255, 255, 0.1)',
+                                                boxShadow: isActive
+                                                    ? '0 0 15px rgba(var(--primary-rgb), 0.4)'
+                                                    : isHovered
+                                                        ? '0 0 12px rgba(var(--primary-rgb), 0.35)'
+                                                        : isIncluded
+                                                            ? '0 0 8px rgba(var(--primary-rgb), 0.25)'
+                                                            : 'none',
+                                                transform: isHovered
+                                                    ? 'scale(1.08)'
+                                                    : isIncluded
+                                                        ? 'scale(1.02)'
+                                                        : 'scale(1)',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
+                                            <span className="flex items-center gap-1.5">
+                                                {SETS[key].name}
+                                                <AppleIcon
+                                                    stage={
+                                                        key === 'ascii_extended' ? 0
+                                                            : key === 'symbols_set' ? 2
+                                                                : key === 'active_languages' ? 2
+                                                                    : key === 'emojis' ? 3
+                                                                        : 4
+                                                    }
+                                                    size={16}
+                                                />
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="settings-grid">
                             {/* Left Column: Options */}
@@ -2107,98 +2198,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                 </div>
                                             </div>
                                         )}
-                                        {/* Character Sets with inclusion highlighting */}
-                                        <div>
-                                            <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
-                                            <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
-                                                {(areCharsetsExpanded ? SETS_ORDER : SETS_ORDER.slice(0, SETS_ORDER.indexOf('ascii') + 1)).map(key => {
-                                                    const highlightState = isSetHighlighted(key);
-                                                    const isActive = highlightState === 'active';
-                                                    const isIncluded = highlightState === 'included';
-                                                    const isChild = highlightState === 'child';
-                                                    const isHovered = hoveredSet === key;
-                                                    return (
-                                                        <button
-                                                            id={`charset-btn-${key}`}
-                                                            key={key}
-                                                            onClick={() => handleSetChange(key)}
-                                                            onMouseEnter={() => setHoveredSet(key)}
-                                                            onMouseLeave={() => setHoveredSet(null)}
-                                                            className="charset-selector-btn rounded-full transition-all px-4 py-2 text-sm cursor-pointer"
-                                                            title={`${SETS[key].description}\n${charsetSizes[key]?.toLocaleString() || '?'} characters`}
-                                                            style={{
-                                                                background: isActive
-                                                                    ? 'var(--primary)'
-                                                                    : isHovered
-                                                                        ? 'rgba(var(--primary-rgb), 0.35)'
-                                                                        : isIncluded
-                                                                            ? 'rgba(var(--primary-rgb), 0.2)'
-                                                                            : isChild
-                                                                                ? 'rgba(var(--primary-rgb), 0.15)'
-                                                                                : 'rgba(0, 0, 0, 0.2)',
-                                                                color: isActive
-                                                                    ? 'white'
-                                                                    : isHovered
-                                                                        ? 'white'
-                                                                        : isIncluded
-                                                                            ? 'rgba(255, 255, 255, 0.9)'
-                                                                            : isChild
-                                                                                ? 'rgba(255, 255, 255, 0.8)'
-                                                                                : 'var(--text-muted)',
-                                                                border: isActive
-                                                                    ? '1px solid var(--primary)'
-                                                                    : isHovered
-                                                                        ? '1px solid rgba(var(--primary-rgb), 0.7)'
-                                                                        : isIncluded
-                                                                            ? '1px solid rgba(var(--primary-rgb), 0.4)'
-                                                                            : isChild
-                                                                                ? '1px solid rgba(var(--primary-rgb), 0.3)'
-                                                                                : '1px solid rgba(255, 255, 255, 0.1)',
-                                                                boxShadow: isActive
-                                                                    ? '0 0 15px rgba(var(--primary-rgb), 0.4)'
-                                                                    : isHovered
-                                                                        ? '0 0 12px rgba(var(--primary-rgb), 0.35)'
-                                                                        : isIncluded
-                                                                            ? '0 0 8px rgba(var(--primary-rgb), 0.25)'
-                                                                            : 'none',
-                                                                transform: isHovered
-                                                                    ? 'scale(1.08)'
-                                                                    : isIncluded
-                                                                        ? 'scale(1.02)'
-                                                                        : 'scale(1)',
-                                                                transition: 'all 0.2s ease'
-                                                            }}
-                                                        >
-                                                            {SETS[key].name}
-                                                        </button>
-                                                    );
-                                                })}
-                                                {!areCharsetsExpanded && (
-                                                    <button
-                                                        onClick={handleExpandCharsets}
-                                                        className="charset-selector-btn rounded-full transition-all px-3 py-2 text-sm cursor-pointer flex items-center justify-center"
-                                                        title="Show more character sets"
-                                                        style={{
-                                                            background: 'rgba(255, 255, 255, 0.05)',
-                                                            color: 'var(--text-muted)',
-                                                            border: '1px solid rgba(255, 255, 255, 0.1)'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                                                            e.currentTarget.style.color = 'var(--primary)';
-                                                            e.currentTarget.style.borderColor = 'rgba(var(--primary-rgb), 0.3)';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                                                            e.currentTarget.style.color = 'var(--text-muted)';
-                                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                                                        }}
-                                                    >
-                                                        <Plus size={16} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
                                         {/* Character Inspector Button has been moved to main input */}
                                     </div>
                                 )}
