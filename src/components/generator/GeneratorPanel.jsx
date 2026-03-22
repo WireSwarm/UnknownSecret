@@ -159,13 +159,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [importConflict, setImportConflict] = useState(null); // { duplicates: [...], newOnly: [...], all: [...] }
     const [defaultPresets, setDefaultPresets] = useState([]); // Default presets loaded from JSON
     const [isInspecting, setIsInspecting] = useState(false); // Character Inspection Mode
-    const [showUtf8Warning, setShowUtf8Warning] = useState(() => {
-        try {
-            return sessionStorage.getItem('hide_utf8_warning') !== 'true';
-        } catch {
-            return true;
-        }
-    });
+
     // Cursor follower for inspect mode
     const cursorFollowerRef = useRef(null);
     const unicodeCheckerRef = useRef(null);
@@ -490,6 +484,22 @@ export function GeneratorPanel({ onCopyPassword }) {
     };
     // Change Set
     const handleSetChange = (setId) => {
+        // Deselect if clicking the already-active set
+        if (setId === activeSet) {
+            setActiveSet(null);
+            setConfig({
+                ...config,
+                lower: true,
+                upper: true,
+                numbers: true,
+                basic: true,
+                advanced: true,
+                tokens: ['lowercase', 'uppercase', 'numbers', 'basic_symbols', 'advanced_symbols'],
+                standardCharsetDisabled: false,
+                ensureMinAscii: false,
+            });
+            return;
+        }
         setActiveSet(setId);
         let newConfig = {
             ...config,
@@ -1029,76 +1039,6 @@ export function GeneratorPanel({ onCopyPassword }) {
                     )}
                 </div>
 
-                {/* Cond 2: UTF-8 Compatibility Warning */}
-                {showUtf8Warning && config.standardCharsetDisabled !== true && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii_extended') && (
-                    <div
-                        id="utf8-warning-alert"
-                        className="w-full max-w-2xl mt-4 rounded-lg overflow-hidden p-3 relative"
-                        style={{
-                            background: 'rgba(234, 179, 8, 0.05)',
-                            border: '1px solid rgba(234, 179, 8, 0.15)',
-                            animation: 'fadeIn 0.3s ease'
-                        }}
-                    >
-                        <div className="flex items-start gap-2">
-                            <TriangleAlert size={14} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
-                            <div className="flex flex-col gap-2 pr-4 flex-1">
-                                <div>
-                                    <span style={{ fontSize: '0.8rem', color: '#FEF9C3', fontWeight: 600 }}>
-                                        Compatibility Check
-                                    </span>
-                                    <p style={{ fontSize: '0.75rem', color: 'rgba(254, 249, 195, 0.8)', lineHeight: 1.5, margin: 0 }}>
-                                        Not all backends fully support UTF-8. Legacy systems might replace complex symbols, reducing password strength.
-                                        <br />
-                                        Please follow the steps in the <b>Unicode Compatibility Check</b> card below.
-                                    </p>
-                                </div>
-                                <Button
-                                    onClick={() => {
-                                        unicodeCheckerRef.current?.open();
-                                        // Small timeout to allow expansion animation to start/layout to update
-                                        setTimeout(() => {
-                                            const el = document.getElementById('unicode-compatibility-section');
-                                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                        }, 100);
-                                    }}
-                                    size="sm"
-                                    variant="ghost"
-                                    className="self-start h-auto py-1 px-2 text-xs"
-                                    style={{
-                                        background: 'rgba(254, 249, 195, 0.15)',
-                                        color: '#FEF9C3',
-                                        border: '1px solid rgba(254, 249, 195, 0.3)'
-                                    }}
-                                >
-                                    Go to Compatibility Check
-                                </Button>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => {
-                                setShowUtf8Warning(false);
-                                sessionStorage.setItem('hide_utf8_warning', 'true');
-                            }}
-                            className="absolute text-[#FEF9C3] hover:bg-[rgba(255,255,255,0.05)] transition-all rounded px-1.5 py-0.5"
-                            style={{
-                                top: '8px',
-                                right: '8px',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontSize: '0.65rem',
-                                opacity: 0.5,
-                                fontWeight: 500
-                            }}
-                            title="Dismiss warning"
-                            onMouseEnter={(e) => e.target.style.opacity = '1'}
-                            onMouseLeave={(e) => e.target.style.opacity = '0.5'}
-                        >
-                            Hide
-                        </button>
-                    </div>
-                )}
             </div>
             {/* Copy Button & Meter & Stats Toggle */}
             <div className="flex flex-col gap-4" id="meter-action-row">
@@ -1143,6 +1083,14 @@ export function GeneratorPanel({ onCopyPassword }) {
                 enableEmojiStats={SETS_ORDER.indexOf(activeSet) >= SETS_ORDER.indexOf('emojis')}
                 isPostQuantum={config.isPostQuantum}
                 onFixBcrypt={() => handleByteChange(72)}
+                hasUnicodeCompat={config.standardCharsetDisabled !== true && SETS_ORDER.indexOf(activeSet) > SETS_ORDER.indexOf('ascii_extended')}
+                onGoToCompatCheck={() => {
+                    unicodeCheckerRef.current?.open();
+                    setTimeout(() => {
+                        const el = document.getElementById('unicode-compatibility-section');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
+                }}
             />
             {/* Presets and Default Configs Card — stays in the left column */}
             <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="presets-glass-card">
@@ -1629,12 +1577,16 @@ export function GeneratorPanel({ onCopyPassword }) {
                         <div>
                             <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
                             <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
-                                {SETS_ORDER.map(key => {
+                                {[...SETS_ORDER].reverse().map(key => {
                                     const highlightState = isSetHighlighted(key);
                                     const isActive = highlightState === 'active';
                                     const isIncluded = highlightState === 'included';
                                     const isChild = highlightState === 'child';
                                     const isHovered = hoveredSet === key;
+                                    const allUnicodeSize = charsetSizes['all_unicode'] || 1;
+                                    const keySize = charsetSizes[key] || 0;
+                                    const pct = allUnicodeSize > 0 ? ((keySize / allUnicodeSize) * 100) : 0;
+                                    const pctStr = pct < 0.01 ? '<0.01%' : pct >= 99.99 ? '100%' : `${pct.toFixed(2)}%`;
                                     return (
                                         <button
                                             id={`charset-btn-${key}`}
@@ -1699,6 +1651,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                     }
                                                     size={16}
                                                 />
+                                                <span style={{ fontSize: '0.7em', opacity: 0.75 }}>{pctStr}</span>
                                             </span>
                                         </button>
                                     );

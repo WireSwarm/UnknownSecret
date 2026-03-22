@@ -2,6 +2,7 @@ artifact/
 history/
 .wrangler/
 GEMINI.md
+CLAUDE.md
 # Logs
 logs
 *.log
