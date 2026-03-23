@@ -35,7 +35,6 @@ const SPECIAL_SUFFIXES = [
     '𒈰', '𒉲', '𒈷', '𒉹', '𒊼', '𒎉', '𓁑'
 ];
 
-// Simple random generator for this specific component
 const getRandomChar = (charset) => charset.charAt(Math.floor(Math.random() * charset.length));
 
 const generateBase = () => {
@@ -47,33 +46,35 @@ const generateBase = () => {
     return pwd;
 };
 
-// Reusable Field Component just for here
 const CheckerField = ({ label, value, index, status, description, isControl, onRegen, copiedIndex, onCopy, regenTitle }) => (
-    <div className="flex flex-col" style={{ gap: '0.75rem' }}>
+    <div id={`unicode-checker-field-${index}`} className="flex flex-col" style={{ gap: '0.5rem' }}>
         <div className="flex justify-between items-center px-1">
-            <label className="label-text" style={{ fontSize: '0.75rem', letterSpacing: '0.05em' }}>{label}</label>
-            <span className={`text-xs font-bold ${status === 'valid' ? 'text-green-500' : 'text-red-500'}`} style={{ fontSize: '0.75rem' }}>
+            <label className="label-text" style={{ fontSize: '0.7rem', letterSpacing: '0.05em' }}>{label}</label>
+            <span
+                className={`text-xs font-bold ${status === 'valid' ? 'text-green-500' : 'text-red-500'}`}
+                style={{ fontSize: '0.7rem' }}
+            >
                 {description}
             </span>
         </div>
-
         <Input
             value={value}
             readOnly
-            type="text" // Always visible as requested
-            className="font-mono text-center tracking-wider keeper-ignore" // Added keeper-ignore
+            type="text"
+            className="font-mono text-center tracking-wider keeper-ignore"
             style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.03)', // Match forbidden-input
-                borderColor: 'rgba(255, 255, 255, 0.08)', // Match forbidden-input
-                borderRadius: '10px', // Match forbidden-input
-                fontSize: '0.9rem', // Match forbidden-input (approx) but kept slightly larger for readability if needed, or stick to 0.875rem. Let's use 0.9rem to be close but readable
-                padding: '0.8rem 1rem', // Slightly more vertical padding for breathing room
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderColor: 'rgba(255, 255, 255, 0.08)',
+                borderRadius: '10px',
+                fontSize: '0.875rem',
+                padding: '0.7rem 1rem',
                 paddingRight: isControl ? '5rem' : '3.5rem',
             }}
             rightElement={
                 <div className="flex items-center gap-2">
                     {isControl && (
                         <button
+                            id="unicode-checker-regen-btn"
                             onClick={onRegen}
                             className="icon-btn icon-btn-primary"
                             title={regenTitle}
@@ -83,6 +84,7 @@ const CheckerField = ({ label, value, index, status, description, isControl, onR
                         </button>
                     )}
                     <button
+                        id={`unicode-checker-copy-btn-${index}`}
                         onClick={(e) => { e.stopPropagation(); onCopy(value, index); }}
                         className="icon-btn"
                         title="Copy"
@@ -99,6 +101,59 @@ const CheckerField = ({ label, value, index, status, description, isControl, onR
     </div>
 );
 
+const StepItem = ({ id, number, title, desc, children, isLast }) => (
+    <div id={id} style={{ display: 'flex', gap: '1rem' }}>
+        {/* Step indicator column */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: '2rem' }}>
+            <div style={{
+                width: '2rem',
+                height: '2rem',
+                borderRadius: '50%',
+                background: 'rgba(var(--secondary-rgb), 0.12)',
+                border: '1.5px solid rgba(var(--secondary-rgb), 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--secondary)',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                flexShrink: 0,
+            }}>
+                {number}
+            </div>
+            {!isLast && (
+                <div style={{
+                    width: '1.5px',
+                    flex: 1,
+                    minHeight: '1rem',
+                    background: 'rgba(255,255,255,0.07)',
+                    marginTop: '0.4rem',
+                }} />
+            )}
+        </div>
+
+        {/* Step content */}
+        <div style={{ flex: 1, paddingBottom: isLast ? 0 : '1.75rem' }}>
+            <h4 style={{
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                marginBottom: '0.25rem',
+            }}>
+                {title}
+            </h4>
+            <p style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-muted)',
+                lineHeight: 1.55,
+                marginBottom: children ? '0.75rem' : 0,
+            }}>
+                {desc}
+            </p>
+            {children}
+        </div>
+    </div>
+);
+
 export const UnicodeChecker = React.forwardRef((props, ref) => {
     const { t } = useLanguage();
 
@@ -107,7 +162,6 @@ export const UnicodeChecker = React.forwardRef((props, ref) => {
     const [suffix, setSuffix] = useState(() => SPECIAL_SUFFIXES[Math.floor(Math.random() * SPECIAL_SUFFIXES.length)]);
     const [copiedIndex, setCopiedIndex] = useState(null);
 
-    // Expose open method to parent
     React.useImperativeHandle(ref, () => ({
         open: () => setIsOpen(true)
     }));
@@ -115,8 +169,7 @@ export const UnicodeChecker = React.forwardRef((props, ref) => {
     const handleRegenerate = (e) => {
         if (e) e.stopPropagation();
         setBasePassword(generateBase());
-        const randomSuffix = SPECIAL_SUFFIXES[Math.floor(Math.random() * SPECIAL_SUFFIXES.length)];
-        setSuffix(randomSuffix);
+        setSuffix(SPECIAL_SUFFIXES[Math.floor(Math.random() * SPECIAL_SUFFIXES.length)]);
     };
 
     const copyToClipboard = (text, index) => {
@@ -126,14 +179,14 @@ export const UnicodeChecker = React.forwardRef((props, ref) => {
         setTimeout(() => setCopiedIndex(null), 2000);
     };
 
-    // Derived values
     const field1Value = basePassword + suffix;
     const field2Value = basePassword + '\uFFFD';
     const field3Value = basePassword;
 
     return (
-        <GlassCard className="transition-all duration-300 overflow-hidden" style={{ userSelect: 'none' }}>
+        <GlassCard id="unicode-checker-card" className="transition-all duration-300 overflow-hidden" style={{ userSelect: 'none' }}>
             <div
+                id="unicode-checker-header"
                 className="p-4 flex justify-between items-center cursor-pointer hover:bg-white-5 transition-colors"
                 onClick={() => setIsOpen(!isOpen)}
             >
@@ -153,19 +206,18 @@ export const UnicodeChecker = React.forwardRef((props, ref) => {
 
             {isOpen && (
                 <div
+                    id="unicode-checker-body"
                     className="flex flex-col animate-in slide-in-from-top-2 fade-in duration-300"
-                    style={{
-                        padding: '1rem 2rem 2.5rem 2rem', // px-8 pb-10 pt-4 equivalent
-                        gap: '2rem' // gap-8 equivalent
-                    }}
+                    style={{ padding: '1rem 2rem 2.5rem 2rem', gap: '1.5rem' }}
                 >
-                    {/* Warning Box */}
+                    {/* Lockout warning */}
                     <div
+                        id="unicode-checker-warning"
                         className="rounded-lg border"
                         style={{
-                            padding: '1.25rem', // p-5
+                            padding: '1.25rem',
                             background: 'rgba(234, 179, 8, 0.1)',
-                            borderColor: 'rgba(234, 179, 8, 0.2)'
+                            borderColor: 'rgba(234, 179, 8, 0.2)',
                         }}
                     >
                         <div className="flex gap-3">
@@ -181,39 +233,129 @@ export const UnicodeChecker = React.forwardRef((props, ref) => {
                         </div>
                     </div>
 
-                    <div className="flex flex-col" style={{ gap: '2rem' }}>
-                        <CheckerField
-                            index={1}
-                            label={t('field1_label')}
-                            value={field1Value}
-                            status="valid"
-                            description={t('field1_status')}
-                            isControl={true}
-                            onRegen={handleRegenerate}
-                            regenTitle={t('regenerate')}
-                            copiedIndex={copiedIndex}
-                            onCopy={copyToClipboard}
-                        />
+                    {/* 3-step workflow */}
+                    <div id="unicode-checker-steps">
+                        {/* Step 1 — Create / change password */}
+                        <StepItem
+                            id="unicode-checker-step-1"
+                            number={1}
+                            title={t('step1_title')}
+                            desc={t('step1_desc')}
+                            isLast={false}
+                        >
+                            <CheckerField
+                                index={1}
+                                label={t('field1_label')}
+                                value={field1Value}
+                                status="valid"
+                                description={t('field1_status')}
+                                isControl={true}
+                                onRegen={handleRegenerate}
+                                regenTitle={t('regenerate')}
+                                copiedIndex={copiedIndex}
+                                onCopy={copyToClipboard}
+                            />
+                        </StepItem>
 
-                        <CheckerField
-                            index={2}
-                            label={t('field2_label')}
-                            value={field2Value}
-                            status="invalid"
-                            description={t('field2_status')}
-                            copiedIndex={copiedIndex}
-                            onCopy={copyToClipboard}
-                        />
+                        {/* Step 2 — Log out and log back in */}
+                        <StepItem
+                            id="unicode-checker-step-2"
+                            number={2}
+                            title={t('step2_title')}
+                            desc={t('step2_desc')}
+                            isLast={false}
+                        >
+                            {/* Compact password reminder for quick re-copy */}
+                            <div
+                                id="unicode-checker-step2-reminder"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    padding: '0.55rem 0.9rem',
+                                    background: 'rgba(255,255,255,0.03)',
+                                    borderRadius: '10px',
+                                    border: '1px solid rgba(255,255,255,0.07)',
+                                }}
+                            >
+                                <span
+                                    className="font-mono keeper-ignore"
+                                    style={{
+                                        flex: 1,
+                                        fontSize: '0.8rem',
+                                        color: 'var(--text-muted)',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        letterSpacing: '0.04em',
+                                    }}
+                                >
+                                    {field1Value}
+                                </span>
+                                <button
+                                    id="unicode-checker-step2-copy-btn"
+                                    onClick={(e) => { e.stopPropagation(); copyToClipboard(field1Value, 'step2'); }}
+                                    className="icon-btn"
+                                    title="Copy"
+                                    style={{
+                                        padding: '4px',
+                                        flexShrink: 0,
+                                        color: copiedIndex === 'step2' ? '#10B981' : undefined,
+                                    }}
+                                >
+                                    {copiedIndex === 'step2' ? <Check size={16} /> : <Copy size={16} />}
+                                </button>
+                            </div>
+                        </StepItem>
 
-                        <CheckerField
-                            index={3}
-                            label={t('field3_label')}
-                            value={field3Value}
-                            status="invalid"
-                            description={t('field3_status')}
-                            copiedIndex={copiedIndex}
-                            onCopy={copyToClipboard}
-                        />
+                        {/* Step 3 — Verify failing passwords */}
+                        <StepItem
+                            id="unicode-checker-step-3"
+                            number={3}
+                            title={t('step3_title')}
+                            desc={t('step3_desc')}
+                            isLast={true}
+                        >
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <CheckerField
+                                    index={2}
+                                    label={t('field2_label')}
+                                    value={field2Value}
+                                    status="invalid"
+                                    description={t('field2_status')}
+                                    copiedIndex={copiedIndex}
+                                    onCopy={copyToClipboard}
+                                />
+                                <CheckerField
+                                    index={3}
+                                    label={t('field3_label')}
+                                    value={field3Value}
+                                    status="invalid"
+                                    description={t('field3_status')}
+                                    copiedIndex={copiedIndex}
+                                    onCopy={copyToClipboard}
+                                />
+                            </div>
+                        </StepItem>
+                    </div>
+
+                    {/* Conclusion */}
+                    <div
+                        id="unicode-checker-conclusion"
+                        className="rounded-lg border"
+                        style={{
+                            padding: '0.9rem 1.25rem',
+                            background: 'rgba(16, 185, 129, 0.08)',
+                            borderColor: 'rgba(16, 185, 129, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                        }}
+                    >
+                        <span style={{ fontSize: '1rem', flexShrink: 0 }}>✅</span>
+                        <p className="text-xs leading-relaxed" style={{ color: 'rgba(167, 243, 208, 0.9)' }}>
+                            {t('compat_confirmed')}
+                        </p>
                     </div>
                 </div>
             )}

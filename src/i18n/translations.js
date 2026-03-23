@@ -236,15 +236,22 @@ export const translations = {
 
     // UnicodeChecker
     unicode_check_title: 'Vérification de compatibilité Unicode',
-    unicode_check_sub: 'Testez comment les systèmes gèrent les caractères rares',
+    unicode_check_sub: 'Testez si votre service gère correctement les caractères rares',
     lockout_warning_title: 'Avertissement : Risque de blocage de compte',
     lockout_warning_desc:
       "Assurez-vous d'avoir toujours des options de récupération de compte (numéro de téléphone, email de secours). Si le mot de passe Unicode n'est pas supporté lors de la connexion, il sera considéré comme perdu et il deviendra impossible de se reconnecter.",
-    field1_label: 'Standard + Unicode (Devrait fonctionner)',
+    step1_title: 'Créer un compte ou changer de mot de passe',
+    step1_desc: 'Utilisez ce mot de passe pour créer un nouveau compte ou modifier votre mot de passe actuel.',
+    step2_title: 'Se déconnecter et se reconnecter',
+    step2_desc: 'Déconnectez-vous, puis tentez de vous reconnecter avec le même mot de passe.',
+    step3_title: 'Vérifier que ces variantes sont refusées',
+    step3_desc: 'Ces deux mots de passe doivent être rejetés par le système. S\'ils sont acceptés, le service ne gère pas l\'Unicode correctement.',
+    compat_confirmed: 'Si les 3 étapes réussissent, votre système est compatible Unicode, vous pouvez utiliser des mots de passe contenant des caractères rares en toute sécurité.',
+    field1_label: 'Mot de passe Unicode',
     field1_status: '✅ UTF-8 valide',
-    field2_label: 'Avec caractère de remplacement (Devrait échouer)',
+    field2_label: 'Avec U+FFFD (caractère de remplacement)',
     field2_status: '❌ Contient \uFFFD (U+FFFD)',
-    field3_label: 'Sans caractère spécial (Devrait échouer)',
+    field3_label: 'Sans suffixe Unicode',
     field3_status: '❌ Caractère requis manquant',
   },
 
@@ -484,15 +491,22 @@ export const translations = {
 
     // UnicodeChecker
     unicode_check_title: 'Unicode Compatibility Check',
-    unicode_check_sub: 'Test how systems handle rare characters',
+    unicode_check_sub: 'Test whether your service correctly handles rare characters',
     lockout_warning_title: 'Warning: Risk of Account Lockout',
     lockout_warning_desc:
       'Make sure you always have account recovery options (phone number, extra info, backup email). If the Unicode password is not supported during login, you can consider the password lost and it becomes impossible to log back into the account.',
-    field1_label: 'Standard + Unicode (Should Work)',
+    step1_title: 'Create an account or change your password',
+    step1_desc: 'Use this password to create a new account or update your current password.',
+    step2_title: 'Log out and log back in',
+    step2_desc: 'Log out, then try to log back in using the same password.',
+    step3_title: 'Verify these variants are rejected',
+    step3_desc: 'Both passwords below must be refused by the system. If either is accepted, the service does not handle Unicode correctly.',
+    compat_confirmed: 'If all 3 steps pass, your system is Unicode compatible — you can safely use passwords containing rare characters.',
+    field1_label: 'Unicode Password',
     field1_status: '✅ Valid UTF-8',
-    field2_label: 'With Replacement Char (Should Fail)',
+    field2_label: 'With U+FFFD (replacement char)',
     field2_status: '❌ Contains \uFFFD (U+FFFD)',
-    field3_label: 'Without Special Char (Should Fail)',
+    field3_label: 'Without Unicode suffix',
     field3_status: '❌ Missing required char',
   },
 };
