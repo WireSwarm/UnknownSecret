@@ -111,14 +111,16 @@ export const translations = {
     click_change_ascii: 'Cliquer pour modifier le % ASCII minimum',
 
     custom_charset_label: 'Jeu de caractères personnalisé',
+    custom_charset_desc: 'Le mot de passe sera uniquement composé des caractères suivants :',
     add_chars_label: 'Ajouter des caractères au jeu',
+    add_chars_desc: 'J\'ajoute les caractères suivants dans les mots de passe :',
     custom_charset_help_title: 'Jeu de caractères personnalisé',
     custom_charset_help: 'Permet un contrôle précis des caractères autorisés pour des exigences spécifiques.',
     add_chars_help_title: 'Ajouter des caractères',
     add_chars_help: 'Injecte manuellement des caractères spécifiques dans le pool de génération.',
     custom_charset_placeholder: 'Ajouter des caractères (ex. ñçµ...)',
 
-    enable_std_charset: 'Activer le jeu de caractères standard',
+    enable_std_charset: 'Inclure les caractères standards',
 
     boost_custom_label: 'Augmenter prob. personnalisée (~',
     click_change_weight: 'Cliquer pour modifier le poids %',
@@ -366,14 +368,16 @@ export const translations = {
     click_change_ascii: 'Click to change min ASCII %',
 
     custom_charset_label: 'Custom Charset',
+    custom_charset_desc: 'The password will only consist of the following characters:',
     add_chars_label: 'Add characters to the charset',
+    add_chars_desc: 'I add the following characters to the passwords:',
     custom_charset_help_title: 'Custom Charset',
     custom_charset_help: 'Enables precise control over the allowed characters for specific requirements.',
     add_chars_help_title: 'Add Characters',
     add_chars_help: 'Manually injects specific characters into the generation pool.',
     custom_charset_placeholder: 'Add characters (e.g. ñçµ...)',
 
-    enable_std_charset: 'Enable Standard Charset',
+    enable_std_charset: 'Include standard characters',
 
     boost_custom_label: 'Boost Custom Prob. (~',
     click_change_weight: 'Click to change weight %',

@@ -1884,12 +1884,17 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             <Input
                                                 id="custom-charset-input"
                                                 label={
-                                                    <div className="flex items-center gap-1">
-                                                        {(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_label') : t('custom_charset_label')}
-                                                        <HelpPopover
-                                                            title={(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_help_title') : t('custom_charset_help_title')}
-                                                            content={(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_help') : t('custom_charset_help')}
-                                                        />
+                                                    <div>
+                                                        <div className="flex items-center gap-1">
+                                                            {(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_label') : t('custom_charset_label')}
+                                                            <HelpPopover
+                                                                title={(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_help_title') : t('custom_charset_help_title')}
+                                                                content={(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_help') : t('custom_charset_help')}
+                                                            />
+                                                        </div>
+                                                        <span id="custom-charset-desc" style={{ display: 'block', fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 400, textTransform: 'none', letterSpacing: 'normal', marginTop: '3px', fontStyle: 'italic' }}>
+                                                            {(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_desc') : t('custom_charset_desc')}
+                                                        </span>
                                                     </div>
                                                 }
                                                 placeholder={t('custom_charset_placeholder')}
