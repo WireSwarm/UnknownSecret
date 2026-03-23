@@ -84,6 +84,7 @@ export const translations = {
     set_desc_emojis: '+ Emojis (🎉🔥💻...)',
     set_desc_all_unicode: '+ BMP complet (CJK, Technique...)',
     charset_characters: 'caractères',
+    included_by: 'Inclus dans ',
 
     // Options
     options_title: 'Options',
@@ -341,6 +342,7 @@ export const translations = {
     set_desc_emojis: '+ Emojis (🎉🔥💻...)',
     set_desc_all_unicode: '+ Full BMP (CJK, Technical...)',
     charset_characters: 'characters',
+    included_by: 'Included by',
 
     // Options
     options_title: 'Options',

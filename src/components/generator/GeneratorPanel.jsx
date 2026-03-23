@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { RefreshCw, Settings, Copy, Check, Eye, EyeOff, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X, RotateCcw, Search, ExternalLink } from 'lucide-react';
+import { RefreshCw, Settings, Copy, Check, Eye, EyeOff, ShieldAlert, Sparkles, Plus, Trash2, Save, ChevronDown, Sliders, TriangleAlert, Eraser, Edit2, Keyboard, BarChart2, Download, Upload, AlertCircle, X, RotateCcw, Search, ExternalLink, Lock } from 'lucide-react';
 import { createPortal } from 'react-dom';
 const DiceIcon = ({ size = 22, className = "" }) => (
     <svg
@@ -60,13 +60,13 @@ import { EntropyMeter } from './EntropyMeter';
 import { PasswordStats } from './PasswordStats';
 import { UnicodeChecker } from './UnicodeChecker';
 import { useLanguage } from '../../i18n';
-const CheckboxOption = ({ id, label, checked, onChange, disabled, tooltip }) => (
-    <label htmlFor={id} title={tooltip} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary/10 hover:bg-primary/20' : 'bg-white/5 hover:bg-white/10'}`} style={{ border: '1px solid', borderColor: checked ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(255,255,255,0.1)', opacity: disabled ? 0.5 : 1, boxSizing: 'border-box' }}>
-        <div style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0, border: checked ? '2px solid var(--primary)' : '2px solid rgba(255,255,255,0.2)', backgroundColor: checked ? 'var(--primary)' : 'rgba(0,0,0,0.2)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease', boxSizing: 'border-box' }}>
-            {checked && <Check size={12} strokeWidth={3} style={{ color: 'white' }} />}
+const CheckboxOption = ({ id, label, checked, onChange, disabled, tooltip, includedBy }) => (
+    <label htmlFor={id} title={tooltip} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary/10 hover:bg-primary/20' : 'bg-white/5 hover:bg-white/10'}`} style={{ border: '1px solid', borderColor: checked ? (includedBy ? 'rgba(255,255,255,0.1)' : 'rgba(var(--primary-rgb), 0.3)') : 'rgba(255,255,255,0.1)', opacity: disabled ? 0.5 : includedBy ? 0.4 : 1, boxSizing: 'border-box' }}>
+        <div style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0, border: includedBy ? '2px solid rgba(255,255,255,0.15)' : checked ? '2px solid var(--primary)' : '2px solid rgba(255,255,255,0.2)', backgroundColor: includedBy ? 'rgba(167,139,250,0.15)' : checked ? 'var(--primary)' : 'rgba(0,0,0,0.2)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease', boxSizing: 'border-box' }}>
+            {checked && <Check size={12} strokeWidth={3} style={{ color: includedBy ? 'rgba(167,139,250,0.7)' : 'white' }} />}
         </div>
         <input type="checkbox" id={id} style={{ display: 'none' }} checked={checked} onChange={onChange} disabled={disabled} />
-        <span className="text-xs font-semibold tracking-wide text-white/90 select-none flex-1">{label}</span>
+        <span className="text-xs font-semibold tracking-wide select-none flex-1" style={{ color: 'rgba(255,255,255,0.9)' }}>{label}</span>
     </label>
 );
 export function GeneratorPanel({ onCopyPassword }) {
@@ -1570,12 +1570,20 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 ASCII
                                 <AppleIcon stage={1} size={14} />
                             </span>
-                            <div className="flex flex-wrap gap-2 justify-center" id="ascii-checkboxes-container">
-                                <CheckboxOption id="chk-lower" label={t('lowercase')} tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
-                                <CheckboxOption id="chk-upper" label={t('uppercase')} tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
-                                <CheckboxOption id="chk-numbers" label={t('numbers')} tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
-                                <CheckboxOption id="chk-basic" label={t('basic_symbols')} tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
-                                <CheckboxOption id="chk-advanced" label={t('advanced_symbols')} tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
+                            <div style={{ position: 'relative' }}>
+                                <div className="flex flex-wrap gap-2 justify-center" id="ascii-checkboxes-container">
+                                    <CheckboxOption id="chk-lower" label={t('lowercase')} tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} includedBy={!!activeSet} />
+                                    <CheckboxOption id="chk-upper" label={t('uppercase')} tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} includedBy={!!activeSet} />
+                                    <CheckboxOption id="chk-numbers" label={t('numbers')} tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} includedBy={!!activeSet} />
+                                    <CheckboxOption id="chk-basic" label={t('basic_symbols')} tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} includedBy={!!activeSet} />
+                                    <CheckboxOption id="chk-advanced" label={t('advanced_symbols')} tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} includedBy={!!activeSet} />
+                                </div>
+                                {activeSet && (
+                                    <span id="ascii-included-by-msg" style={{ position: 'absolute', top: '-10px', left: '8px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#a78bfa', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap', zIndex: 1, fontStyle: 'italic', lineHeight: 1.4 }}>
+                                        <Lock size={10} strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                                        {t('included_by')} <strong style={{ fontStyle: 'normal', fontWeight: 600 }}>{SETS[activeSet].name}</strong>
+                                    </span>
+                                )}
                             </div>
                         </div>
                         {/* Character Sets with inclusion highlighting */}
