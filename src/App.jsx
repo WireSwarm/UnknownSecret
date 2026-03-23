@@ -3,12 +3,15 @@ import { ShieldCheck, Settings, History } from 'lucide-react';
 import './App.css';
 import { GeneratorPanel } from './components/generator/GeneratorPanel';
 import { HistoryPanel } from './components/history/HistoryPanel';
+import { TopMenu } from './components/ui/TopMenu';
 // To re-enable the UI showcase, uncomment the line below.
 // import { HelpShowcase } from './components/showcase/HelpShowcase';
 import { useSessionStorage } from './utils/storage';
+import { useLocalStorage } from './utils/storage';
 
 function App() {
   const [history, setHistory] = useSessionStorage('password_history', []);
+  const [language, setLanguage] = useLocalStorage('app_language', 'fr');
   // const [showcaseMode, setShowcaseMode] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('config');
 
@@ -64,6 +67,7 @@ function App() {
             <p className="label-text" id="app-subtitle">Premium Password Generator</p>
           </div>
         </div>
+        <TopMenu language={language} onLanguageChange={setLanguage} />
       </header>
 
       <main className="app-main" id="main-content">

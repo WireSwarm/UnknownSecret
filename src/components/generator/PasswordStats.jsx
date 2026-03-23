@@ -314,7 +314,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                             Bcrypt Compatibility
                         </h4>
                         <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', lineHeight: 1.5, color: '#BFDBFE' }}>
-                            Bcrypt is a common lecacy password hashing algorithm with a strict technical limit: it ignores any input beyond 72 bytes.
+                            Bcrypt is a common legacy password hashing algorithm with a strict technical limit: it ignores any input beyond 72 bytes.
                         </p>
                     </div>
                     <button
