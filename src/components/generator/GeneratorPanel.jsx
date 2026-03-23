@@ -59,6 +59,7 @@ import { generatePassword, PRESETS, buildCharset, getCharsetSizes } from '../../
 import { EntropyMeter } from './EntropyMeter';
 import { PasswordStats } from './PasswordStats';
 import { UnicodeChecker } from './UnicodeChecker';
+import { useLanguage } from '../../i18n';
 const CheckboxOption = ({ id, label, checked, onChange, disabled, tooltip }) => (
     <label htmlFor={id} title={tooltip} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary/10 hover:bg-primary/20' : 'bg-white/5 hover:bg-white/10'}`} style={{ border: '1px solid', borderColor: checked ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(255,255,255,0.1)', opacity: disabled ? 0.5 : 1, boxSizing: 'border-box' }}>
         <div style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0, border: checked ? '2px solid var(--primary)' : '2px solid rgba(255,255,255,0.2)', backgroundColor: checked ? 'var(--primary)' : 'rgba(0,0,0,0.2)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease', boxSizing: 'border-box' }}>
@@ -159,6 +160,7 @@ export function GeneratorPanel({ onCopyPassword }) {
     const [importConflict, setImportConflict] = useState(null); // { duplicates: [...], newOnly: [...], all: [...] }
     const [defaultPresets, setDefaultPresets] = useState([]); // Default presets loaded from JSON
     const [isInspecting, setIsInspecting] = useState(false); // Character Inspection Mode
+    const { t } = useLanguage();
 
     // Cursor follower for inspect mode
     const cursorFollowerRef = useRef(null);
@@ -325,38 +327,38 @@ export function GeneratorPanel({ onCopyPassword }) {
     const SETS_ORDER = ['ascii_extended', 'symbols_set', 'active_languages', 'emojis', 'all_unicode'];
     // Get exact charset sizes (computed once and cached)
     const charsetSizes = useMemo(() => getCharsetSizes(), []);
-    const SETS = {
+    const SETS = useMemo(() => ({
         ascii_extended: {
             id: 'ascii_extended',
-            name: 'Ascii Extended',
+            name: t('set_title_ascii_extended'),
             tokens: ['ascii_extended'],
-            description: '+ More symbols (Latin Extended A & B (U+0100-024F))'
+            description: t('set_desc_ascii_extended')
         },
         symbols_set: {
             id: 'symbols_set',
-            name: 'With Symbols',
+            name: t('set_title_symbols_set'),
             tokens: ['symbols_set'],
-            description: '+ Arrows, Math, Currency (→∑€...)'
+            description: t('set_desc_symbols_set')
         },
         active_languages: {
             id: 'active_languages',
-            name: 'Active Languages',
+            name: t('set_title_active_languages'),
             tokens: ['active_languages'],
-            description: '+ Greek, Cyrillic, Hebrew, Arabic (αБא...)'
+            description: t('set_desc_active_languages')
         },
         emojis: {
             id: 'emojis',
-            name: 'With Emojis',
+            name: t('set_title_emojis'),
             tokens: ['emojis'],
-            description: '+ Emojis (🎉🔥💻...)'
+            description: t('set_desc_emojis')
         },
         all_unicode: {
             id: 'all_unicode',
-            name: 'All Unicode',
+            name: t('set_title_all_unicode'),
             tokens: ['all_unicode'],
-            description: '+ Full BMP (CJK, Technical...)'
+            description: t('set_desc_all_unicode')
         }
-    };
+    }), [t]);
     // State for tracking hovered set (for inclusion highlighting)
     const [hoveredSet, setHoveredSet] = useState(null);
 
@@ -692,7 +694,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                 }
             } catch (err) {
                 console.error("Import failed", err);
-                alert("Failed to import presets: Invalid JSON format");
+                alert(t('import_failed'));
             }
         };
         reader.readAsText(file);
@@ -767,9 +769,9 @@ export function GeneratorPanel({ onCopyPassword }) {
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
     const getClearButtonText = () => {
-        if (clearConfirmLevel === 1) return "Sure?";
-        if (clearConfirmLevel === 2) return "REALLY?";
-        return "Clear";
+        if (clearConfirmLevel === 1) return t('sure');
+        if (clearConfirmLevel === 2) return t('really');
+        return t('clear');
     };
     // Portal target for the config panel (mounted in the right aside)
     const [portalTarget, setPortalTarget] = useState(null);
@@ -821,7 +823,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
                             <AlertCircle size={24} style={{ color: '#FACC15' }} />
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Duplicate Presets Found</h3>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>{t('duplicate_presets_title')}</h3>
                             <button
                                 onClick={handleImportCancel}
                                 style={{
@@ -837,7 +839,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                             </button>
                         </div>
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: 1.5 }}>
-                            The following presets already exist:
+                            {t('duplicate_presets_exist')}
                         </p>
                         <div
                             id="import-conflict-list"
@@ -869,7 +871,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         </div>
                         {importConflict.newOnly.length > 0 && (
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', opacity: 0.8 }}>
-                                {importConflict.newOnly.length} new preset{importConflict.newOnly.length > 1 ? 's' : ''} will be added regardless.
+                                {t('new_presets_added_n', importConflict.newOnly.length)}
                             </p>
                         )}
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -879,7 +881,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 variant="primary"
                                 style={{ flex: 1 }}
                             >
-                                Overwrite
+                                {t('overwrite')}
                             </Button>
                             <Button
                                 id="import-skip-btn"
@@ -887,7 +889,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 variant="ghost"
                                 style={{ flex: 1 }}
                             >
-                                Skip Duplicates
+                                {t('skip_duplicates')}
                             </Button>
                         </div>
                     </div>
@@ -975,7 +977,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     onClick={(e) => { e.stopPropagation(); setIsInspecting(false); }}
                                     className="icon-btn"
                                     style={{ color: 'var(--primary)', textShadow: '0 0 10px rgba(var(--primary-rgb), 0.5)' }}
-                                    title="Stop Inspecting"
+                                    title={t('stop_inspecting')}
                                 >
                                     <Search size={22} />
                                 </button>
@@ -983,7 +985,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     id="toggle-visibility-btn-inspect"
                                     onClick={(e) => { e.stopPropagation(); setShowPassword(!showPassword); }}
                                     className="icon-btn"
-                                    title={showPassword ? "Hide" : "Show"}
+                                    title={showPassword ? t('hide') : t('show')}
                                 >
                                     {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
                                 </button>
@@ -991,7 +993,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     id="regen-password-btn-inspect"
                                     onClick={(e) => { e.stopPropagation(); handleGenerate(); }}
                                     className="icon-btn icon-btn-primary"
-                                    title="Regenerate"
+                                    title={t('regenerate')}
                                 >
                                     <DiceIcon size={22} />
                                 </button>
@@ -1013,7 +1015,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         id="toggle-inspect-btn"
                                         onClick={(e) => { e.stopPropagation(); setIsInspecting(true); setShowPassword(true); }}
                                         className="icon-btn"
-                                        title="Inspect Characters"
+                                        title={t('inspect_characters')}
                                     >
                                         <Search size={22} />
                                     </button>
@@ -1021,7 +1023,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         id="toggle-visibility-btn"
                                         onClick={(e) => { e.stopPropagation(); setShowPassword(!showPassword); }}
                                         className="icon-btn"
-                                        title={showPassword ? "Hide" : "Show"}
+                                        title={showPassword ? t('hide') : t('show')}
                                     >
                                         {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
                                     </button>
@@ -1029,7 +1031,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         id="regen-password-btn"
                                         onClick={(e) => { e.stopPropagation(); handleGenerate(); }}
                                         className="icon-btn icon-btn-primary"
-                                        title="Regenerate"
+                                        title={t('regenerate')}
                                     >
                                         <DiceIcon size={22} />
                                     </button>
@@ -1048,7 +1050,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         onClick={() => setShowStats(!showStats)}
                         variant="ghost"
                         className={`px-3 transition-all duration-300 ${showStats ? 'bg-white/10 text-primary border-primary/30' : 'bg-white/5 border-white/5 text-muted'}`}
-                        title="Toggle Statistics"
+                        title={t('toggle_statistics')}
                         style={showStats ? { boxShadow: '0 0 15px rgba(var(--primary-rgb), 0.15)' } : {}}
                     >
                         <BarChart2 size={20} className={showStats ? 'text-primary' : ''} />
@@ -1061,7 +1063,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                         style={copied ? { borderColor: '#10B981', color: '#10B981' } : {}}
                     >
                         {copied ? <Check size={20} id="copied-icon" /> : <Copy size={20} id="copy-icon" />}
-                        {copied ? 'Copied!' : 'Copy Password'}
+                        {copied ? t('copied') : t('copy_password')}
                     </Button>
                 </div>
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
@@ -1130,15 +1132,15 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 }}
                             >
                                 <Upload size={32} style={{ opacity: 0.8 }} />
-                                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Drop JSON file to import</span>
-                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Presets will be added to your list</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{t('drop_json_import')}</span>
+                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{t('presets_added_to_list')}</span>
                             </div>
                         </div>
                     )}
                     <div className="flex justify-between items-center">
                         <h3 className="text-lg font-bold flex items-center gap-2" id="custom-configs-title">
                             <Save size={18} className="text-primary" />
-                            Custom Configurations
+                            {t('custom_configurations')}
                         </h3>
                         <div className="flex items-center gap-2">
                             <input
@@ -1153,7 +1155,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 variant="ghost"
                                 onClick={() => fileInputRef.current?.click()}
                                 className="px-2 py-1 text-xs h-8 text-muted hover:text-primary"
-                                title="Import Presets"
+                                title={t('import_presets_title')}
                             >
                                 <Upload size={14} />
                             </Button>
@@ -1161,7 +1163,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 variant="ghost"
                                 onClick={exportPresets}
                                 className="px-2 py-1 text-xs h-8 text-muted hover:text-primary"
-                                title="Export Presets"
+                                title={t('export_presets_title')}
                                 disabled={presets.length === 0}
                             >
                                 <Download size={14} />
@@ -1186,7 +1188,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                             <div className="flex-1 relative group">
                                 <input
                                     autoFocus
-                                    placeholder="Configuration name..."
+                                    placeholder={t('preset_name_placeholder')}
                                     value={newPresetName}
                                     onChange={(e) => setNewPresetName(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && saveCurrentAsPreset()}
@@ -1212,7 +1214,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     width: '2.5rem',
                                     color: 'var(--text-muted)',
                                 }}
-                                title="Confirm Save"
+                                title={t('confirm_save')}
                             >
                                 <Check size={24} />
                             </button>
@@ -1225,7 +1227,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     borderRadius: '9999px',
                                     color: 'rgba(239, 68, 68, 0.7)'
                                 }}
-                                title="Cancel"
+                                title={t('cancel_save')}
                             >
                                 <Trash2 size={18} />
                             </button>
@@ -1318,7 +1320,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                 e.currentTarget.querySelector('svg').style.transform = 'scale(1) rotate(0deg)';
                                                 e.currentTarget.querySelector('svg').style.color = 'rgba(239, 68, 68, 0.4)';
                                             }}
-                                            title="Delete preset"
+                                            title={t('delete_preset_title')}
                                         >
                                             <Trash2
                                                 size={16}
@@ -1343,7 +1345,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 }}
                             >
                                 <Plus size={16} />
-                                <span className="font-semibold text-xs uppercase tracking-wider">Save Current</span>
+                                <span className="font-semibold text-xs uppercase tracking-wider">{t('save_current')}</span>
                             </button>
                         )}
                     </div>
@@ -1358,13 +1360,13 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 opacity: isShiftPressed ? 0 : 0.5
                             }}
                         >
-                            Hold <kbd style={{
+                            {t('hold_shift_pre')}<kbd style={{
                                 background: 'rgba(255,255,255,0.1)',
                                 padding: '0.1rem 0.4rem',
                                 borderRadius: '4px',
                                 fontFamily: 'var(--font-mono)',
                                 fontSize: '0.7rem'
-                            }}>Shift</kbd> to delete individual presets
+                            }}>Shift</kbd>{t('hold_shift_post')}
                         </p>
                     )}
                 </div>
@@ -1373,7 +1375,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                     <div className="flex flex-col gap-4" id="default-presets-section">
                         <h3 className="text-lg font-bold flex items-center gap-2" id="default-configs-title">
                             <Sliders size={18} className="text-primary" />
-                            Default Configurations
+                            {t('default_configurations')}
                         </h3>
                         <div className="flex flex-wrap gap-6 items-center" id="default-presets-list" style={{ padding: '0.25rem' }}>
                             {defaultPresets.map(preset => {
@@ -1453,22 +1455,22 @@ export function GeneratorPanel({ onCopyPassword }) {
                         <div className="flex justify-between items-center">
                             <h3 className="text-lg font-bold flex items-center gap-2">
                                 <Settings size={18} className="text-primary" />
-                                Configuration
+                                {t('configuration')}
                             </h3>
                             <Button
                                 variant="ghost"
                                 onClick={handleResetConfig}
                                 className="px-2 py-1 text-xs h-7 text-muted hover:text-primary transition-colors"
-                                title="Reset to default configuration"
+                                title={t('reset_config_title')}
                             >
                                 <RotateCcw size={13} className="mr-1.5" />
-                                Reset
+                                {t('reset_config')}
                             </Button>
                         </div>
                         {/* Password Length Slider: moved here */}
                         <div className="w-full max-w-2xl mt-4" id="length-slider-area">
                             <div className="flex justify-between items-center mb-1" id="length-label-row">
-                                <label className="label-text" id="length-label">Password Length</label>
+                                <label className="label-text" id="length-label">{t('password_length')}</label>
                                 <div className="flex items-center gap-2" id="length-value-container">
                                     {isEditingLength ? (
                                         <input
@@ -1485,7 +1487,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             className="font-mono font-bold text-primary cursor-pointer hover:underline flex items-center gap-1"
                                             id="current-length-val"
                                             onClick={() => setIsEditingLength(true)}
-                                            title="Click to edit length"
+                                            title={t('click_edit_length')}
                                         >
                                             {config.randomLength ? (
                                                 <>
@@ -1513,7 +1515,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             id="max-length-display"
                                             className="font-mono text-muted cursor-pointer hover:text-primary transition-colors flex items-center gap-1"
                                             onClick={() => setIsEditingMax(true)}
-                                            title="Click to edit max limit"
+                                            title={t('click_edit_max')}
                                         >
                                             {config.maxPossible}
                                             <Edit2 size={10} className="opacity-50" />
@@ -1553,7 +1555,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                             <span
                                 id="ascii-group-label"
                                 className="font-bold uppercase tracking-widest absolute select-none cursor-help flex items-center gap-1.5"
-                                title={`All the basic symbols (U+0000-00FF)\n${charsetSizes['ascii']?.toLocaleString() || '?'} characters`}
+                                title={`All the basic symbols (U+0000-00FF)\n${charsetSizes['ascii']?.toLocaleString() || '?'} ${t('charset_characters')}`}
                                 style={{
                                     top: '4px',
                                     right: '8px',
@@ -1566,16 +1568,16 @@ export function GeneratorPanel({ onCopyPassword }) {
                                 <AppleIcon stage={1} size={14} />
                             </span>
                             <div className="flex flex-wrap gap-2 justify-center" id="ascii-checkboxes-container">
-                                <CheckboxOption id="chk-lower" label="Lowercase" tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
-                                <CheckboxOption id="chk-upper" label="Uppercase" tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
-                                <CheckboxOption id="chk-numbers" label="Numbers" tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
-                                <CheckboxOption id="chk-basic" label="Basic Symbols" tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
-                                <CheckboxOption id="chk-advanced" label="Advanced Symbols" tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
+                                <CheckboxOption id="chk-lower" label={t('lowercase')} tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} />
+                                <CheckboxOption id="chk-upper" label={t('uppercase')} tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} />
+                                <CheckboxOption id="chk-numbers" label={t('numbers')} tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} />
+                                <CheckboxOption id="chk-basic" label={t('basic_symbols')} tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} />
+                                <CheckboxOption id="chk-advanced" label={t('advanced_symbols')} tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} />
                             </div>
                         </div>
                         {/* Character Sets with inclusion highlighting */}
                         <div>
-                            <h3 className="label-text mb-4 text-center" id="charset-title">Character Set</h3>
+                            <h3 className="label-text mb-4 text-center" id="charset-title">{t('charset_title')}</h3>
                             <div className="flex flex-wrap gap-3 justify-center" id="charset-selectors">
                                 {[...SETS_ORDER].reverse().map(key => {
                                     const highlightState = isSetHighlighted(key);
@@ -1595,7 +1597,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             onMouseEnter={() => setHoveredSet(key)}
                                             onMouseLeave={() => setHoveredSet(null)}
                                             className="charset-selector-btn rounded-full transition-all px-4 py-2 text-sm cursor-pointer"
-                                            title={`${SETS[key].description}\n${charsetSizes[key]?.toLocaleString() || '?'} characters`}
+                                            title={`${SETS[key].description}\n${charsetSizes[key]?.toLocaleString() || '?'} ${t('charset_characters')}`}
                                             style={{
                                                 background: isActive
                                                     ? 'var(--primary)'
@@ -1677,7 +1679,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             fontWeight: 600
                                         }}
                                     >
-                                        Options
+                                        {t('options_title')}
                                     </h3>
                                     <Toggle
                                         id="opt-random-length"
@@ -1687,7 +1689,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                         }}
                                         label={
                                             <span className="flex items-center gap-1">
-                                                Randomize Length (down to -
+                                                {t('randomize_length_label')}
                                                 {isEditingPercent ? (
                                                     <input
                                                         autoFocus
@@ -1713,15 +1715,15 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                     <span
                                                         className="font-bold cursor-pointer hover:underline mx-1"
                                                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingPercent(true); }}
-                                                        title="Click to change deviation %"
+                                                        title={t('click_change_deviation')}
                                                     >
                                                         {config.lengthDeviation}%
                                                     </span>
                                                 )}
                                                 )
                                                 <HelpPopover
-                                                    title="Randomize Length"
-                                                    content="Obfuscates usage patterns by slightly randomizing the password length. Useful against white-box attacks (where the attacker knows you use this tool) or to avoid predictable fixed-length patterns."
+                                                    title={t('randomize_length_help_title')}
+                                                    content={t('randomize_length_help')}
                                                 />
                                             </span>
                                         }
@@ -1738,10 +1740,10 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             id="compat-toggle"
                                             label={
                                                 <div className="flex items-center">
-                                                    Ensure Compatibility
+                                                    {t('ensure_compat_label')}
                                                     <HelpPopover
-                                                        title="Ensure Compatibility"
-                                                        content="Restricts the character set to ensure at least one character from each active character block (lowercase, uppercase, numbers, symbols) is present in the generated password."
+                                                        title={t('ensure_compat_help_title')}
+                                                        content={t('ensure_compat_help')}
                                                     />
                                                 </div>
                                             }
@@ -1756,7 +1758,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             className="w-full"
                                         />
                                         <p className="text-xs text-muted leading-relaxed" id="compat-desc">
-                                            Guarantees at least one character from each active character set option.
+                                            {t('compat_desc')}
                                         </p>
                                     </div>
                                 </div>
@@ -1785,7 +1787,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             fontWeight: 600
                                         }}
                                     >
-                                        Advanced
+                                        {t('advanced_title')}
                                     </h3>
                                     <ChevronDown
                                         size={18}
@@ -1817,16 +1819,16 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                 onChange={(v) => setConfig({ ...config, isPostQuantum: v })}
                                                 label={
                                                     <div className="flex items-center">
-                                                        Post-Quantum Strength
+                                                        {t('post_quantum_label')}
                                                         <HelpPopover
-                                                            title="Post-Quantum Strength"
-                                                            content="Estimates security against future quantum attacks. Since Grover's algorithm effectively halves the bit strength (square root of the search space), we divide the entropy by 2 to measure post-quantum resilience."
+                                                            title={t('post_quantum_help_title')}
+                                                            content={t('post_quantum_help')}
                                                         />
                                                     </div>
                                                 }
                                             />
                                             <p className="text-xs text-muted leading-relaxed ml-7 mt-1">
-                                                Simulates Grover's algorithm impact: effective entropy is halved (N/2).
+                                                {t('post_quantum_desc')}
                                             </p>
                                         </div>
                                         {['emojis', 'all_unicode'].includes(activeSet) && (
@@ -1838,7 +1840,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                 }}
                                                 label={
                                                     <span className="flex items-center gap-1">
-                                                        Guarantee ASCII ({'>='}
+                                                        {t('guarantee_ascii_label')}
                                                         {isEditingAsciiPercent ? (
                                                             <input
                                                                 autoFocus
@@ -1864,7 +1866,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                             <span
                                                                 className="font-bold cursor-pointer hover:underline mx-1"
                                                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingAsciiPercent(true); }}
-                                                                title="Click to change min ASCII %"
+                                                                title={t('click_change_ascii')}
                                                             >
                                                                 {config.minAsciiPercent}%
                                                             </span>
@@ -1879,16 +1881,14 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                 id="custom-charset-input"
                                                 label={
                                                     <div className="flex items-center gap-1">
-                                                        {(!config.standardCharsetDisabled && config.customCharset) ? "Add characters to the charset" : "Custom Charset"}
+                                                        {(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_label') : t('custom_charset_label')}
                                                         <HelpPopover
-                                                            title={(!config.standardCharsetDisabled && config.customCharset) ? "Add Characters" : "Custom Charset"}
-                                                            content={(!config.standardCharsetDisabled && config.customCharset)
-                                                                ? "Manually injects specific characters into the generation pool."
-                                                                : "Enables precise control over the allowed characters for specific requirements."}
+                                                            title={(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_help_title') : t('custom_charset_help_title')}
+                                                            content={(!config.standardCharsetDisabled && config.customCharset) ? t('add_chars_help') : t('custom_charset_help')}
                                                         />
                                                     </div>
                                                 }
-                                                placeholder="Add characters (e.g. ñçµ...)"
+                                                placeholder={t('custom_charset_placeholder')}
                                                 value={config.customCharset}
                                                 onChange={(e) => {
                                                     const val = e.target.value;
@@ -1921,7 +1921,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             {config.customCharset && (
                                                 <Toggle
                                                     id="opt-enable-std"
-                                                    label="Enable Standard Charset"
+                                                    label={t('enable_std_charset')}
                                                     checked={!config.standardCharsetDisabled}
                                                     onChange={(v) => {
                                                         setConfig({ ...config, standardCharsetDisabled: !v });
@@ -1940,7 +1940,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                     checked={config.customWeight > 0}
                                                     label={
                                                         <span className="flex items-center gap-1">
-                                                            Boost Custom Prob. (~
+                                                            {t('boost_custom_label')}
                                                             {isEditingWeight ? (
                                                                 <input
                                                                     autoFocus
@@ -1966,15 +1966,15 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                                 <span
                                                                     className="font-bold cursor-pointer hover:underline mx-1"
                                                                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditingWeight(true); }}
-                                                                    title="Click to change weight %"
+                                                                    title={t('click_change_weight')}
                                                                 >
                                                                     {config.customWeight || 5}%
                                                                 </span>
                                                             )}
                                                             )
                                                             <HelpPopover
-                                                                title="Boost Custom Probability"
-                                                                content="Significantly increases the probability of your custom characters appearing. Useful when the base pool is huge (e.g., Unicode), ensuring your additions aren't statistically drowned out."
+                                                                title={t('boost_custom_help_title')}
+                                                                content={t('boost_custom_help')}
                                                             />
                                                         </span>
                                                     }
@@ -1985,14 +1985,14 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             id="must-include-input"
                                             label={
                                                 <div className="flex items-center gap-1">
-                                                    Must Include Characters
+                                                    {t('must_include_label')}
                                                     <HelpPopover
-                                                        title="Must Include Characters"
-                                                        content="Guarantees these specific characters appear in the final password. Can also be used as an 'Allowed List' by selecting Alphanumeric mode and pasting accepted symbols here."
+                                                        title={t('must_include_help_title')}
+                                                        content={t('must_include_help')}
                                                     />
                                                 </div>
                                             }
-                                            placeholder="e.g. @ö5"
+                                            placeholder={t('must_include_placeholder')}
                                             value={config.include}
                                             onChange={(e) => setConfig({ ...config, include: e.target.value })}
                                             icon={<Sparkles size={14} />}
@@ -2018,10 +2018,10 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                     }}
                                                     onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
                                                     onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
-                                                    title="Remove characters that are also in 'Forbidden'"
+                                                    title={t('remove_forbidden_dupe')}
                                                 >
                                                     <Eraser size={10} />
-                                                    Remove Duplicate
+                                                    {t('remove_duplicate')}
                                                 </button>
                                             )}
                                             className="compact-input"
@@ -2039,14 +2039,14 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             id="forbidden-input"
                                             label={
                                                 <div className="flex items-center gap-1">
-                                                    Forbidden Characters
+                                                    {t('forbidden_label')}
                                                     <HelpPopover
-                                                        title="Forbidden Characters"
-                                                        content="Removes specific characters from the pool, preventing rejection by services with strict character constraints."
+                                                        title={t('forbidden_help_title')}
+                                                        content={t('forbidden_help')}
                                                     />
                                                 </div>
                                             }
-                                            placeholder="e.g. I1l0O"
+                                            placeholder={t('forbidden_placeholder')}
                                             value={config.exclude}
                                             onChange={(e) => setConfig({ ...config, exclude: e.target.value })}
                                             icon={<ShieldAlert size={14} />}
@@ -2072,10 +2072,10 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                     }}
                                                     onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
                                                     onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
-                                                    title="Remove characters that are also in 'Must Include'"
+                                                    title={t('remove_include_dupe')}
                                                 >
                                                     <Eraser size={10} />
-                                                    Remove Duplicate
+                                                    {t('remove_duplicate')}
                                                 </button>
                                             )}
                                             className="compact-input"
@@ -2105,10 +2105,9 @@ export function GeneratorPanel({ onCopyPassword }) {
                                             >
                                                 <TriangleAlert size={18} style={{ color: '#FACC15', flexShrink: 0, marginTop: '2px' }} />
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                    <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FEF9C3', margin: 0 }}>Conflict Detected</h4>
+                                                    <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FEF9C3', margin: 0 }}>{t('conflict_title')}</h4>
                                                     <p style={{ fontSize: '0.75rem', color: 'rgba(254, 240, 138, 0.8)', lineHeight: 1.625, margin: 0 }}>
-                                                        Some characters appear in both "Must Include" and "Forbidden" fields.
-                                                        This is impossible to satisfy (<b>{conflictChars.join(' ')}</b>).
+                                                        {t('conflict_desc_pre')}<b>{conflictChars.join(' ')}</b>{t('conflict_desc_post')}
                                                     </p>
                                                 </div>
                                             </div>

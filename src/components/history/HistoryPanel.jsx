@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Copy, Trash2, Edit2, Star, Eye, EyeOff, Check } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
+import { useLanguage } from '../../i18n';
 
 export function HistoryPanel({ history, onUpdateHistory }) {
     // history is array: { id, password, timestamp, name (opt), favorite (opt) }
@@ -17,6 +18,8 @@ export function HistoryPanel({ history, onUpdateHistory }) {
         );
         onUpdateHistory(newHistory);
     };
+
+    const { t } = useLanguage();
 
     const [editingId, setEditingId] = useState(null);
     const [editValue, setEditValue] = useState("");
@@ -68,7 +71,7 @@ export function HistoryPanel({ history, onUpdateHistory }) {
     };
 
     const clearHistory = () => {
-        if (window.confirm("Clear all history? Favorites will be kept.")) {
+        if (window.confirm(t('clear_history_confirm'))) {
             onUpdateHistory(history.filter(h => h.favorite));
         }
     };
@@ -96,19 +99,19 @@ export function HistoryPanel({ history, onUpdateHistory }) {
         <div className="flex flex-col gap-4 h-full" id="history-panel">
             <div className="flex justify-between items-center" id="history-header">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold" id="history-title">History</h2>
+                    <h2 className="text-xl font-bold" id="history-title">{t('history_title')}</h2>
                     {history.length > 0 && (
                         <button
                             onClick={toggleAllVisibility}
                             className="icon-btn p-1 ml-2 opacity-50 hover:opacity-100 transition-opacity"
-                            title={areAllVisible ? "Hide all" : "Show all"}
+                            title={areAllVisible ? t('hide_all') : t('show_all')}
                         >
                             {areAllVisible ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                     )}
                 </div>
                 {history.length > 0 &&
-                    <Button variant="ghost" onClick={clearHistory} className="px-3 py-1 text-xs h-8" id="clear-history-btn">Clear</Button>
+                    <Button variant="ghost" onClick={clearHistory} className="px-3 py-1 text-xs h-8" id="clear-history-btn">{t('clear_history')}</Button>
                 }
             </div>
 
@@ -116,7 +119,7 @@ export function HistoryPanel({ history, onUpdateHistory }) {
                 <div className="flex flex-col gap-4 pb-4" id="history-items-container">
                     {/* Séparateur pour éviter que le scale du premier élément ne soit rogné */}
                     <div style={{ height: '0.75rem', flexShrink: 0 }}></div>
-                    {history.length === 0 && <p className="text-muted text-center py-8" id="history-empty-msg">No history yet.<br /><span className="text-xs">Generated passwords will appear here when copied.</span></p>}
+                    {history.length === 0 && <p className="text-muted text-center py-8" id="history-empty-msg">{t('no_history')}<br /><span className="text-xs">{t('no_history_sub')}</span></p>}
                     {sortedHistory.map(item => (
                         <GlassCard
                             key={item.id}
@@ -133,7 +136,7 @@ export function HistoryPanel({ history, onUpdateHistory }) {
                                     onBlur={() => saveRename(item.id)}
                                     onKeyDown={(e) => handleKeyDown(e, item.id)}
                                     onClick={(e) => e.stopPropagation()}
-                                    placeholder="Name"
+                                    placeholder={t('name_placeholder')}
                                     style={{
                                         height: '2.5rem', // Matched to original content height (~40px) to prevent jump
                                         background: 'transparent',
@@ -221,7 +224,7 @@ export function HistoryPanel({ history, onUpdateHistory }) {
                 }}>
                     <Check size={14} style={{ color: '#34D399' }} strokeWidth={3} />
                 </div>
-                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Copied to clipboard</span>
+                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{t('copied_clipboard')}</span>
             </div >
         </div >
     );

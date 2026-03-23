@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ClipboardCheck, ChevronDown, RefreshCw, Copy, Check, TriangleAlert } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Input } from '../ui/Input';
+import { useLanguage } from '../../i18n';
 
 const DiceIcon = ({ size = 20, className = "" }) => (
     <svg
@@ -47,7 +48,7 @@ const generateBase = () => {
 };
 
 // Reusable Field Component just for here
-const CheckerField = ({ label, value, index, status, description, isControl, onRegen, copiedIndex, onCopy }) => (
+const CheckerField = ({ label, value, index, status, description, isControl, onRegen, copiedIndex, onCopy, regenTitle }) => (
     <div className="flex flex-col" style={{ gap: '0.75rem' }}>
         <div className="flex justify-between items-center px-1">
             <label className="label-text" style={{ fontSize: '0.75rem', letterSpacing: '0.05em' }}>{label}</label>
@@ -75,7 +76,7 @@ const CheckerField = ({ label, value, index, status, description, isControl, onR
                         <button
                             onClick={onRegen}
                             className="icon-btn icon-btn-primary"
-                            title="Regenerate Test"
+                            title={regenTitle}
                             style={{ padding: '6px' }}
                         >
                             <DiceIcon size={18} />
@@ -99,6 +100,8 @@ const CheckerField = ({ label, value, index, status, description, isControl, onR
 );
 
 export const UnicodeChecker = React.forwardRef((props, ref) => {
+    const { t } = useLanguage();
+
     const [isOpen, setIsOpen] = useState(false);
     const [basePassword, setBasePassword] = useState(() => generateBase());
     const [suffix, setSuffix] = useState(() => SPECIAL_SUFFIXES[Math.floor(Math.random() * SPECIAL_SUFFIXES.length)]);
@@ -139,8 +142,8 @@ export const UnicodeChecker = React.forwardRef((props, ref) => {
                         <ClipboardCheck size={20} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-sm">Unicode Compatibility Check</h3>
-                        <p className="text-xs text-muted" style={{ fontWeight: 400 }}>Test how systems handle rare characters</p>
+                        <h3 className="font-bold text-sm">{t('unicode_check_title')}</h3>
+                        <p className="text-xs text-muted" style={{ fontWeight: 400 }}>{t('unicode_check_sub')}</p>
                     </div>
                 </div>
                 <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} text-muted`}>
@@ -169,11 +172,10 @@ export const UnicodeChecker = React.forwardRef((props, ref) => {
                             <TriangleAlert size={20} style={{ color: '#FACC15', minWidth: '20px' }} />
                             <div className="flex flex-col gap-1">
                                 <h4 className="font-bold text-xs uppercase tracking-wider" style={{ color: '#FEF9C3' }}>
-                                    Warning: Risk of Account Lockout
+                                    {t('lockout_warning_title')}
                                 </h4>
                                 <p className="text-xs leading-relaxed" style={{ color: 'rgba(254, 240, 138, 0.9)' }}>
-                                    Make sure you always have account recovery options (phone number, extra info, backup email). If the Unicode password is not supported during login,
-                                    you can consider the password lost and it becomes impossible to log back into the account.
+                                    {t('lockout_warning_desc')}
                                 </p>
                             </div>
                         </div>
@@ -182,32 +184,33 @@ export const UnicodeChecker = React.forwardRef((props, ref) => {
                     <div className="flex flex-col" style={{ gap: '2rem' }}>
                         <CheckerField
                             index={1}
-                            label="Standard + Unicode (Should Work)"
+                            label={t('field1_label')}
                             value={field1Value}
                             status="valid"
-                            description="✅ Valid UTF-8"
+                            description={t('field1_status')}
                             isControl={true}
                             onRegen={handleRegenerate}
+                            regenTitle={t('regenerate')}
                             copiedIndex={copiedIndex}
                             onCopy={copyToClipboard}
                         />
 
                         <CheckerField
                             index={2}
-                            label="With Replacement Char (Should Fail)"
+                            label={t('field2_label')}
                             value={field2Value}
                             status="invalid"
-                            description="❌ Contains  (U+FFFD)"
+                            description={t('field2_status')}
                             copiedIndex={copiedIndex}
                             onCopy={copyToClipboard}
                         />
 
                         <CheckerField
                             index={3}
-                            label="Without Special Char (Should Fail)"
+                            label={t('field3_label')}
                             value={field3Value}
                             status="invalid"
-                            description="❌ Missing required char"
+                            description={t('field3_status')}
                             copiedIndex={copiedIndex}
                             onCopy={copyToClipboard}
                         />

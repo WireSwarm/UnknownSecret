@@ -1,12 +1,14 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Type, ArrowUpCircle, Hash, Smile, Zap, Check, Shield, Globe, Info, X, Activity, BookOpen, TriangleAlert } from 'lucide-react';
 import { HelpPopover } from '../ui/HelpPopover';
+import { useLanguage } from '../../i18n';
 
 export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPostQuantum = false, onFixBcrypt, hasUnicodeCompat = false, onGoToCompatCheck }) {
     const [showBcryptInfo, setShowBcryptInfo] = useState(false);
     const [showCompatInfo, setShowCompatInfo] = useState(false);
     const [debouncedResult, setDebouncedResult] = useState(null);
     const [isCalculating, setIsCalculating] = useState(false);
+    const { t } = useLanguage();
     const workerRef = useRef(null);
 
     useEffect(() => {
@@ -83,13 +85,13 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
     }, [password, enableEmojiStats]);
 
     const statItems = [
-        { label: 'Lowercase', count: stats.lower, icon: Type },
-        { label: 'Uppercase', count: stats.upper, icon: ArrowUpCircle },
-        { label: 'Numbers', count: stats.number, icon: Hash },
-        { label: 'Emojis', count: stats.emoji, icon: Smile },
-        { label: 'Symbols', count: stats.symbol, icon: Zap },
+        { label: t('stat_lowercase'), count: stats.lower, icon: Type },
+        { label: t('stat_uppercase'), count: stats.upper, icon: ArrowUpCircle },
+        { label: t('stat_numbers'), count: stats.number, icon: Hash },
+        { label: t('stat_emojis'), count: stats.emoji, icon: Smile },
+        { label: t('stat_symbols'), count: stats.symbol, icon: Zap },
         {
-            label: 'Bcrypt',
+            label: t('stat_bcrypt'),
             count: (password && stats.bytes <= 72) ? 1 : 0,
             icon: Shield,
             hideCount: true,
@@ -98,7 +100,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
             isInteractive: true
         },
         {
-            label: 'Compatibility',
+            label: t('stat_compatibility'),
             count: (!hasUnicodeCompat && password) ? 1 : 0,
             icon: Globe,
             hideCount: true,
@@ -311,10 +313,10 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                     <Info size={18} style={{ color: '#60A5FA', flexShrink: 0, marginTop: '2px' }} />
                     <div style={{ flex: 1 }}>
                         <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#DBEAFE' }}>
-                            Bcrypt Compatibility
+                            {t('bcrypt_compat_title')}
                         </h4>
                         <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', lineHeight: 1.5, color: '#BFDBFE' }}>
-                            Bcrypt is a common legacy password hashing algorithm with a strict technical limit: it ignores any input beyond 72 bytes.
+                            {t('bcrypt_compat_desc')}
                         </p>
                     </div>
                     <button
@@ -345,11 +347,11 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <TriangleAlert id="bcrypt-warning-icon" size={14} color="#FACC15" />
                         <h5 id="bcrypt-warning-title" style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: '#FEF9C3' }}>
-                            Byte-Size Exceeded
+                            {t('bcrypt_exceeded_title')}
                         </h5>
                     </div>
                     <p id="bcrypt-warning-desc" style={{ margin: 0, fontSize: '0.7rem', lineHeight: 1.4, color: 'rgba(254, 249, 195, 0.8)' }}>
-                        Because you are using complex multi-byte characters (like emojis or symbols), your generated password has exceeded this 72-byte limit. It may be silently truncated by the target website.
+                        {t('bcrypt_exceeded_desc')}
                     </p>
                     <button
                         id="bcrypt-fix-btn"
@@ -369,7 +371,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                         }}
                         className="hover:bg-yellow-500/20"
                     >
-                        Set to 72 Bytes
+                        {t('set_to_72')}
                     </button>
                 </div>
             )}
@@ -393,10 +395,10 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                     <Globe size={18} style={{ color: '#60A5FA', flexShrink: 0, marginTop: '2px' }} />
                     <div style={{ flex: 1 }}>
                         <h4 id="compat-info-title" style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#DBEAFE' }}>
-                            Unicode Compatibility
+                            {t('unicode_compat_title')}
                         </h4>
                         <p id="compat-info-desc" style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', lineHeight: 1.5, color: '#BFDBFE' }}>
-                            Not all backends fully support UTF-8. Legacy systems might replace or reject complex symbols, reducing password strength.
+                            {t('unicode_compat_desc')}
                         </p>
                     </div>
                     <button
@@ -427,11 +429,11 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <TriangleAlert id="compat-warning-icon" size={14} color="#FACC15" />
                         <h5 id="compat-warning-title" style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: '#FEF9C3' }}>
-                            Compatibility Risk Detected
+                            {t('compat_risk_title')}
                         </h5>
                     </div>
                     <p id="compat-warning-desc" style={{ margin: 0, fontSize: '0.7rem', lineHeight: 1.4, color: 'rgba(254, 249, 195, 0.8)' }}>
-                        Your active charset includes complex Unicode characters that may not be supported by all systems. Please follow the steps in the Unicode Compatibility Check card below.
+                        {t('compat_risk_desc')}
                     </p>
                     {onGoToCompatCheck && (
                         <button
@@ -451,7 +453,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                                 transition: 'all 0.2s ease'
                             }}
                         >
-                            Go to Compatibility Check
+                            {t('goto_compat_check')}
                         </button>
                     )}
                 </div>
@@ -480,7 +482,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                                 ...getSlideInStyle(350)
                             }}>
                                 <Activity size={16} />
-                                <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Security Analysis</h3>
+                                <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>{t('security_analysis')}</h3>
                             </div>
 
                             <div style={getSlideInStyle(450)}>
@@ -510,10 +512,10 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                             }}>
                                 <BookOpen size={16} style={{ flexShrink: 0, marginTop: '2px', opacity: 0.7 }} />
                                 <div>
-                                    <strong style={{ color: 'rgba(255,255,255,0.9)', display: 'block', marginBottom: '0.2rem' }}>Algorithm: zxcvbn</strong>
-                                    Specifically designed to detect human-friendly passwords by analyzing dictionary words, repetitions, and common patterns often missed by traditional entropy calculators.
+                                    <strong style={{ color: 'rgba(255,255,255,0.9)', display: 'block', marginBottom: '0.2rem' }}>{t('algorithm_zxcvbn')}</strong>
+                                    {t('zxcvbn_desc')}
                                     <div style={{ marginTop: '0.4rem', fontSize: '0.75rem', opacity: 0.6, fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.4rem' }}>
-                                        Note: This analysis is less relevant for purely random passwords generated by this tool.
+                                        {t('zxcvbn_note')}
                                     </div>
                                 </div>
                             </div>
@@ -531,7 +533,7 @@ export function PasswordStats({ password, isOpen, enableEmojiStats = true, isPos
                                                 marginBottom: '0.75rem'
                                             }}
                                         >
-                                            <strong id="zxcvbn-warning-title" style={{ color: '#FCA5A5', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Warning</strong>
+                                            <strong id="zxcvbn-warning-title" style={{ color: '#FCA5A5', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>{t('warning')}</strong>
                                             <span id="zxcvbn-warning-text" style={{ color: '#FECACA', fontSize: '0.8rem' }}>{debouncedResult.feedback.warning}</span>
                                         </div>
                                     )}
@@ -568,30 +570,31 @@ function ScrambleText({ length = 8 }) {
 
 function CrackTimeDisplay({ times, isPostQuantum, isLoading }) {
     const [scrambleLength] = React.useState(() => 10 + Math.floor(Math.random() * 5));
+    const { t } = useLanguage();
     if (!times) return null;
 
     const formatTime = (seconds) => {
         let val = seconds;
         if (isPostQuantum) val = Math.sqrt(seconds);
 
-        if (val < 1) return 'Instantly';
-        if (val < 60) return `${Math.round(val)} seconds`;
-        if (val < 3600) return `${Math.round(val / 60)} minutes`;
-        if (val < 86400) return `${Math.round(val / 3600)} hours`;
-        if (val < 31536000) return `${Math.round(val / 86400)} days`;
-        if (val < 31536000 * 100) return `${Math.round(val / 31536000)} years`;
-        if (val < 31536000 * 1000) return 'Centuries';
-        if (val < 31536000 * 1e6) return 'Millennia';
-        if (val < 31536000 * 1e9) return 'Millions of years';
-        if (val < 31536000 * 14e9) return 'Billions of years';
-        return 'Age of the Universe';
+        if (val < 1) return t('time_instantly');
+        if (val < 60) return t('time_seconds', Math.round(val));
+        if (val < 3600) return t('time_minutes', Math.round(val / 60));
+        if (val < 86400) return t('time_hours', Math.round(val / 3600));
+        if (val < 31536000) return t('time_days', Math.round(val / 86400));
+        if (val < 31536000 * 100) return t('time_years', Math.round(val / 31536000));
+        if (val < 31536000 * 1000) return t('time_centuries');
+        if (val < 31536000 * 1e6) return t('time_millennia');
+        if (val < 31536000 * 1e9) return t('time_millions_years');
+        if (val < 31536000 * 14e9) return t('time_billions_years');
+        return t('time_universe_age');
     };
 
     const items = [
-        { label: 'Data Breach (Weak Security)', tooltip: 'The database leaked and the hashing algorithm (e.g., MD5) is very fast to compute. The attacker uses hardware to test 10 billion combinations per second.', value: formatTime(times.offline_fast_hashing_1e10_per_second), sub: '10B/sec', id: 'crack-time-offline-fast' },
-        { label: 'Data Breach (Strong Security)', tooltip: 'The database leaked, but the password is defended by a slow algorithm (e.g., Bcrypt, Argon2). The attacker is limited to about 10,000 tests per second.', value: formatTime(times.offline_slow_hashing_1e4_per_second), sub: '10k/sec', id: 'crack-time-offline-slow' },
-        { label: 'Login Attempts (Unlimited)', tooltip: 'Online attack: the login form has no protection against bots. The attacker tests passwords as fast as the network allows.', value: formatTime(times.online_no_throttling_10_per_second), sub: '10/sec', id: 'crack-time-unthrottled' },
-        { label: 'Login Attempts (With Max Attempts)', tooltip: 'Online attack: the login page has a security system that blocks or slows down the attacker after a few failed tries (rate limiting, max attempts).', value: formatTime(times.online_throttling_100_per_hour), sub: '100/hour', id: 'crack-time-throttled' }
+        { label: t('crack_offline_fast_label'), tooltip: t('crack_offline_fast_tooltip'), value: formatTime(times.offline_fast_hashing_1e10_per_second), sub: '10B/sec', id: 'crack-time-offline-fast' },
+        { label: t('crack_offline_slow_label'), tooltip: t('crack_offline_slow_tooltip'), value: formatTime(times.offline_slow_hashing_1e4_per_second), sub: '10k/sec', id: 'crack-time-offline-slow' },
+        { label: t('crack_unthrottled_label'), tooltip: t('crack_unthrottled_tooltip'), value: formatTime(times.online_no_throttling_10_per_second), sub: '10/sec', id: 'crack-time-unthrottled' },
+        { label: t('crack_throttled_label'), tooltip: t('crack_throttled_tooltip'), value: formatTime(times.online_throttling_100_per_hour), sub: '100/hour', id: 'crack-time-throttled' }
     ];
 
     return (

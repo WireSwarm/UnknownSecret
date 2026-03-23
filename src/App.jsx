@@ -8,10 +8,11 @@ import { TopMenu } from './components/ui/TopMenu';
 // import { HelpShowcase } from './components/showcase/HelpShowcase';
 import { useSessionStorage } from './utils/storage';
 import { useLocalStorage } from './utils/storage';
+import { LanguageProvider } from './i18n';
 
 function App() {
   const [history, setHistory] = useSessionStorage('password_history', []);
-  const [language, setLanguage] = useLocalStorage('app_language', 'fr');
+  const [language, setLanguage] = useLocalStorage('app_language', navigator.language?.startsWith('fr') ? 'fr' : 'en');
   // const [showcaseMode, setShowcaseMode] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('config');
 
@@ -56,6 +57,7 @@ function App() {
   // }
 
   return (
+    <LanguageProvider language={language}>
     <div className="app-container" id="app-root">
       <header className="app-header animate-float" id="main-header">
         <div className="header-content" id="header-content">
@@ -64,7 +66,7 @@ function App() {
           </div>
           <div className="title-stack" id="title-stack">
             <h1 className="app-title text-gradient" id="app-title">UnknownSecret</h1>
-            <p className="label-text" id="app-subtitle">Premium Password Generator</p>
+            <p className="label-text" id="app-subtitle">{language === 'fr' ? 'Générateur de mots de passe premium' : 'Premium Password Generator'}</p>
           </div>
         </div>
         <TopMenu language={language} onLanguageChange={setLanguage} />
@@ -92,7 +94,7 @@ function App() {
               onClick={() => setActiveTab('history')}
             >
               <History size={14} />
-              Historique
+              {language === 'fr' ? 'Historique' : 'History'}
               {history.length > 0 && (
                 <span className="right-panel-tab-badge" id="history-tab-badge">
                   {history.length}
@@ -141,6 +143,7 @@ function App() {
         UI Showcase
       </button> */}
     </div>
+    </LanguageProvider>
   );
 }
 

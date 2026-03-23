@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Edit2 } from 'lucide-react';
+import { useLanguage } from '../../i18n';
 
 export function EntropyMeter({ entropy, combinations, password, id, isPostQuantum, onByteChange }) {
     const [isEditingBytes, setIsEditingBytes] = useState(false);
+    const { t } = useLanguage();
 
     // Analyze strength variables — declared without initial value to avoid useless assignments
     let strength;
@@ -22,24 +24,24 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
     // Thresholds & Logic
     // New thresholds: VeryWeak<20, Weak<40, Medium<60, Strong<100, Excellent<500, Overkill<2000, Paranoiac<15000, Demon>=15000
     if (safeEntropy >= 15000) {
-        strength = 'Absolute Demon';
+        strength = t('strength_absolute_demon');
         color = '#0a0a0a'; // Black text for Demon
         barColor = '#0a0a0a'; // Near-black bar
         widthStr = 'calc(100% - 136px)';
         isDemon = true;
         textGlow = '0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFD700'; // Gold glow
     } else if (safeEntropy >= 2000) {
-        strength = 'Paranoiac';
+        strength = t('strength_paranoiac');
         color = '#D946EF'; // Fuchsia
         barColor = '#D946EF';
         widthStr = 'calc(100% - 136px)';
     } else if (safeEntropy >= 500) {
-        strength = 'Overkill';
+        strength = t('strength_overkill');
         color = '#8b5cf6'; // Violet
         barColor = '#8b5cf6';
         widthStr = 'calc(75% - 136px)';
     } else if (safeEntropy >= 100) {
-        strength = 'Excellent';
+        strength = t('strength_excellent');
         color = '#10B981'; // Green
         barColor = '#10B981';
         // Excellent: 100-125 bits -> 80-100% of track (saturates at 125)
@@ -53,28 +55,28 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
 
         if (safeEntropy >= 60) {
             // Strong: 60-100 bits -> 60-80% of track
-            strength = 'Strong';
+            strength = t('strength_strong');
             color = '#4FD8FF';
             barColor = '#4FD8FF';
             const tierProgress = Math.min(1, (safeEntropy - 60) / 40);
             fraction = 0.6 + tierProgress * 0.2;
         } else if (safeEntropy >= 40) {
             // Medium: 40-60 bits -> 40-60% of track
-            strength = 'Medium';
+            strength = t('strength_medium');
             color = '#FBBF24';
             barColor = '#FBBF24';
             const tierProgress = (safeEntropy - 40) / 20;
             fraction = 0.4 + tierProgress * 0.2;
         } else if (safeEntropy >= 20) {
             // Weak: 20-40 bits -> 20-40% of track
-            strength = 'Weak';
+            strength = t('strength_weak');
             color = '#F97316';
             barColor = '#F97316';
             const tierProgress = (safeEntropy - 20) / 20;
             fraction = 0.2 + tierProgress * 0.2;
         } else {
             // Very Weak: 0-20 bits -> 5-20% of track (minimum 5% to be visible)
-            strength = 'Very Weak';
+            strength = t('strength_very_weak');
             color = '#EF4444'; // Red
             barColor = '#EF4444';
             const tierProgress = safeEntropy / 20;
@@ -116,7 +118,7 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
                         id={id ? `${id}-details` : undefined}
                     >
                         <div className="flex justify-between items-center" title="UTF-8 Encoded Size. Click to set target byte size (for bcrypt, etc).">
-                            <span className="opacity-50 mr-2">Size (utf-8):</span>
+                            <span className="opacity-50 mr-2">{t('size_utf8')}</span>
                             {isEditingBytes ? (
                                 <input
                                     autoFocus
@@ -141,7 +143,7 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
                                     className="font-mono cursor-pointer hover:text-primary transition-colors flex items-center gap-1"
                                     onClick={() => setIsEditingBytes(true)}
                                 >
-                                    {utf8Bytes} bytes
+                                    {utf8Bytes} {t('bytes_unit')}
                                     <Edit2 size={8} className="opacity-50" />
                                 </div>
                             )}
@@ -149,12 +151,12 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
 
                         {combinations && (
                             <div className="flex justify-between items-center" title="Total number of possible password combinations with the current character set and length.">
-                                <span className="opacity-50 mr-2">Comb:</span>
+                                <span className="opacity-50 mr-2">{t('comb')}</span>
                                 <span>{new Intl.NumberFormat('en-US', { notation: "scientific", maximumSignificantDigits: 3 }).format(combinations)}</span>
                             </div>
                         )}
                         <div className="flex justify-between items-center" title="The degree of randomness and unpredictability measured in bits. Higher is stronger.">
-                            <span className="opacity-50 mr-2">Entropy:</span>
+                            <span className="opacity-50 mr-2">{t('entropy_label')}</span>
                             <span>{Math.round(safeEntropy)} bits {isPostQuantum && <span className="text-amber-500" title="Post-Quantum Strength (Grover's Algorithm adjusted)">(PQ)</span>}</span>
                         </div>
                     </div>
@@ -171,7 +173,7 @@ export function EntropyMeter({ entropy, combinations, password, id, isPostQuantu
                     }}
                     id={id ? `${id}-label` : undefined}
                 >
-                    Security Strength
+                    {t('security_strength')}
                 </span>
 
                 {/* Track (Background) - Positioned absolutely to start at same point as fill */}
