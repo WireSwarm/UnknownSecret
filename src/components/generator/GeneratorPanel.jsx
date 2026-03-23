@@ -1683,6 +1683,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                                     </h3>
                                     <Toggle
                                         id="opt-random-length"
+                                        className="secondary-toggle"
                                         checked={config.randomLength}
                                         onChange={(v) => {
                                             setConfig({ ...config, randomLength: v });
@@ -1927,13 +1928,14 @@ export function GeneratorPanel({ onCopyPassword }) {
                                                         setConfig({ ...config, standardCharsetDisabled: !v });
                                                         if (!v) setActiveSet(null);
                                                     }}
-                                                    className="mb-2 mt-4"
+                                                    className="secondary-toggle mb-2 mt-4"
                                                 />
                                             )}
                                             {/* Weight Option (Option B) */}
                                             {!config.standardCharsetDisabled && config.customCharset && (
                                                 <Toggle
                                                     id="opt-custom-weight"
+                                                    className="secondary-toggle"
                                                     onChange={(v) => {
                                                         setConfig({ ...config, customWeight: v ? 5 : 0 });
                                                     }}

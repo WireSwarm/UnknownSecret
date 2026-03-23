@@ -146,6 +146,38 @@ h6 {
   color: var(--text-muted);
 }
 
+.secondary-toggle {
+  position: relative;
+  padding-left: 0.875rem;
+  background: rgba(var(--primary-rgb), 0.03);
+  border-radius: 6px;
+  padding-right: 0.25rem;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+}
+
+.secondary-toggle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 70%;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--primary-rgb), 0.65),
+    rgba(var(--secondary-rgb), 0.35)
+  );
+  border-radius: 1px;
+}
+
+.secondary-toggle .label-text {
+  color: rgba(188, 193, 210, 0.78);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
 .font-mono {
   font-family: var(--font-mono);
 }
