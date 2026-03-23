@@ -895,6 +895,8 @@ export function GeneratorPanel({ onCopyPassword }) {
                     </div>
                 </div>
             )}
+            {/* Password Output Card — glassmorphism wrapper */}
+            <GlassCard className="p-6 flex flex-col gap-4" id="password-output-card" style={{ transform: 'none', background: 'rgba(255, 255, 255, 0.04)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)', border: '1px solid rgba(255, 255, 255, 0.10)' }}>
             {/* Centered Output Section */}
             <div className="flex flex-col items-center w-full" id="output-section">
                 <div className="w-full max-w-2xl relative" id="password-input-area">
@@ -1094,6 +1096,7 @@ export function GeneratorPanel({ onCopyPassword }) {
                     }, 100);
                 }}
             />
+            </GlassCard>
             {/* Presets and Default Configs Card — stays in the left column */}
             <GlassCard className="p-6 mt-4 flex flex-col gap-6" id="presets-glass-card">
                 {/* Section 2: Saved Configurations */}
