@@ -1572,13 +1572,13 @@ export function GeneratorPanel({ onCopyPassword }) {
                             </span>
                             <div style={{ position: 'relative' }}>
                                 <div className="flex flex-wrap gap-2 justify-center" id="ascii-checkboxes-container">
-                                    <CheckboxOption id="chk-lower" label={t('lowercase')} tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} includedBy={!!activeSet} />
-                                    <CheckboxOption id="chk-upper" label={t('uppercase')} tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} includedBy={!!activeSet} />
-                                    <CheckboxOption id="chk-numbers" label={t('numbers')} tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} includedBy={!!activeSet} />
-                                    <CheckboxOption id="chk-basic" label={t('basic_symbols')} tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} includedBy={!!activeSet} />
-                                    <CheckboxOption id="chk-advanced" label={t('advanced_symbols')} tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} includedBy={!!activeSet} />
+                                    <CheckboxOption id="chk-lower" label={t('lowercase')} tooltip="26 characters" checked={config.lower} onChange={() => handleCheckboxToggle('lower')} includedBy={!!(activeSet && SETS[activeSet])} />
+                                    <CheckboxOption id="chk-upper" label={t('uppercase')} tooltip="26 characters" checked={config.upper} onChange={() => handleCheckboxToggle('upper')} includedBy={!!(activeSet && SETS[activeSet])} />
+                                    <CheckboxOption id="chk-numbers" label={t('numbers')} tooltip="10 characters" checked={config.numbers} onChange={() => handleCheckboxToggle('numbers')} includedBy={!!(activeSet && SETS[activeSet])} />
+                                    <CheckboxOption id="chk-basic" label={t('basic_symbols')} tooltip="9 characters" checked={config.basic} onChange={() => handleCheckboxToggle('basic')} includedBy={!!(activeSet && SETS[activeSet])} />
+                                    <CheckboxOption id="chk-advanced" label={t('advanced_symbols')} tooltip="24 characters" checked={config.advanced} onChange={() => handleCheckboxToggle('advanced')} includedBy={!!(activeSet && SETS[activeSet])} />
                                 </div>
-                                {activeSet && (
+                                {activeSet && SETS[activeSet] && (
                                     <span id="ascii-included-by-msg" style={{ position: 'absolute', top: '-10px', left: '8px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#a78bfa', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap', zIndex: 1, fontStyle: 'italic', lineHeight: 1.4 }}>
                                         <Lock size={10} strokeWidth={2.5} style={{ flexShrink: 0 }} />
                                         {t('included_by')} <strong style={{ fontStyle: 'normal', fontWeight: 600 }}>{SETS[activeSet].name}</strong>
